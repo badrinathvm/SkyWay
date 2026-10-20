@@ -8,6 +8,7 @@ enum AppTab: String, CaseIterable, Identifiable {
   case travel
   case myTrips
   case flightStatus
+  case search
 
   var id: Self { self }
 
@@ -18,6 +19,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case .travel: "Travel"
     case .myTrips: "My trips"
     case .flightStatus: "Flight status"
+    case .search: "Search"
     }
   }
 
@@ -28,6 +30,7 @@ enum AppTab: String, CaseIterable, Identifiable {
     case .travel: "suitcase.rolling.fill"
     case .myTrips: "ticket.fill"
     case .flightStatus: "clock.fill"
+    case .search: "magnifyingglass"
     }
   }
 }

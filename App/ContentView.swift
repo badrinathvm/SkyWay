@@ -22,6 +22,9 @@ struct ContentView: View {
       Tab(AppTab.flightStatus.title, systemImage: AppTab.flightStatus.systemImage, value: AppTab.flightStatus) {
         PlaceholderTabView(tab: .flightStatus)
       }
+      Tab(value: AppTab.search, role: .search) {
+        SearchView(trip: trip)
+      }
     }
     .tabBarMinimizeBehavior(.onScrollDown)
     .tabViewBottomAccessory(isEnabled: selectedTab == .travel) {
