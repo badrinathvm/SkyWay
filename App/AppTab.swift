@@ -1,3 +1,5 @@
+// xcode: set sdk=iOS
+
 import SwiftUI
 
 enum AppTab: String, CaseIterable, Identifiable {
