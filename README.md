@@ -2,6 +2,13 @@
 
 An iOS sample project for exploring SwiftUI tab bar placements in the Liquid Glass design: a tab bar **bottom accessory**, **minimize on scroll**, and a **prominent tab** pinned to the trailing edge.
 
+## Demo
+
+| Tab bar bottom accessory | Prominent tab |
+| --- | --- |
+| <img src="Docs/accessory.gif" width="300" alt="Boarding pass accessory collapsing inline as the tab bar minimizes on scroll, hiding on other tabs, and opening the boarding pass sheet"> | <img src="Docs/prominent.gif" width="300" alt="Settings tab pinned in its own glass button on the trailing edge, staying visible while the tab bar minimizes"> |
+| Scrolling minimizes the tab bar and the boarding pass moves inline. It only appears on the Travel tab, and tapping it opens the boarding pass. | The `.prominent` tab sits in its own glass button on the trailing side and stays put when the tab bar minimizes. |
+
 ## Features
 
 | Feature | API | Where |
@@ -15,7 +22,7 @@ An iOS sample project for exploring SwiftUI tab bar placements in the Liquid Gla
 ## Requirements
 
 - Xcode 27.1 or later
-- iOS 27.1 or later (deployment target in `Project.json`)
+- iOS 27.0 or later (deployment target in `Project.json`)
 - [XcodeGen](https://github.com/yonaskolb/XcodeGen) to generate the Xcode project
 
 ## Getting Started
@@ -63,6 +70,7 @@ App/
   SearchView.swift             Searchable list of travel actions
   PlaceholderTabView.swift     Placeholder for unbuilt tabs
   Trip.swift                   Trip model and sample data
+Docs/                          Demo GIFs used in this README
 Project.json                   XcodeGen project spec
 ```
 
