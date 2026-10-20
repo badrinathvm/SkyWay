@@ -37,3 +37,7 @@ node_modules/
 # Build
 build/
 build-*/
+
+# Locally generated Xcode project (source of truth is Project.json)
+*.xcodeproj/
+App/Info.plist
