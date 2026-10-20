@@ -13,7 +13,7 @@
   },
   "targets": {
     "Skyway": {
-      "deploymentTarget": "26.1",
+      "deploymentTarget": "27.1",
       "info": {
         "path": "App\/Info.plist",
         "properties": {
