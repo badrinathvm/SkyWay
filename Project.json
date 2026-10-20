@@ -12,12 +12,12 @@
     "CODE_SIGN_IDENTITY": "-"
   },
   "targets": {
-    "New Project": {
-      "deploymentTarget": "26.0",
+    "Skyway": {
+      "deploymentTarget": "26.1",
       "info": {
         "path": "App\/Info.plist",
         "properties": {
-          "CFBundleDisplayName": "New Project",
+          "CFBundleDisplayName": "Skyway",
           "CFBundleShortVersionString": "1.0",
           "CFBundleVersion": "1",
           "ITSAppUsesNonExemptEncryption": false,
