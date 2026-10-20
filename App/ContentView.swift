@@ -22,7 +22,7 @@ struct ContentView: View {
       Tab(AppTab.flightStatus.title, systemImage: AppTab.flightStatus.systemImage, value: AppTab.flightStatus) {
         PlaceholderTabView(tab: .flightStatus)
       }
-      Tab(AppTab.search.title, systemImage: AppTab.search.systemImage, value: AppTab.search, role: .prominent) {
+      Tab(AppTab.settings.title, systemImage: AppTab.settings.systemImage, value: AppTab.settings, role: .prominent) {
         SearchView(trip: trip)
       }
     }
