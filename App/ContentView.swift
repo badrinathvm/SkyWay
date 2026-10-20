@@ -10,19 +10,19 @@ struct ContentView: View {
       Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
         PlaceholderTabView(tab: .home)
       }
-      Tab(AppTab.bookFlight.title, systemImage: AppTab.bookFlight.systemImage, value: AppTab.bookFlight) {
-        PlaceholderTabView(tab: .bookFlight)
-      }
+//      Tab(AppTab.bookFlight.title, systemImage: AppTab.bookFlight.systemImage, value: AppTab.bookFlight) {
+//        PlaceholderTabView(tab: .bookFlight)
+//      }
       Tab(AppTab.travel.title, systemImage: AppTab.travel.systemImage, value: AppTab.travel) {
         TravelView(trip: trip)
       }
-      Tab(AppTab.myTrips.title, systemImage: AppTab.myTrips.systemImage, value: AppTab.myTrips) {
-        PlaceholderTabView(tab: .myTrips)
-      }
+//      Tab(AppTab.myTrips.title, systemImage: AppTab.myTrips.systemImage, value: AppTab.myTrips) {
+//        PlaceholderTabView(tab: .myTrips)
+//      }
       Tab(AppTab.flightStatus.title, systemImage: AppTab.flightStatus.systemImage, value: AppTab.flightStatus) {
         PlaceholderTabView(tab: .flightStatus)
       }
-      Tab(value: AppTab.search, role: .search) {
+      Tab(value: AppTab.search, role: .prominent) {
         SearchView(trip: trip)
       }
     }
