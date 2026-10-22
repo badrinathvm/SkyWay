@@ -18,6 +18,10 @@ An iOS sample project for exploring SwiftUI tab bar placements in the Liquid Gla
 | Accessory adapts its layout when inline vs. expanded | `@Environment(\.tabViewBottomAccessoryPlacement)` | `App/BoardingPassAccessory.swift` |
 | Dedicated tab in its own glass button on the trailing side | `Tab(..., role: .prominent)` (iOS 27) or `role: .search` | `App/ContentView.swift` |
 | Boarding pass sheet with a generated QR code | `CIFilter.qrCodeGenerator()` | `App/BoardingPassView.swift` |
+| Siri onscreen awareness for the trip and search rows | `.userActivity` / `.appEntityIdentifier` + `AppEntity` | `App/TripEntity.swift`, `App/TravelActionEntity.swift` |
+| "Where is my trip in Skyway?" Siri phrase | `AppIntent` + `AppShortcutsProvider` | `App/GetCurrentTripIntent.swift`, `App/SkywayShortcuts.swift` |
+
+For how onscreen awareness works and when to use `.userActivity` vs `.appEntityIdentifier`, see [Docs/OnscreenAwareness.md](Docs/OnscreenAwareness.md).
 
 ## Requirements
 
@@ -70,7 +74,14 @@ App/
   SearchView.swift             Searchable list of travel actions
   PlaceholderTabView.swift     Placeholder for unbuilt tabs
   Trip.swift                   Trip model and sample data
-Docs/                          Demo GIFs used in this README
+  TripStore.swift              Trip data shared by the UI and App Intents
+  TripEntity.swift             Trip App Entity, query, and Spotlight indexing
+  TravelActionEntity.swift     Travel action App Entity and query
+  GetCurrentTripIntent.swift   "Get Upcoming Trip" App Intent
+  SkywayShortcuts.swift        Siri phrases (App Shortcuts)
+Docs/
+  OnscreenAwareness.md         Notes on Siri onscreen awareness
+  *.gif                        Demo GIFs used in this README
 Project.json                   XcodeGen project spec
 ```
 
