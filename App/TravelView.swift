@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 
 struct TravelView: View {
@@ -24,6 +25,12 @@ struct TravelView: View {
       }
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
+      // Annotate the Travel screen with the trip so Siri and Apple Intelligence
+      // can resolve "my trip" or "this trip" from onscreen context.
+      .userActivity(TripEntity.viewTripActivityType) { activity in
+        activity.title = trip.title
+        activity.appEntityIdentifier = EntityIdentifier(for: TripEntity.self, identifier: trip.id)
+      }
     }
   }
 }

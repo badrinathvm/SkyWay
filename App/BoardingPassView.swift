@@ -1,3 +1,4 @@
+import AppIntents
 import CoreImage.CIFilterBuiltins
 import SwiftUI
 
@@ -56,6 +57,10 @@ struct BoardingPassView: View {
       .background(Color(.systemGroupedBackground))
       .navigationTitle(trip.title)
       .navigationBarTitleDisplayMode(.inline)
+      .userActivity(TripEntity.viewTripActivityType) { activity in
+        activity.title = trip.title
+        activity.appEntityIdentifier = EntityIdentifier(for: TripEntity.self, identifier: trip.id)
+      }
       .toolbar {
         ToolbarItem(placement: .confirmationAction) {
           Button("Done", systemImage: "checkmark") { dismiss() }
