@@ -1,7 +1,7 @@
 import Foundation
 
 struct Trip: Identifiable, Hashable {
-  var id = UUID()
+  var originCity: String
   var destinationCity: String
   var originCode: String
   var destinationCode: String
@@ -13,6 +13,9 @@ struct Trip: Identifiable, Hashable {
   var passengerName: String
   var confirmationCode: String
 
+  /// Stable across launches so Siri and Apple Intelligence can look the trip up by identifier.
+  var id: String { confirmationCode }
+
   var title: String { "Trip to \(destinationCity)" }
 
   var boardingPassPayload: String {
@@ -20,6 +23,7 @@ struct Trip: Identifiable, Hashable {
   }
 
   static let sample = Trip(
+    originCity: "New York",
     destinationCity: "San Francisco",
     originCode: "JFK",
     destinationCode: "SFO",
