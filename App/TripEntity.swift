@@ -1,9 +1,10 @@
 import AppIntents
+import CoreSpotlight
 import CoreTransferable
 
 /// Exposes a trip to Siri and Apple Intelligence so requests like
 /// "Where am I travelling to?" can resolve the trip shown on screen.
-struct TripEntity: AppEntity {
+struct TripEntity: IndexedEntity {
   static let typeDisplayRepresentation: TypeDisplayRepresentation = "Trip"
   static let defaultQuery = TripEntityQuery()
   static let viewTripActivityType = "app.skyway.viewTrip"
@@ -72,6 +73,13 @@ extension TripEntity: Transferable {
 
 extension Trip {
   var entity: TripEntity { TripEntity(trip: self) }
+}
+
+extension TripStore {
+  /// Adds the person's trips to Spotlight so Siri and Apple Intelligence can find them.
+  static func indexInSpotlight() async {
+    try? await CSSearchableIndex.default().indexAppEntities(trips.map(\.entity))
+  }
 }
 
 struct TripEntityQuery: EntityStringQuery {
