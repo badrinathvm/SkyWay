@@ -1,3 +1,4 @@
+import AppIntents
 import SwiftUI
 
 struct SearchView: View {
@@ -25,6 +26,9 @@ struct SearchView: View {
                 Image(systemName: action.systemImage)
                   .foregroundStyle(.tint)
               }
+              // Annotate each visible row so Siri can resolve
+              // "this one" or "the second one" from what's on screen.
+              .appEntityIdentifier(EntityIdentifier(for: TravelActionEntity.self, identifier: action.id))
             }
           }
         }
@@ -35,7 +39,7 @@ struct SearchView: View {
   }
 
   private var results: [TravelAction] {
-    let all = TravelAction.featured + TravelAction.quick
+    let all = TravelAction.all
     let trimmed = query.trimmingCharacters(in: .whitespaces)
     guard !trimmed.isEmpty else { return all }
     return all.filter {
