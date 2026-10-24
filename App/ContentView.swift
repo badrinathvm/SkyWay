@@ -3,6 +3,7 @@ import SwiftUI
 struct ContentView: View {
   @State private var selectedTab: AppTab = .travel
   @State private var isShowingBoardingPass = false
+  @State private var assistant = FlightAssistant(trip: .sample)
   private let trip = Trip.sample
 
   var body: some View {
@@ -20,20 +21,29 @@ struct ContentView: View {
 //        PlaceholderTabView(tab: .myTrips)
 //      }
       Tab(AppTab.flightStatus.title, systemImage: AppTab.flightStatus.systemImage, value: AppTab.flightStatus) {
-        PlaceholderTabView(tab: .flightStatus)
+        FlightStatusView(assistant: assistant)
       }
       Tab(AppTab.settings.title, systemImage: AppTab.settings.systemImage, value: AppTab.settings, role: .prominent) {
         SearchView(trip: trip)
       }
     }
     .tabBarMinimizeBehavior(.onScrollDown)
-    .tabViewBottomAccessory(isEnabled: selectedTab == .travel) {
-      BoardingPassAccessory(trip: trip) {
-        isShowingBoardingPass = true
+    .tabViewBottomAccessory(isEnabled: hasAccessory) {
+      switch selectedTab {
+      case .flightStatus:
+        MessageComposerAccessory(assistant: assistant)
+      default:
+        BoardingPassAccessory(trip: trip) {
+          isShowingBoardingPass = true
+        }
       }
     }
     .sheet(isPresented: $isShowingBoardingPass) {
       BoardingPassView(trip: trip)
     }
+  }
+
+  private var hasAccessory: Bool {
+    selectedTab == .travel || selectedTab == .flightStatus
   }
 }
