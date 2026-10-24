@@ -3,6 +3,7 @@ import SwiftUI
 
 struct TravelView: View {
   var trip: Trip
+  var assistant: FlightAssistant
 
   var body: some View {
     NavigationStack {
@@ -23,8 +24,16 @@ struct TravelView: View {
         .padding()
         .frame(maxWidth: .infinity)
       }
+      .scrollDismissesKeyboard(.interactively)
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
+      .environment(\.isHighlightingCards, assistant.isHighlightingCards)
+      .safeAreaInset(edge: .bottom) {
+        if assistant.isComposing {
+          AssistantComposer(assistant: assistant)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+      }
       // Annotate the Travel screen with the trip so Siri and Apple Intelligence
       // can resolve "my trip" or "this trip" from onscreen context.
       .userActivity(TripEntity.viewTripActivityType) { activity in
@@ -52,6 +61,7 @@ private struct TripSummaryCard: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(20)
     .background(.background, in: .rect(cornerRadius: 20))
+    .cardHighlight(cornerRadius: 20)
   }
 }
 
@@ -85,6 +95,7 @@ private struct TravelActionRow: View {
       .padding(20)
       .frame(maxWidth: .infinity)
       .background(.background, in: .rect(cornerRadius: 20))
+      .cardHighlight(cornerRadius: 20)
       .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
@@ -108,6 +119,7 @@ private struct QuickActionTile: View {
       .padding(20)
       .frame(maxWidth: .infinity)
       .background(.background, in: .rect(cornerRadius: 20))
+      .cardHighlight(cornerRadius: 20)
       .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)

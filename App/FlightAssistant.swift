@@ -6,7 +6,11 @@ import Observation
 final class FlightAssistant {
   var trip: Trip
   var draft = ""
+  var isComposing = false
+  var isHighlightingCards = false
   private(set) var messages: [ChatMessage] = []
+  /// The reply to the most recent question asked while composing, shown above the text field.
+  private(set) var latestReply: ChatMessage?
 
   static let suggestions = [
     "What gate do I leave from?",
@@ -27,11 +31,29 @@ final class FlightAssistant {
     draft = ""
   }
 
+  func startComposing() {
+    latestReply = nil
+    isComposing = true
+  }
+
+  func stopComposing() {
+    isComposing = false
+    isHighlightingCards = false
+    latestReply = nil
+  }
+
+  func toggleCardHighlight() {
+    isHighlightingCards.toggle()
+  }
+
   func send(_ text: String) {
     let question = text.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !question.isEmpty else { return }
+    let reply = ChatMessage(sender: .assistant, text: answer(to: question))
     messages.append(ChatMessage(sender: .user, text: question))
-    messages.append(ChatMessage(sender: .assistant, text: answer(to: question)))
+    messages.append(reply)
+    latestReply = reply
+    isHighlightingCards = false
   }
 
   var boardingTime: Date {

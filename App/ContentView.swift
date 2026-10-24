@@ -15,7 +15,7 @@ struct ContentView: View {
 //        PlaceholderTabView(tab: .bookFlight)
 //      }
       Tab(AppTab.travel.title, systemImage: AppTab.travel.systemImage, value: AppTab.travel) {
-        TravelView(trip: trip)
+        TravelView(trip: trip, assistant: assistant)
       }
 //      Tab(AppTab.myTrips.title, systemImage: AppTab.myTrips.systemImage, value: AppTab.myTrips) {
 //        PlaceholderTabView(tab: .myTrips)
@@ -44,6 +44,10 @@ struct ContentView: View {
   }
 
   private var hasAccessory: Bool {
-    selectedTab == .travel || selectedTab == .flightStatus
+    switch selectedTab {
+    case .travel: !assistant.isComposing
+    case .flightStatus: true
+    default: false
+    }
   }
 }
