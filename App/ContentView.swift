@@ -31,11 +31,11 @@ struct ContentView: View {
     .tabViewBottomAccessory(isEnabled: hasAccessory) {
       switch selectedTab {
       case .flightStatus:
-        MessageComposerAccessory(assistant: assistant)
+         BoardingPassAccessory(trip: trip) {
+             isShowingBoardingPass = true
+           }
       default:
-        BoardingPassAccessory(trip: trip) {
-          isShowingBoardingPass = true
-        }
+         MessageComposerAccessory(assistant: assistant)
       }
     }
     .sheet(isPresented: $isShowingBoardingPass) {
