@@ -17,7 +17,7 @@ struct AssistantComposer: View {
       .buttonBorderShape(.circle)
 
       TextField(
-        assistant.isHighlightingCards ? "Ask about what's on screen…" : "Ask about your trip…",
+        placeholder,
         text: $assistant.draft
       )
       .focused($isFocused)
@@ -37,6 +37,15 @@ struct AssistantComposer: View {
     .padding(.bottom, 8)
     .onAppear { isFocused = true }
     .sensoryFeedback(.impact(weight: .light), trigger: assistant.messages.count)
+  }
+
+  private var placeholder: String {
+    let count = assistant.screenContext.mode == .off ? 0 : assistant.screenContext.selectedIDs.count
+    return switch count {
+    case 0: "Ask about your trip…"
+    case 1: "Ask about 1 selected item…"
+    default: "Ask about \(count) selected items…"
+    }
   }
 
   private func send() {

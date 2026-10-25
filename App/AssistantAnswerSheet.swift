@@ -99,12 +99,7 @@ struct AssistantAnswerSheet: View {
           .font(.headline)
           .foregroundStyle(.tint)
         if assistant.usesScreenContext {
-          Label("Using \(assistant.screenCardCount) cards on screen", systemImage: "rectangle.stack")
-            .font(.caption.weight(.medium))
-            .foregroundStyle(.secondary)
-            .padding(.horizontal, 10)
-            .padding(.vertical, 4)
-            .background(.tint.opacity(0.12), in: .capsule)
+          contextChips
         }
       }
       Spacer()
@@ -115,6 +110,25 @@ struct AssistantAnswerSheet: View {
       .buttonStyle(.bordered)
       .buttonBorderShape(.circle)
     }
+  }
+
+  /// The items shared as context, so the person can see what the assistant is using.
+  private var contextChips: some View {
+    ScrollView(.horizontal) {
+      HStack(spacing: 6) {
+        ForEach(assistant.contextItems) { item in
+          Label(item.title, systemImage: item.systemImage)
+            .font(.caption.weight(.medium))
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 10)
+            .padding(.vertical, 4)
+            .background(.tint.opacity(0.12), in: .capsule)
+        }
+      }
+    }
+    .scrollIndicators(.hidden)
+    .accessibilityElement(children: .combine)
+    .accessibilityLabel("Using \(assistant.contextItems.count) items on screen")
   }
 
   private var suggestions: some View {

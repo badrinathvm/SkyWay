@@ -7,14 +7,17 @@ final class FlightAssistant {
   var trip: Trip
   var draft = ""
   var isComposing = false
-  var isHighlightingCards = false
   var isShowingAnswerSheet = false
+  /// The on-screen items the person can share as context.
+  let screenContext = ScreenContext()
   /// Every message, shown on the Flight status tab.
   private(set) var messages: [ChatMessage] = []
   /// Messages from the current answer sheet session.
   private(set) var sessionMessages: [ChatMessage] = []
-  /// Whether the current session was started with the Travel cards highlighted as context.
-  private(set) var usesScreenContext = false
+  /// The items the person shared as context for the current session.
+  private(set) var contextItems: [ContextItem] = []
+
+  var usesScreenContext: Bool { !contextItems.isEmpty }
 
   static let suggestions = [
     "What gate do I leave from?",
@@ -22,14 +25,7 @@ final class FlightAssistant {
     "What's my seat?",
   ]
 
-  private static let screenSuggestions = [
-    "What's on the inflight menu?",
-    "Can I upgrade my seat?",
-    "How do I get to my gate?",
-    "Where are my bags?",
-    "Is there Wi-Fi on board?",
-    "Can I change my flight?",
-  ]
+  private static let screenSuggestions = TravelAction.all.map(\.question)
 
   init(trip: Trip) {
     self.trip = trip
@@ -39,29 +35,25 @@ final class FlightAssistant {
     !draft.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
   }
 
-  /// The number of cards shared as context: the trip summary plus each travel action.
-  var screenCardCount: Int { 1 + TravelAction.all.count }
-
   /// Follow-up questions for the answer sheet, skipping ones already asked.
   var followUpSuggestions: [String] {
-    let pool = usesScreenContext ? Self.screenSuggestions + Self.suggestions : Self.suggestions + Self.screenSuggestions
+    let pool = usesScreenContext
+      ? contextItems.compactMap(\.suggestion) + ["Summarize what I selected"]
+      : Self.suggestions + Self.screenSuggestions
     let asked = Set(sessionMessages.filter { $0.sender == .user }.map(\.text))
     return Array(pool.filter { !asked.contains($0) }.prefix(3))
   }
 
   func startComposing() {
+    screenContext.lock()
     isComposing = true
   }
 
   func stopComposing() {
     isComposing = false
     if !isShowingAnswerSheet {
-      isHighlightingCards = false
+      screenContext.clear()
     }
-  }
-
-  func toggleCardHighlight() {
-    isHighlightingCards.toggle()
   }
 
   /// Sends the draft as a follow-up in the current session.
@@ -76,7 +68,7 @@ final class FlightAssistant {
     let question = draft
     draft = ""
     sessionMessages = []
-    usesScreenContext = isHighlightingCards
+    contextItems = screenContext.mode == .off ? [] : screenContext.selectedItems
     isComposing = false
     send(question)
     isShowingAnswerSheet = true
@@ -84,8 +76,8 @@ final class FlightAssistant {
 
   func endSession() {
     isShowingAnswerSheet = false
-    isHighlightingCards = false
-    usesScreenContext = false
+    screenContext.clear()
+    contextItems = []
     sessionMessages = []
   }
 
@@ -139,6 +131,10 @@ final class FlightAssistant {
       return "You can cancel this trip from the Travel tab. Since your fare is refundable, you'll get credit for the full amount, using confirmation code \(trip.confirmationCode)."
     } else if text.contains("check-in") || text.contains("check in") {
       return "You're checked in for \(trip.flightNumber). Your boarding pass is ready in the boarding pass bar on the Flight status tab."
+    } else if text.contains("weather") || text.contains("temperature") {
+      return "It's forecast to be \(trip.arrivalWeather) in \(trip.destinationCity) when you land."
+    } else if usesScreenContext && ["summar", "selected", "this", "these", "them"].contains(where: text.contains) {
+      return "Here's what you shared:\n" + contextItems.map { "• \($0.detail)" }.joined(separator: "\n")
     } else if text.contains("gate") {
       return "Flight \(trip.flightNumber) departs from gate \(trip.gate)."
     } else if text.contains("board") {

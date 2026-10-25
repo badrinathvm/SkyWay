@@ -10,14 +10,27 @@ struct TravelView: View {
       ScrollView {
         VStack(spacing: 16) {
           TripSummaryCard(trip: trip)
+            .assistantContext(trip.summaryContextItem)
+
+          // Not a card: any view can be shared as context.
+          Label("\(trip.arrivalWeather) in \(trip.destinationCity) on arrival", systemImage: "sun.max.fill")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .symbolRenderingMode(.multicolor)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .assistantContext(trip.weatherContextItem, cornerRadius: 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
           ForEach(TravelAction.featured) { action in
             TravelActionRow(action: action)
+              .assistantContext(action.contextItem)
           }
 
           HStack(spacing: 16) {
             ForEach(TravelAction.quick) { action in
               QuickActionTile(action: action)
+                .assistantContext(action.contextItem)
             }
           }
         }
@@ -27,7 +40,7 @@ struct TravelView: View {
       .scrollDismissesKeyboard(.interactively)
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
-      .environment(\.isHighlightingCards, assistant.isHighlightingCards)
+      .environment(\.screenContext, assistant.screenContext)
       .sheet(isPresented: $assistant.isShowingAnswerSheet, onDismiss: assistant.endSession) {
         AssistantAnswerSheet(assistant: assistant)
       }
@@ -64,7 +77,6 @@ private struct TripSummaryCard: View {
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(20)
     .background(.background, in: .rect(cornerRadius: 20))
-    .cardHighlight(cornerRadius: 20)
   }
 }
 
@@ -98,8 +110,7 @@ private struct TravelActionRow: View {
       .padding(20)
       .frame(maxWidth: .infinity)
       .background(.background, in: .rect(cornerRadius: 20))
-      .cardHighlight(cornerRadius: 20)
-      .contentShape(.rect(cornerRadius: 20))
+        .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
   }
@@ -122,8 +133,7 @@ private struct QuickActionTile: View {
       .padding(20)
       .frame(maxWidth: .infinity)
       .background(.background, in: .rect(cornerRadius: 20))
-      .cardHighlight(cornerRadius: 20)
-      .contentShape(.rect(cornerRadius: 20))
+        .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
   }

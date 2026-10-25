@@ -12,6 +12,7 @@ struct Trip: Identifiable, Hashable {
   var boardingGroup: String
   var passengerName: String
   var confirmationCode: String
+  var arrivalWeather: String
 
   /// Stable across launches so Siri and Apple Intelligence can look the trip up by identifier.
   var id: String { confirmationCode }
@@ -33,6 +34,30 @@ struct Trip: Identifiable, Hashable {
     seat: "14A",
     boardingGroup: "2",
     passengerName: "Alex Morgan",
-    confirmationCode: "K7QX2P"
+    confirmationCode: "K7QX2P",
+    arrivalWeather: "64°F and sunny"
   )
+}
+
+extension Trip {
+  var summaryContextItem: ContextItem {
+    ContextItem(
+      id: "trip-summary",
+      title: title,
+      detail: "\(title), flight \(flightNumber) from \(originCode) to \(destinationCode), departing \(departure.formatted(date: .omitted, time: .shortened)) from gate \(gate), seat \(seat).",
+      systemImage: "airplane",
+      suggestion: "When do I board?"
+    )
+  }
+
+  var weatherContextItem: ContextItem {
+    ContextItem(
+      id: "arrival-weather",
+      title: "Arrival weather",
+      detail: "Weather in \(destinationCity) on arrival: \(arrivalWeather).",
+      systemImage: "sun.max.fill",
+      suggestion: "What's the weather when I land?",
+      sortOrder: 1
+    )
+  }
 }
