@@ -3,7 +3,7 @@ import SwiftUI
 
 struct TravelView: View {
   var trip: Trip
-  var assistant: FlightAssistant
+  @Bindable var assistant: FlightAssistant
 
   var body: some View {
     NavigationStack {
@@ -28,6 +28,9 @@ struct TravelView: View {
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
       .environment(\.isHighlightingCards, assistant.isHighlightingCards)
+      .sheet(isPresented: $assistant.isShowingAnswerSheet, onDismiss: assistant.endSession) {
+        AssistantAnswerSheet(assistant: assistant)
+      }
       .safeAreaInset(edge: .bottom) {
         if assistant.isComposing {
           AssistantComposer(assistant: assistant)
