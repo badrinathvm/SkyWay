@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 /// Holds the assistant conversation and answers questions from the trip and the cards on screen.
+@MainActor
 @Observable
 final class FlightAssistant {
   var trip: Trip
@@ -52,7 +53,11 @@ final class FlightAssistant {
   /// Leaves the composer so the person can choose what's on screen, then returns with Ask.
   func chooseContextFromComposer() {
     isComposing = false
-    screenContext.beginSelecting()
+    if screenContext.mode == .locked {
+      screenContext.resumeSelecting()
+    } else {
+      screenContext.beginSelecting()
+    }
   }
 
   func stopComposing() {

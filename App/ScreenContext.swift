@@ -2,6 +2,7 @@ import Foundation
 import Observation
 
 /// Tracks which on-screen items can be shared with the assistant, and which ones the person selected.
+@MainActor
 @Observable
 final class ScreenContext {
   enum Mode {
@@ -58,6 +59,12 @@ final class ScreenContext {
   func beginSelecting() {
     isPreviewing = false
     selectedIDs = Set(items.filter(\.isSelectedByDefault).map(\.id))
+    mode = .selecting
+  }
+
+  /// Goes back to selecting while keeping the current selection.
+  func resumeSelecting() {
+    isPreviewing = false
     mode = .selecting
   }
 

@@ -1,24 +1,23 @@
 import SwiftUI
+import TipKit
 
 /// The text field and send button, pinned above the keyboard while composing.
 struct AssistantComposer: View {
   @Bindable var assistant: FlightAssistant
   @FocusState private var isFocused: Bool
+  @State private var plusBounce = 0
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      if assistant.screenContext.mode == .off {
-        // Offer screen context right when someone is about to ask a question.
-        Button("Add What's on Screen", systemImage: "rectangle.stack.badge.plus") {
-          isFocused = false
-          ScreenContextTip.hasChosenContext = true
-          withAnimation(.smooth) {
-            assistant.chooseContextFromComposer()
+      // An inline tip, since a popover would collide with the keyboard.
+      if let tip = SkywayTips.screenContext.currentTip as? ComposerContextTip {
+        TipView(tip) { action in
+          if action.id == ComposerContextTip.chooseItemsActionID {
+            chooseContext()
           }
         }
-        .font(.subheadline.weight(.medium))
-        .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
+        .tipBackground(.clear)
       }
 
       inputRow
@@ -28,6 +27,12 @@ struct AssistantComposer: View {
     .padding(.horizontal)
     .padding(.bottom, 8)
     .onAppear { isFocused = true }
+    .task {
+      // Draw the eye to + until the person has used it, once per composer.
+      guard !ScreenContextTip.hasChosenContext, !reduceMotion else { return }
+      try? await Task.sleep(for: .seconds(0.6))
+      plusBounce += 1
+    }
     .sensoryFeedback(.impact(weight: .light), trigger: assistant.messages.count)
   }
 
@@ -41,6 +46,8 @@ struct AssistantComposer: View {
       .labelStyle(.iconOnly)
       .buttonStyle(.bordered)
       .buttonBorderShape(.circle)
+
+      addMenu
 
       TextField(
         placeholder,
@@ -59,12 +66,48 @@ struct AssistantComposer: View {
     }
   }
 
+  /// Ways to add context to the question. New sources, like photos or a boarding pass, go here.
+  private var addMenu: some View {
+    Menu {
+      Button(hasSelection ? "Change Selection" : "Add What's on Screen", systemImage: "sparkles.rectangle.stack") {
+        chooseContext()
+      }
+      if hasSelection {
+        Button("Remove Selection", systemImage: "xmark.circle", role: .destructive) {
+          withAnimation(.smooth) {
+            assistant.screenContext.clear()
+          }
+        }
+      }
+    } label: {
+      Label("Add", systemImage: "plus")
+    }
+    .labelStyle(.iconOnly)
+    .fontWeight(.semibold)
+    .buttonStyle(.bordered)
+    .buttonBorderShape(.circle)
+    .symbolEffect(.bounce, value: plusBounce)
+    .accessibilityLabel("Add Context")
+  }
+
+  private var hasSelection: Bool {
+    assistant.screenContext.mode == .locked
+  }
+
   private var placeholder: String {
     let count = assistant.screenContext.mode == .off ? 0 : assistant.screenContext.selectedIDs.count
     return switch count {
     case 0: "Ask about your trip…"
     case 1: "Ask about 1 selected item…"
     default: "Ask about \(count) selected items…"
+    }
+  }
+
+  private func chooseContext() {
+    isFocused = false
+    SkywayTips.didChooseContext()
+    withAnimation(.smooth) {
+      assistant.chooseContextFromComposer()
     }
   }
 

@@ -1,0 +1,233 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Concurrency Auditor</title>
+<style>
+:root{
+  --bg:#f6f7f9; --surface:#ffffff; --surface-2:#f0f2f5; --border:#e2e5ea;
+  --text:#14171c; --muted:#5f6773; --accent:#5b5bd6;
+  --crit:#d92d20; --crit-bg:#fdecea; --high:#e8590c; --high-bg:#fff1e6;
+  --med:#b7791f; --med-bg:#fdf6e3; --low:#3b82f6; --low-bg:#e8f0fe;
+  --ok:#16a34a; --code-bg:#0f1218; --code-text:#e6e8ec;
+  --kw:#ff7ab2; --ty:#5dd8ff; --str:#fc6a5d; --cm:#7f8c98; --at:#d0a8ff;
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){
+    --bg:#0d0f13; --surface:#161a20; --surface-2:#1d222a; --border:#2a303a;
+    --text:#e8eaee; --muted:#9aa3ae; --accent:#8b8bff;
+    --crit-bg:#3a1714; --high-bg:#3a2010; --med-bg:#33290f; --low-bg:#14233d;
+    --code-bg:#0a0c10;
+  }
+}
+:root[data-theme="dark"]{
+  --bg:#0d0f13; --surface:#161a20; --surface-2:#1d222a; --border:#2a303a;
+  --text:#e8eaee; --muted:#9aa3ae; --accent:#8b8bff;
+  --crit-bg:#3a1714; --high-bg:#3a2010; --med-bg:#33290f; --low-bg:#14233d;
+  --code-bg:#0a0c10;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--text);
+  font:15px/1.5 -apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,sans-serif}
+.wrap{max-width:960px;margin:0 auto;padding:20px 16px 60px}
+header{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:18px}
+.logo{width:40px;height:40px;border-radius:10px;background:linear-gradient(135deg,var(--accent),#c056e8);
+  display:grid;place-items:center;color:#fff;font-weight:700;font-size:18px;flex:none}
+header h1{font-size:20px;margin:0;line-height:1.2}
+header .sub{color:var(--muted);font-size:13px}
+header .actions{margin-left:auto;display:flex;gap:8px}
+button{font:inherit;cursor:pointer;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);padding:7px 12px;font-size:13px}
+button.primary{background:var(--accent);border-color:var(--accent);color:#fff}
+button:hover{filter:brightness(.97)}
+
+.summary{display:grid;grid-template-columns:200px 1fr;gap:14px;margin-bottom:18px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:14px;padding:16px}
+.score{display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center}
+.ring{position:relative;width:110px;height:110px}
+.ring svg{transform:rotate(-90deg)}
+.ring .val{position:absolute;inset:0;display:grid;place-items:center;font-size:26px;font-weight:700}
+.score .lbl{margin-top:8px;font-size:13px;color:var(--muted)}
+.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}
+.stat{border-radius:10px;padding:12px;background:var(--surface-2)}
+.stat .n{font-size:24px;font-weight:700;line-height:1.1}
+.stat .t{font-size:12px;color:var(--muted)}
+.stat.crit .n{color:var(--crit)} .stat.high .n{color:var(--high)}
+.stat.med .n{color:var(--med)} .stat.low .n{color:var(--low)}
+.meta{display:flex;gap:16px;flex-wrap:wrap;margin-top:12px;font-size:13px;color:var(--muted)}
+.meta b{color:var(--text);font-weight:600}
+
+.toolbar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:12px}
+.chip{border-radius:999px;padding:6px 12px;font-size:13px}
+.chip.on{background:var(--text);color:var(--bg);border-color:var(--text)}
+.search{flex:1;min-width:160px;padding:8px 12px;border-radius:8px;border:1px solid var(--border);
+  background:var(--surface);color:var(--text);font:inherit;font-size:14px}
+
+.finding{background:var(--surface);border:1px solid var(--border);border-radius:12px;margin-bottom:10px;overflow:hidden}
+.fhead{display:flex;gap:12px;align-items:flex-start;padding:14px;cursor:pointer}
+.sev{flex:none;font-size:11px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;
+  padding:3px 8px;border-radius:6px;margin-top:2px}
+.sev.critical{color:var(--crit);background:var(--crit-bg)}
+.sev.high{color:var(--high);background:var(--high-bg)}
+.sev.medium{color:var(--med);background:var(--med-bg)}
+.sev.low{color:var(--low);background:var(--low-bg)}
+.ftitle{font-weight:600}
+.floc{font:12px/1.4 ui-monospace,"SF Mono",Menlo,monospace;color:var(--muted);margin-top:2px;word-break:break-all}
+.rule{font:11px ui-monospace,"SF Mono",Menlo,monospace;color:var(--muted);border:1px solid var(--border);
+  border-radius:5px;padding:1px 6px;margin-left:6px}
+.chev{margin-left:auto;color:var(--muted);transition:transform .2s;flex:none}
+.finding.open .chev{transform:rotate(90deg)}
+.fbody{display:none;padding:0 14px 14px;border-top:1px solid var(--border)}
+.finding.open .fbody{display:block}
+.fbody p{margin:12px 0;color:var(--muted);font-size:14px}
+.diff{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.code{background:var(--code-bg);border-radius:10px;overflow:hidden}
+.code .lab{font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:.05em;
+  padding:7px 12px;color:#aab;border-bottom:1px solid #222833;display:flex;align-items:center;gap:6px}
+.code .lab .dot{width:7px;height:7px;border-radius:50%}
+pre{margin:0;padding:12px;overflow-x:auto;color:var(--code-text);
+  font:12.5px/1.55 ui-monospace,"SF Mono",Menlo,monospace}
+.kw{color:var(--kw)} .ty{color:var(--ty)} .st{color:var(--str)} .cm{color:var(--cm);font-style:italic} .at{color:var(--at)}
+.factions{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.tag{font-size:12px;color:var(--muted);margin-left:auto;align-self:center}
+.empty{text-align:center;color:var(--muted);padding:40px 0}
+.toast{position:fixed;bottom:20px;left:50%;transform:translateX(-50%) translateY(80px);
+  background:var(--text);color:var(--bg);padding:9px 16px;border-radius:999px;font-size:13px;
+  transition:transform .25s;pointer-events:none}
+.toast.show{transform:translateX(-50%) translateY(0)}
+
+@media (max-width:640px){
+  .summary{grid-template-columns:1fr}
+  .stats{grid-template-columns:repeat(2,1fr)}
+  .diff{grid-template-columns:1fr}
+  header .actions{margin-left:0;width:100%}
+  header .actions button{flex:1}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <div class="logo">⚡︎</div>
+    <div>
+      <h1>Concurrency Auditor</h1>
+      <div class="sub">71b7b2c8-9dc8-4b74-825d-7b2e755ba4c3 · Claude Code session · 2026-10-25 06:17 UTC</div>
+    </div>
+    <div class="actions">
+      <button id="themeBtn">Theme</button>
+    </div>
+  </header>
+
+  <section class="summary">
+    <div class="card score">
+      <div class="ring">
+        <svg width="110" height="110" viewBox="0 0 110 110">
+          <circle cx="55" cy="55" r="46" fill="none" stroke="var(--surface-2)" stroke-width="10"/>
+          <circle cx="55" cy="55" r="46" fill="none" stroke="var(--accent)" stroke-width="10"
+            stroke-linecap="round" stroke-dasharray="289" stroke-dashoffset="46"/>
+        </svg>
+        <div class="val">84%</div>
+      </div>
+      <div class="lbl">Swift 6 readiness</div>
+    </div>
+    <div class="card">
+      <div class="stats" id="stats"></div>
+      <div class="meta"><span><b>5</b> Swift files touched this session</span><span><b>3</b> clean</span><span>Soft check · nothing blocked</span></div>
+    </div>
+  </section>
+
+  <div class="toolbar" id="chips"></div>
+  <div class="toolbar"><input class="search" id="q" placeholder="Search by file, rule, or title…"></div>
+
+  <div id="list"></div>
+</div>
+<div class="toast" id="toast">Fix copied</div>
+
+<script>
+const findings = [{"id":"CA007","sev":"high","title":"UI-observable type not isolated to @MainActor","why":"An @Observable / ObservableObject type drives UI but is not @MainActor, so async methods can mutate it off the main thread.","fix":"Annotate the type with @MainActor.","file":"App/FlightAssistant.swift","line":6,"snippet":"@Observable\nfinal class FlightAssistant {\n  var trip: Trip\n  var draft = \"\""},{"id":"CA007","sev":"high","title":"UI-observable type not isolated to @MainActor","why":"An @Observable / ObservableObject type drives UI but is not @MainActor, so async methods can mutate it off the main thread.","fix":"Annotate the type with @MainActor.","file":"App/ScreenContext.swift","line":6,"snippet":"@Observable\nfinal class ScreenContext {\n  enum Mode {\n    /// Nothing is highlighted."}];
+
+const sevs = ["critical","high","medium","low"];
+const names = {critical:"Critical",high:"High",medium:"Medium",low:"Low"};
+let filter = "all", query = "";
+
+function esc(s){return s.replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;")}
+function hl(code){
+  let s = esc(code);
+  const toks = [];
+  s = s.replace(/(\/\/[^\n]*)/g, m => { toks.push(`<span class="cm">${m}</span>`); return `\u0000${toks.length-1}\u0000`; });
+  s = s.replace(/(@\w+)/g,'<span class="at">$1</span>');
+  s = s.replace(/\b(func|var|let|final|class|actor|private|async|await|try|return|if|guard|else|while|for|in|import|deinit|true|nil|self|Task\.detached)\b/g,'<span class="kw">$1</span>');
+  s = s.replace(/\b([A-Z][A-Za-z0-9]*)\b(?![^<]*>)/g,'<span class="ty">$1</span>');
+  s = s.replace(/\u0000(\d+)\u0000/g,(_,i)=>toks[i]);
+  return s;
+}
+
+function renderStats(){
+  document.getElementById("stats").innerHTML = sevs.map(s=>{
+    const n = findings.filter(f=>f.sev===s).length;
+    const cls = s==="medium"?"med":s==="critical"?"crit":s;
+    return `<div class="stat ${cls}"><div class="n">${n}</div><div class="t">${names[s]}</div></div>`;
+  }).join("");
+}
+function renderChips(){
+  const opts = ["all",...sevs];
+  document.getElementById("chips").innerHTML = opts.map(o=>{
+    const n = o==="all"?findings.length:findings.filter(f=>f.sev===o).length;
+    return `<button class="chip ${filter===o?"on":""}" data-f="${o}">${o==="all"?"All":names[o]} · ${n}</button>`;
+  }).join("");
+  document.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{filter=b.dataset.f;renderChips();renderList();});
+}
+function renderList(){
+  const q = query.toLowerCase();
+  const items = findings.filter(f=>(filter==="all"||f.sev===filter) &&
+    (!q || (f.title+f.file+f.id).toLowerCase().includes(q)));
+  const list = document.getElementById("list");
+  if(!items.length){ list.innerHTML = `<div class="empty">No findings match.</div>`; return; }
+  list.innerHTML = items.map(f=>`
+    <div class="finding">
+      <div class="fhead">
+        <span class="sev ${f.sev}">${names[f.sev]}</span>
+        <div style="min-width:0">
+          <div class="ftitle">${esc(f.title)}<span class="rule">${f.id}</span></div>
+          <div class="floc">${esc(f.file)}:${f.line}</div>
+        </div>
+        <svg class="chev" width="16" height="16" viewBox="0 0 16 16"><path d="M6 3l5 5-5 5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div class="fbody">
+        
+        <div class="diff">
+          <div class="code"><div class="lab"><span class="dot" style="background:var(--crit)"></span>Flagged code</div><pre>${hl(f.snippet)}</pre></div>
+          <div class="code"><div class="lab"><span class="dot" style="background:var(--ok)"></span>How to fix</div><pre>${esc(f.fix)}</pre></div>
+        </div>
+        <div class="factions">
+          <button class="primary" data-copy="${f.file}:${f.line}:${f.id}">Copy fix hint</button>
+          <button data-ignore="${f.id}">Ignore rule here</button>
+          <span class="tag">${esc(f.why)}</span>
+        </div>
+      </div>
+    </div>`).join("");
+  list.querySelectorAll(".fhead").forEach(h=>h.onclick=()=>h.parentElement.classList.toggle("open"));
+  list.querySelectorAll("[data-copy]").forEach(b=>b.onclick=e=>{
+    e.stopPropagation();
+    const f = findings.find(x=>x.file+":"+x.line+":"+x.id===b.dataset.copy);
+    try{ navigator.clipboard.writeText(f.fix); }catch(_){}
+    toast("Fix copied");
+  });
+  list.querySelectorAll("[data-ignore]").forEach(b=>b.onclick=()=>toast("Added // audit:ignore " + b.dataset.ignore));
+  const first = list.querySelector(".finding"); if(first && filter==="all" && !q) first.classList.add("open");
+}
+function toast(msg){
+  const t=document.getElementById("toast"); t.textContent=msg; t.classList.add("show");
+  clearTimeout(t._h); t._h=setTimeout(()=>t.classList.remove("show"),1600);
+}
+document.getElementById("q").oninput=e=>{query=e.target.value;renderList();};
+document.getElementById("themeBtn").onclick=()=>{
+  const r=document.documentElement;
+  const dark = r.dataset.theme ? r.dataset.theme==="dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  r.dataset.theme = dark ? "light" : "dark";
+};
+renderStats(); renderChips(); renderList();
+</script>
+</body>
+</html>

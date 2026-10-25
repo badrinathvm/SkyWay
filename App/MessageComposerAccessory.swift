@@ -7,7 +7,6 @@ import TipKit
 struct MessageComposerAccessory: View {
   var assistant: FlightAssistant
   @Environment(\.tabViewBottomAccessoryPlacement) private var placement
-  private let tip = ScreenContextTip()
 
   var body: some View {
     Group {
@@ -29,6 +28,11 @@ struct MessageComposerAccessory: View {
 
   private var isInline: Bool { placement == .inline }
 
+  /// The bar's tip, when it's the group's current tip, so only one screen-context tip shows at a time.
+  private var barTip: ScreenContextTip? {
+    SkywayTips.screenContext.currentTip as? ScreenContextTip
+  }
+
   private var isAssistantIdle: Bool {
     !assistant.isComposing && !assistant.isShowingAnswerSheet
   }
@@ -41,7 +45,7 @@ struct MessageComposerAccessory: View {
         .foregroundStyle(.tint)
         .buttonStyle(.borderless)
         // Hide the tip while the person is asking a question or reading an answer.
-        .popoverTip(isAssistantIdle ? tip : nil, arrowEdge: .bottom)
+        .popoverTip(isAssistantIdle ? barTip : nil, arrowEdge: .bottom)
 
       HStack(spacing: 8) {
         Text("Ask about your trip…")
@@ -113,8 +117,7 @@ struct MessageComposerAccessory: View {
   }
 
   private func beginSelecting() {
-    ScreenContextTip.hasChosenContext = true
-    tip.invalidate(reason: .actionPerformed)
+    SkywayTips.didChooseContext()
     withAnimation(.smooth) {
       context.beginSelecting()
     }
