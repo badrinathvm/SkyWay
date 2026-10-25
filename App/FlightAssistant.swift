@@ -64,6 +64,13 @@ final class FlightAssistant {
     isHighlightingCards.toggle()
   }
 
+  /// Sends the draft as a follow-up in the current session.
+  func sendDraft() {
+    let question = draft
+    draft = ""
+    send(question)
+  }
+
   /// Sends the draft from the Travel composer and shows the reply in the answer sheet.
   func sendDraftToSheet() {
     let question = draft

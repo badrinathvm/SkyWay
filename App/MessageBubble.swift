@@ -10,7 +10,7 @@ struct MessageBubble: View {
         .padding(.horizontal, 14)
         .padding(.vertical, 10)
         .foregroundStyle(isUser ? AnyShapeStyle(.white) : AnyShapeStyle(.primary))
-        .background(isUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.background), in: .rect(cornerRadius: 18))
+        .background(isUser ? AnyShapeStyle(.tint) : AnyShapeStyle(.fill.tertiary), in: .rect(cornerRadius: 18))
       if !isUser { Spacer(minLength: 48) }
     }
     .accessibilityLabel("\(isUser ? "You" : "Skyway"): \(message.text)")

@@ -3,9 +3,11 @@ import SwiftUI
 /// A resizable, dismissible sheet with the assistant's answers and follow-up suggestions.
 /// It grows to fit its content as more answers arrive, up to the large detent.
 struct AssistantAnswerSheet: View {
-  var assistant: FlightAssistant
+  @Bindable var assistant: FlightAssistant
   @Environment(\.dismiss) private var dismiss
+  @FocusState private var isPromptFocused: Bool
   @State private var contentHeight: CGFloat = 320
+  @State private var promptBarHeight: CGFloat = 0
   @State private var detent: PresentationDetent = .height(320)
 
   /// Space for the drag indicator and sheet padding around the content.
@@ -35,10 +37,17 @@ struct AssistantAnswerSheet: View {
     }
     .defaultScrollAnchor(.bottom, for: .sizeChanges)
     .scrollBounceBehavior(.basedOnSize)
+    .scrollDismissesKeyboard(.interactively)
+    .safeAreaInset(edge: .bottom) {
+      promptBar
+        .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { height in
+          promptBarHeight = height
+        }
+    }
     .presentationDetents([fittedDetent, .medium, .large], selection: $detent)
     .presentationDragIndicator(.visible)
     .presentationBackgroundInteraction(.enabled(upThrough: .medium))
-    .onChange(of: contentHeight) {
+    .onChange(of: contentHeight + promptBarHeight) {
       // Grow to fit new answers unless the person has already expanded the sheet fully.
       guard detent != .large else { return }
       withAnimation(.smooth) {
@@ -50,7 +59,37 @@ struct AssistantAnswerSheet: View {
   }
 
   private var fittedDetent: PresentationDetent {
-    .height(contentHeight + chromeHeight)
+    .height(contentHeight + promptBarHeight + chromeHeight)
+  }
+
+  /// Lets the person type their own follow-up without leaving the sheet.
+  private var promptBar: some View {
+    HStack(spacing: 8) {
+      TextField("Ask a follow-up…", text: $assistant.draft)
+        .focused($isPromptFocused)
+        .submitLabel(.send)
+        .onSubmit(sendPrompt)
+        .padding(.leading, 16)
+
+      Button("Send", systemImage: "arrow.up", action: sendPrompt)
+        .labelStyle(.iconOnly)
+        .fontWeight(.semibold)
+        .buttonStyle(.borderedProminent)
+        .buttonBorderShape(.circle)
+        .disabled(!assistant.canSend)
+    }
+    .padding(6)
+    .glassEffect(in: .capsule)
+    .padding(.horizontal, 16)
+    .padding(.bottom, 8)
+  }
+
+  private func sendPrompt() {
+    guard assistant.canSend else { return }
+    withAnimation(.smooth) {
+      assistant.sendDraft()
+    }
+    isPromptFocused = true
   }
 
   private var header: some View {
