@@ -24,12 +24,18 @@ private struct AssistantContextModifier: ViewModifier {
     let mode = context?.mode ?? .off
     let isSelected = context?.isSelected(item.id) ?? false
     let isSelecting = mode == .selecting
+    let isPreviewed = context?.isPreviewed(item) ?? false
 
     content
       .opacity(isSelecting && !isSelected ? 0.55 : 1)
       .overlay {
         if isSelected {
           ContextGlow(cornerRadius: cornerRadius)
+            .transition(.opacity)
+        } else if isPreviewed {
+          // A faint glow while the bar is being pressed hints at what a long press will do.
+          ContextGlow(cornerRadius: cornerRadius)
+            .opacity(0.35)
             .transition(.opacity)
         } else if isSelecting {
           RoundedRectangle(cornerRadius: cornerRadius)
@@ -65,6 +71,7 @@ private struct AssistantContextModifier: ViewModifier {
       .scaleEffect(isSelected ? 0.98 : 1)
       .animation(.smooth, value: isSelected)
       .animation(.smooth, value: isSelecting)
+      .animation(.easeIn(duration: 0.4), value: isPreviewed)
       .sensoryFeedback(.selection, trigger: isSelected)
       .accessibilityAddTraits(isSelecting && isSelected ? .isSelected : [])
       .accessibilityActions {

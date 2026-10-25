@@ -6,6 +6,32 @@ struct AssistantComposer: View {
   @FocusState private var isFocused: Bool
 
   var body: some View {
+    VStack(alignment: .leading, spacing: 10) {
+      if assistant.screenContext.mode == .off {
+        // Offer screen context right when someone is about to ask a question.
+        Button("Add What's on Screen", systemImage: "rectangle.stack.badge.plus") {
+          isFocused = false
+          ScreenContextTip.hasChosenContext = true
+          withAnimation(.smooth) {
+            assistant.chooseContextFromComposer()
+          }
+        }
+        .font(.subheadline.weight(.medium))
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.capsule)
+      }
+
+      inputRow
+    }
+    .padding(12)
+    .glassEffect(in: .rect(cornerRadius: 28))
+    .padding(.horizontal)
+    .padding(.bottom, 8)
+    .onAppear { isFocused = true }
+    .sensoryFeedback(.impact(weight: .light), trigger: assistant.messages.count)
+  }
+
+  private var inputRow: some View {
     HStack(spacing: 8) {
       Button("Close", systemImage: "xmark") {
         withAnimation(.smooth) {
@@ -31,12 +57,6 @@ struct AssistantComposer: View {
         .buttonBorderShape(.circle)
         .disabled(!assistant.canSend)
     }
-    .padding(12)
-    .glassEffect(in: .rect(cornerRadius: 28))
-    .padding(.horizontal)
-    .padding(.bottom, 8)
-    .onAppear { isFocused = true }
-    .sensoryFeedback(.impact(weight: .light), trigger: assistant.messages.count)
   }
 
   private var placeholder: String {

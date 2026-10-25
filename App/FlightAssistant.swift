@@ -49,6 +49,12 @@ final class FlightAssistant {
     isComposing = true
   }
 
+  /// Leaves the composer so the person can choose what's on screen, then returns with Ask.
+  func chooseContextFromComposer() {
+    isComposing = false
+    screenContext.beginSelecting()
+  }
+
   func stopComposing() {
     isComposing = false
     if !isShowingAnswerSheet {

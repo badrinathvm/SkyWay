@@ -41,6 +41,7 @@ struct TravelView: View {
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
       .environment(\.screenContext, assistant.screenContext)
+      .task { await ScreenContextTip.travelViewed.donate() }
       .sheet(isPresented: $assistant.isShowingAnswerSheet, onDismiss: assistant.endSession) {
         AssistantAnswerSheet(assistant: assistant)
       }

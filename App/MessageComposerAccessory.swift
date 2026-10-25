@@ -1,4 +1,5 @@
 import SwiftUI
+import TipKit
 
 /// A prompt in the tab bar accessory that opens the composer above the keyboard.
 /// Tab bar accessories stay behind the keyboard, so the text field itself lives in `AssistantComposer`.
@@ -6,6 +7,7 @@ import SwiftUI
 struct MessageComposerAccessory: View {
   var assistant: FlightAssistant
   @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+  private let tip = ScreenContextTip()
 
   var body: some View {
     Group {
@@ -29,29 +31,39 @@ struct MessageComposerAccessory: View {
 
   private var promptBar: some View {
     HStack(spacing: 8) {
-      Image(systemName: "bubble.left.and.text.bubble.right")
+      // A visible way to share what's on screen; the long press is a shortcut for the same thing.
+      Button("Choose What's on Screen", systemImage: "sparkles.rectangle.stack", action: beginSelecting)
+        .labelStyle(.iconOnly)
         .foregroundStyle(.tint)
-      Text("Ask about your trip…")
-        .foregroundStyle(.secondary)
-        .lineLimit(1)
-      Spacer(minLength: 0)
-      Image(systemName: "arrow.up")
-        .font(.footnote.weight(.semibold))
-        .foregroundStyle(.white)
-        .frame(width: isInline ? 26 : 32, height: isInline ? 26 : 32)
-        .background(.tint, in: .circle)
-        .accessibilityHidden(true)
+        .buttonStyle(.borderless)
+        .popoverTip(tip, arrowEdge: .bottom)
+
+      HStack(spacing: 8) {
+        Text("Ask about your trip…")
+          .foregroundStyle(.secondary)
+          .lineLimit(1)
+        Spacer(minLength: 0)
+        Image(systemName: "arrow.up")
+          .font(.footnote.weight(.semibold))
+          .foregroundStyle(.white)
+          .frame(width: isInline ? 26 : 32, height: isInline ? 26 : 32)
+          .background(.tint, in: .circle)
+          .accessibilityHidden(true)
+      }
+      .contentShape(.rect)
+      // Separate gestures so a long press starts selecting without also opening the composer.
+      .onTapGesture(perform: compose)
+      .onLongPressGesture(minimumDuration: 0.4, perform: beginSelecting) { isPressing in
+        withAnimation(.easeIn(duration: 0.4)) {
+          context.isPreviewing = isPressing
+        }
+      }
+      .accessibilityElement(children: .ignore)
+      .accessibilityAddTraits(.isButton)
+      .accessibilityLabel("Ask about your trip")
+      .accessibilityHint("Opens a text field. Touch and hold to choose what's on screen to share.")
+      .accessibilityAction { compose() }
     }
-    .contentShape(.rect)
-    // Separate gestures so a long press starts selecting without also opening the composer.
-    .onTapGesture(perform: compose)
-    .onLongPressGesture(minimumDuration: 0.4, perform: beginSelecting)
-    .accessibilityElement(children: .ignore)
-    .accessibilityAddTraits(.isButton)
-    .accessibilityLabel("Ask about your trip")
-    .accessibilityHint("Opens a text field. Touch and hold to choose what's on screen to share.")
-    .accessibilityAction { compose() }
-    .accessibilityAction(named: "Choose What to Share") { beginSelecting() }
     .transition(.blurReplace)
   }
 
@@ -96,6 +108,8 @@ struct MessageComposerAccessory: View {
   }
 
   private func beginSelecting() {
+    ScreenContextTip.hasChosenContext = true
+    tip.invalidate(reason: .actionPerformed)
     withAnimation(.smooth) {
       context.beginSelecting()
     }

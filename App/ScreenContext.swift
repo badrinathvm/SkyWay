@@ -14,6 +14,8 @@ final class ScreenContext {
   }
 
   private(set) var mode: Mode = .off
+  /// True while a long press is in progress, to preview what will be selected.
+  var isPreviewing = false
   private(set) var selectedIDs: Set<ContextItem.ID> = []
   private var registered: [ContextItem.ID: ContextItem] = [:]
   private var order: [ContextItem.ID] = []
@@ -43,12 +45,18 @@ final class ScreenContext {
     selectedIDs.remove(id)
   }
 
+  /// Whether a long press in progress would select this item.
+  func isPreviewed(_ item: ContextItem) -> Bool {
+    isPreviewing && mode == .off && item.isSelectedByDefault
+  }
+
   func isSelected(_ id: ContextItem.ID) -> Bool {
     mode != .off && selectedIDs.contains(id)
   }
 
   /// Starts selection with every item that's selected by default.
   func beginSelecting() {
+    isPreviewing = false
     selectedIDs = Set(items.filter(\.isSelectedByDefault).map(\.id))
     mode = .selecting
   }
