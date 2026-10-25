@@ -29,6 +29,10 @@ struct MessageComposerAccessory: View {
 
   private var isInline: Bool { placement == .inline }
 
+  private var isAssistantIdle: Bool {
+    !assistant.isComposing && !assistant.isShowingAnswerSheet
+  }
+
   private var promptBar: some View {
     HStack(spacing: 8) {
       // A visible way to share what's on screen; the long press is a shortcut for the same thing.
@@ -36,7 +40,8 @@ struct MessageComposerAccessory: View {
         .labelStyle(.iconOnly)
         .foregroundStyle(.tint)
         .buttonStyle(.borderless)
-        .popoverTip(tip, arrowEdge: .bottom)
+        // Hide the tip while the person is asking a question or reading an answer.
+        .popoverTip(isAssistantIdle ? tip : nil, arrowEdge: .bottom)
 
       HStack(spacing: 8) {
         Text("Ask about your trip…")
