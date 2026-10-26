@@ -3,28 +3,54 @@ import SwiftUI
 
 struct TravelView: View {
   var trip: Trip
+  @Bindable var assistant: FlightAssistant
 
   var body: some View {
     NavigationStack {
       ScrollView {
         VStack(spacing: 16) {
           TripSummaryCard(trip: trip)
+            .assistantContext(trip.summaryContextItem)
+
+          // Not a card: any view can be shared as context.
+          Label("\(trip.arrivalWeather) in \(trip.destinationCity) on arrival", systemImage: "sun.max.fill")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
+            .symbolRenderingMode(.multicolor)
+            .padding(.horizontal, 12)
+            .padding(.vertical, 6)
+            .assistantContext(trip.weatherContextItem, cornerRadius: 16)
+            .frame(maxWidth: .infinity, alignment: .leading)
 
           ForEach(TravelAction.featured) { action in
             TravelActionRow(action: action)
+              .assistantContext(action.contextItem)
           }
 
           HStack(spacing: 16) {
             ForEach(TravelAction.quick) { action in
               QuickActionTile(action: action)
+                .assistantContext(action.contextItem)
             }
           }
         }
         .padding()
         .frame(maxWidth: .infinity)
       }
+      .scrollDismissesKeyboard(.interactively)
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
+      .environment(\.screenContext, assistant.screenContext)
+      .task { await ScreenContextTip.travelViewed.donate() }
+      .sheet(isPresented: $assistant.isShowingAnswerSheet, onDismiss: assistant.endSession) {
+        AssistantAnswerSheet(assistant: assistant)
+      }
+      .safeAreaInset(edge: .bottom) {
+        if assistant.isComposing {
+          AssistantComposer(assistant: assistant)
+            .transition(.move(edge: .bottom).combined(with: .opacity))
+        }
+      }
       // Annotate the Travel screen with the trip so Siri and Apple Intelligence
       // can resolve "my trip" or "this trip" from onscreen context.
       .userActivity(TripEntity.viewTripActivityType) { activity in
@@ -85,7 +111,7 @@ private struct TravelActionRow: View {
       .padding(20)
       .frame(maxWidth: .infinity)
       .background(.background, in: .rect(cornerRadius: 20))
-      .contentShape(.rect(cornerRadius: 20))
+        .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
   }
@@ -108,7 +134,7 @@ private struct QuickActionTile: View {
       .padding(20)
       .frame(maxWidth: .infinity)
       .background(.background, in: .rect(cornerRadius: 20))
-      .contentShape(.rect(cornerRadius: 20))
+        .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
   }

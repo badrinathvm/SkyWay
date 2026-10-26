@@ -41,3 +41,6 @@ build-*/
 # Locally generated Xcode project (source of truth is Project.json)
 *.xcodeproj/
 App/Info.plist
+
+# Generated concurrency audit reports
+.concurrency-audit/
