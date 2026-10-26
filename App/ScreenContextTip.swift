@@ -15,7 +15,7 @@ struct ScreenContextTip: Tip {
   }
 
   var message: Text? {
-    Text("Tap \(Image(systemName: "sparkles.rectangle.stack")) or touch and hold the bar to choose cards to share with the assistant.")
+    Text("Tap \(Image(systemName: "plus")) or touch and hold the bar to choose cards to share with the assistant.")
   }
 
   var image: Image? {
@@ -29,5 +29,17 @@ struct ScreenContextTip: Tip {
 
   var options: [any TipOption] {
     MaxDisplayCount(2)
+  }
+}
+
+enum SkywayTips {
+  /// The screen-context tips, shown one at a time. New ones can join this group.
+  @MainActor static let screenContext = TipGroup(.firstAvailable) {
+    ScreenContextTip()
+  }
+
+  /// Records that the person used screen context, which retires every screen-context tip.
+  static func didChooseContext() {
+    ScreenContextTip.hasChosenContext = true
   }
 }

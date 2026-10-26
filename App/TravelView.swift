@@ -38,6 +38,13 @@ struct TravelView: View {
         .frame(maxWidth: .infinity)
       }
       .scrollDismissesKeyboard(.interactively)
+      // Tapping outside the composer dismisses it, so it doesn't need a close button.
+      .simultaneousGesture(TapGesture().onEnded {
+        guard assistant.isComposing else { return }
+        withAnimation(.smooth) {
+          assistant.stopComposing()
+        }
+      })
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
       .environment(\.screenContext, assistant.screenContext)
