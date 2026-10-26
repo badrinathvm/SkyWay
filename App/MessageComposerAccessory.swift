@@ -40,7 +40,7 @@ struct MessageComposerAccessory: View {
   private var promptBar: some View {
     HStack(spacing: 8) {
       // A visible way to share what's on screen; the long press is a shortcut for the same thing.
-      Button("Choose What's on Screen", systemImage: "sparkles.rectangle.stack", action: beginSelecting)
+      Button("Add What's on Screen", systemImage: "plus", action: beginSelecting)
         .labelStyle(.iconOnly)
         .foregroundStyle(.tint)
         .buttonStyle(.borderless)

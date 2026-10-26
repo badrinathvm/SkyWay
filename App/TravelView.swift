@@ -38,6 +38,13 @@ struct TravelView: View {
         .frame(maxWidth: .infinity)
       }
       .scrollDismissesKeyboard(.interactively)
+      // Tapping outside the composer dismisses it, so it doesn't need a close button.
+      .simultaneousGesture(TapGesture().onEnded {
+        guard assistant.isComposing else { return }
+        withAnimation(.smooth) {
+          assistant.stopComposing()
+        }
+      })
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Travel")
       .environment(\.screenContext, assistant.screenContext)
@@ -77,7 +84,7 @@ private struct TripSummaryCard: View {
     }
     .frame(maxWidth: .infinity, alignment: .leading)
     .padding(20)
-    .background(.background, in: .rect(cornerRadius: 20))
+    .cardBackground()
   }
 }
 
@@ -110,7 +117,7 @@ private struct TravelActionRow: View {
       }
       .padding(20)
       .frame(maxWidth: .infinity)
-      .background(.background, in: .rect(cornerRadius: 20))
+      .cardBackground()
         .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)
@@ -133,7 +140,7 @@ private struct QuickActionTile: View {
       }
       .padding(20)
       .frame(maxWidth: .infinity)
-      .background(.background, in: .rect(cornerRadius: 20))
+      .cardBackground()
         .contentShape(.rect(cornerRadius: 20))
     }
     .buttonStyle(.plain)

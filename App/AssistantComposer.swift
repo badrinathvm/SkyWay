@@ -1,7 +1,7 @@
 import SwiftUI
-import TipKit
 
 /// The text field and send button, pinned above the keyboard while composing.
+/// There's no close button: dropping focus, by scrolling or tapping outside, dismisses it.
 struct AssistantComposer: View {
   @Bindable var assistant: FlightAssistant
   @FocusState private var isFocused: Bool
@@ -10,14 +10,13 @@ struct AssistantComposer: View {
 
   var body: some View {
     VStack(alignment: .leading, spacing: 10) {
-      // An inline tip, since a popover would collide with the keyboard.
-      if let tip = SkywayTips.screenContext.currentTip as? ComposerContextTip {
-        TipView(tip) { action in
-          if action.id == ComposerContextTip.chooseItemsActionID {
-            chooseContext()
-          }
-        }
-        .tipBackground(.clear)
+      if showsAddChip {
+        // Offer screen context right when someone is about to ask a question.
+        Button("Add What's on Screen", systemImage: "rectangle.stack.badge.plus", action: chooseContext)
+          .font(.subheadline.weight(.medium))
+          .buttonStyle(.bordered)
+          .buttonBorderShape(.capsule)
+          .transition(.blurReplace)
       }
 
       inputRow
@@ -26,7 +25,16 @@ struct AssistantComposer: View {
     .glassEffect(in: .rect(cornerRadius: 28))
     .padding(.horizontal)
     .padding(.bottom, 8)
+    .animation(.smooth, value: showsAddChip)
     .onAppear { isFocused = true }
+    .onChange(of: isFocused) { _, focused in
+      // Choosing context and sending already leave the composer, so this only catches dismissals.
+      if !focused && assistant.isComposing {
+        withAnimation(.smooth) {
+          assistant.stopComposing()
+        }
+      }
+    }
     .task {
       // Draw the eye to + until the person has used it, once per composer.
       guard !ScreenContextTip.hasChosenContext, !reduceMotion else { return }
@@ -38,16 +46,13 @@ struct AssistantComposer: View {
 
   private var inputRow: some View {
     HStack(spacing: 8) {
-      Button("Close", systemImage: "xmark") {
-        withAnimation(.smooth) {
-          assistant.stopComposing()
-        }
-      }
-      .labelStyle(.iconOnly)
-      .buttonStyle(.bordered)
-      .buttonBorderShape(.circle)
-
-      addMenu
+      // Starts choosing what's on screen, or changes the current selection.
+      Button("Add Context", systemImage: "plus", action: chooseContext)
+        .labelStyle(.iconOnly)
+        .fontWeight(.semibold)
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+        .symbolEffect(.bounce, value: plusBounce)
 
       TextField(
         placeholder,
@@ -66,32 +71,8 @@ struct AssistantComposer: View {
     }
   }
 
-  /// Ways to add context to the question. New sources, like photos or a boarding pass, go here.
-  private var addMenu: some View {
-    Menu {
-      Button(hasSelection ? "Change Selection" : "Add What's on Screen", systemImage: "sparkles.rectangle.stack") {
-        chooseContext()
-      }
-      if hasSelection {
-        Button("Remove Selection", systemImage: "xmark.circle", role: .destructive) {
-          withAnimation(.smooth) {
-            assistant.screenContext.clear()
-          }
-        }
-      }
-    } label: {
-      Label("Add", systemImage: "plus")
-    }
-    .labelStyle(.iconOnly)
-    .fontWeight(.semibold)
-    .buttonStyle(.bordered)
-    .buttonBorderShape(.circle)
-    .symbolEffect(.bounce, value: plusBounce)
-    .accessibilityLabel("Add Context")
-  }
-
-  private var hasSelection: Bool {
-    assistant.screenContext.mode == .locked
+  private var showsAddChip: Bool {
+    isFocused && assistant.screenContext.mode == .off
   }
 
   private var placeholder: String {
@@ -104,18 +85,18 @@ struct AssistantComposer: View {
   }
 
   private func chooseContext() {
-    isFocused = false
     SkywayTips.didChooseContext()
     withAnimation(.smooth) {
       assistant.chooseContextFromComposer()
     }
+    isFocused = false
   }
 
   private func send() {
     guard assistant.canSend else { return }
-    isFocused = false
     withAnimation(.smooth) {
       assistant.sendDraftToSheet()
     }
+    isFocused = false
   }
 }

@@ -50,7 +50,7 @@ struct BoardingPassView: View {
             .foregroundStyle(.secondary)
         }
         .padding(24)
-        .background(.background, in: .rect(cornerRadius: 24))
+        .cardBackground(cornerRadius: 24)
         .padding()
         .frame(maxWidth: .infinity)
       }

@@ -49,7 +49,7 @@ private struct AssistantContextModifier: ViewModifier {
           Image(systemName: isSelected ? "checkmark.circle.fill" : "circle")
             .font(.title3)
             .foregroundStyle(isSelected ? AnyShapeStyle(.tint) : AnyShapeStyle(.secondary))
-            .background(.background, in: .circle)
+            .background(Color(.secondarySystemGroupedBackground), in: .circle)
             .offset(x: 6, y: -6)
             .contentTransition(.symbolEffect(.replace))
             .allowsHitTesting(false)
