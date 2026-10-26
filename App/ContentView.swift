@@ -38,6 +38,12 @@ struct ContentView: View {
          MessageComposerAccessory(assistant: assistant)
       }
     }
+    // Above the content and the tab bar, so the lens can travel from the assistant bar to any item.
+    .overlay {
+      if selectedTab == .travel {
+        ContextLens(context: assistant.screenContext)
+      }
+    }
     .sheet(isPresented: $isShowingBoardingPass) {
       BoardingPassView(trip: trip)
     }

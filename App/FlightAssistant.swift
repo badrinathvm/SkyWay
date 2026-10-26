@@ -50,6 +50,12 @@ final class FlightAssistant {
     isComposing = true
   }
 
+  /// Opens the composer to ask about a single item, picked by dragging the lens onto it.
+  func askAbout(_ item: ContextItem) {
+    screenContext.select(only: item.id)
+    startComposing()
+  }
+
   /// Leaves the composer so the person can choose what's on screen, then returns with Ask.
   func chooseContextFromComposer() {
     isComposing = false

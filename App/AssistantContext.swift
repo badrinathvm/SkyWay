@@ -25,11 +25,12 @@ private struct AssistantContextModifier: ViewModifier {
     let isSelected = context?.isSelected(item.id) ?? false
     let isSelecting = mode == .selecting
     let isPreviewed = context?.isPreviewed(item) ?? false
+    let isHovered = context?.isHovered(item.id) ?? false
 
     content
       .opacity(isSelecting && !isSelected ? 0.55 : 1)
       .overlay {
-        if isSelected {
+        if isSelected || isHovered {
           ContextGlow(cornerRadius: cornerRadius)
             .transition(.opacity)
         } else if isPreviewed {
@@ -68,7 +69,9 @@ private struct AssistantContextModifier: ViewModifier {
             }
         }
       }
-      .scaleEffect(isSelected ? 0.98 : 1)
+      // Lifts toward the lens while it hovers over this item.
+      .scaleEffect(isHovered ? 1.02 : isSelected ? 0.98 : 1)
+      .animation(.snappy, value: isHovered)
       .animation(.smooth, value: isSelected)
       .animation(.smooth, value: isSelecting)
       .animation(.easeIn(duration: 0.4), value: isPreviewed)
@@ -81,13 +84,16 @@ private struct AssistantContextModifier: ViewModifier {
           }
         }
       }
+      .onGeometryChange(for: CGRect.self) { $0.frame(in: .global) } action: { frame in
+        context?.updateFrame(frame, for: item.id)
+      }
       .onAppear { context?.register(item) }
       .onDisappear { context?.unregister(item.id) }
   }
 }
 
 /// An animated rainbow border, like Apple Intelligence.
-private struct ContextGlow: View {
+struct ContextGlow: View {
   var cornerRadius: CGFloat
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 

@@ -20,6 +20,21 @@ final class ScreenContext {
   private(set) var selectedIDs: Set<ContextItem.ID> = []
   private var registered: [ContextItem.ID: ContextItem] = [:]
   private var order: [ContextItem.ID] = []
+  /// Each item's frame in global coordinates, for hit-testing the lens.
+  /// Not observed, so scrolling doesn't redraw every item.
+  @ObservationIgnored private var frames: [ContextItem.ID: CGRect] = [:]
+
+  /// Where the lens is, in global coordinates, while the person drags it from the assistant bar.
+  private(set) var lensLocation: CGPoint?
+  /// Where the drag started, so a cancelled lens can return there.
+  private(set) var lensOrigin: CGPoint?
+  /// True while the person is dragging the lens.
+  private(set) var isLensActive = false
+  /// The item under the lens.
+  private(set) var hoveredID: ContextItem.ID?
+
+  /// How far above the finger the lens floats, so the finger doesn't cover it.
+  static let lensLift: CGFloat = 72
 
   var items: [ContextItem] {
     order.compactMap { registered[$0] }.sorted { $0.sortOrder < $1.sortOrder }
@@ -43,7 +58,58 @@ final class ScreenContext {
   func unregister(_ id: ContextItem.ID) {
     registered[id] = nil
     order.removeAll { $0 == id }
+    frames[id] = nil
     selectedIDs.remove(id)
+    if hoveredID == id {
+      hoveredID = nil
+    }
+  }
+
+  func updateFrame(_ frame: CGRect, for id: ContextItem.ID) {
+    frames[id] = frame
+  }
+
+  func isHovered(_ id: ContextItem.ID) -> Bool {
+    hoveredID == id
+  }
+
+  /// Moves the lens to float above the finger, and finds the item under it.
+  func moveLens(fingerAt location: CGPoint, from origin: CGPoint) {
+    let lens = CGPoint(x: location.x, y: location.y - Self.lensLift)
+    lensOrigin = origin
+    lensLocation = lens
+    isLensActive = true
+    // The smallest frame wins, so a small item inside a bigger one can still be picked.
+    hoveredID = frames
+      .filter { registered[$0.key] != nil && $0.value.contains(lens) }
+      .min { $0.value.width * $0.value.height < $1.value.width * $1.value.height }?
+      .key
+  }
+
+  /// Ends the drag and returns the item under the lens, if any.
+  /// With nothing under it, the lens returns to where the drag started.
+  func endLens() -> ContextItem? {
+    guard let item = hoveredID.flatMap({ registered[$0] }) else {
+      cancelLens()
+      return nil
+    }
+    isLensActive = false
+    hoveredID = nil
+    return item
+  }
+
+  /// Returns the lens to where the drag started without picking anything.
+  func cancelLens() {
+    lensLocation = lensOrigin
+    isLensActive = false
+    hoveredID = nil
+  }
+
+  /// Selects just this item, ready to be used for a question.
+  func select(only id: ContextItem.ID) {
+    isPreviewing = false
+    selectedIDs = [id]
+    mode = .selecting
   }
 
   /// Whether a long press in progress would select this item.

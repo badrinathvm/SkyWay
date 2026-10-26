@@ -3,10 +3,12 @@ import TipKit
 
 /// A prompt in the tab bar accessory that opens the composer above the keyboard.
 /// Tab bar accessories stay behind the keyboard, so the text field itself lives in `AssistantComposer`.
-/// A long press switches it to a selection bar for choosing which on-screen items to share.
+/// A long press switches it to a selection bar for choosing which on-screen items to share,
+/// and dragging from + points a lens at a single item to ask about.
 struct MessageComposerAccessory: View {
   var assistant: FlightAssistant
   @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+  @GestureState private var isTouchingPlus = false
 
   var body: some View {
     Group {
@@ -40,12 +42,28 @@ struct MessageComposerAccessory: View {
   private var promptBar: some View {
     HStack(spacing: 8) {
       // A visible way to share what's on screen; the long press is a shortcut for the same thing.
-      Button("Add What's on Screen", systemImage: "plus", action: beginSelecting)
-        .labelStyle(.iconOnly)
+      // Tapping chooses from everything on screen, and dragging out a lens picks a single item.
+      Image(systemName: "plus")
         .foregroundStyle(.tint)
-        .buttonStyle(.borderless)
-        // Hide the tip while the person is asking a question or reading an answer.
-        .popoverTip(isAssistantIdle ? barTip : nil, arrowEdge: .bottom)
+        .frame(width: 32, height: 32)
+        .contentShape(.rect)
+        .scaleEffect(context.isLensActive ? 0.6 : 1)
+        .opacity(context.isLensActive ? 0.4 : 1)
+        .animation(.bouncy, value: context.isLensActive)
+        .gesture(lensGesture)
+        .onChange(of: isTouchingPlus) { _, touching in
+          // A drag the system cancels never ends, so put the lens away here.
+          if !touching && context.isLensActive {
+            context.cancelLens()
+          }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("Add What's on Screen")
+        .accessibilityHint("Touch and drag onto an item to ask about it.")
+        .accessibilityAction { beginSelecting() }
+        // Hide the tip while the person is asking a question, reading an answer, or dragging.
+        .popoverTip(isAssistantIdle && !context.isLensActive ? barTip : nil, arrowEdge: .bottom)
 
       HStack(spacing: 8) {
         Text("Ask about your trip…")
@@ -109,6 +127,32 @@ struct MessageComposerAccessory: View {
     }
     .transition(.blurReplace)
   }
+
+  /// A tap starts selecting; a drag shows the lens. Global coordinates match the frames
+  /// items report, and the touch keeps tracking after the finger leaves the bar.
+  private var lensGesture: some Gesture {
+    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+      .updating($isTouchingPlus) { _, touching, _ in touching = true }
+      .onChanged { value in
+        let distance = hypot(value.translation.width, value.translation.height)
+        guard context.isLensActive || distance > Self.dragThreshold else { return }
+        context.moveLens(fingerAt: value.location, from: value.startLocation)
+      }
+      .onEnded { value in
+        guard context.isLensActive else {
+          beginSelecting()
+          return
+        }
+        SkywayTips.didChooseContext()
+        if let item = context.endLens() {
+          withAnimation(.smooth) {
+            assistant.askAbout(item)
+          }
+        }
+      }
+  }
+
+  private static let dragThreshold: CGFloat = 8
 
   private func compose() {
     withAnimation(.smooth) {
