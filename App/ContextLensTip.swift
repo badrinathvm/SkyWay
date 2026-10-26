@@ -47,6 +47,11 @@ struct ContextLensTip: Tip {
       && UserDefaults.standard.integer(forKey: peekCountKey) < maxPeeks
   }
 
+  /// Lets the peek play again, for testing.
+  static func resetPeeks() {
+    UserDefaults.standard.removeObject(forKey: peekCountKey)
+  }
+
   @MainActor static func didPeek() {
     hasPeekedThisLaunch = true
     UserDefaults.standard.set(UserDefaults.standard.integer(forKey: peekCountKey) + 1, forKey: peekCountKey)
