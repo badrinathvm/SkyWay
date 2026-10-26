@@ -86,6 +86,10 @@ final class FlightAssistant {
     draft = ""
     sessionMessages = []
     contextItems = screenContext.mode == .off ? [] : screenContext.selectedItems
+    // Picking one item in selection mode is what the lens does faster, so suggest it.
+    if contextItems.count == 1 && !screenContext.wasPickedWithLens {
+      ContextLensTip.didAskAboutOneItem()
+    }
     isComposing = false
     send(question)
     isShowingAnswerSheet = true

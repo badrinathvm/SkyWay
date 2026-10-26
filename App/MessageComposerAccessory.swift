@@ -9,6 +9,9 @@ struct MessageComposerAccessory: View {
   var assistant: FlightAssistant
   @Environment(\.tabViewBottomAccessoryPlacement) private var placement
   @GestureState private var isTouchingPlus = false
+  /// The center of +, in global coordinates, where the peek starts.
+  @State private var plusCenter: CGPoint?
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     Group {
@@ -30,9 +33,9 @@ struct MessageComposerAccessory: View {
 
   private var isInline: Bool { placement == .inline }
 
-  /// The bar's tip, when it's the group's current tip, so only one screen-context tip shows at a time.
-  private var barTip: ScreenContextTip? {
-    SkywayTips.screenContext.currentTip as? ScreenContextTip
+  /// The group's current tip, so only one screen-context tip shows at a time.
+  private var barTip: (any Tip)? {
+    SkywayTips.screenContext.currentTip
   }
 
   private var isAssistantIdle: Bool {
@@ -47,9 +50,18 @@ struct MessageComposerAccessory: View {
         .foregroundStyle(.tint)
         .frame(width: 32, height: 32)
         .contentShape(.rect)
-        .scaleEffect(context.isLensActive ? 0.6 : 1)
+        // Lifts on touch down, hinting that + can be picked up and dragged.
+        .scaleEffect(context.isLensActive ? 0.6 : isTouchingPlus ? 1.25 : 1)
         .opacity(context.isLensActive ? 0.4 : 1)
         .animation(.bouncy, value: context.isLensActive)
+        .animation(.snappy, value: isTouchingPlus)
+        .sensoryFeedback(.impact(weight: .light), trigger: isTouchingPlus) { _, touching in touching }
+        .onGeometryChange(for: CGPoint.self) { proxy in
+          let frame = proxy.frame(in: .global)
+          return CGPoint(x: frame.midX, y: frame.midY)
+        } action: { center in
+          plusCenter = center
+        }
         .gesture(lensGesture)
         .onChange(of: isTouchingPlus) { _, touching in
           // A drag the system cancels never ends, so put the lens away here.
@@ -92,6 +104,7 @@ struct MessageComposerAccessory: View {
       .accessibilityAction { compose() }
     }
     .transition(.blurReplace)
+    .task { await peekIfNeeded() }
   }
 
   private var selectionBar: some View {
@@ -134,6 +147,10 @@ struct MessageComposerAccessory: View {
     DragGesture(minimumDistance: 0, coordinateSpace: .global)
       .updating($isTouchingPlus) { _, touching, _ in touching = true }
       .onChanged { value in
+        // Touching + stops the demonstration, so it can't be mistaken for a drop.
+        if context.isPeeking {
+          context.cancelLens()
+        }
         let distance = hypot(value.translation.width, value.translation.height)
         guard context.isLensActive || distance > Self.dragThreshold else { return }
         context.moveLens(fingerAt: value.location, from: value.startLocation)
@@ -143,7 +160,7 @@ struct MessageComposerAccessory: View {
           beginSelecting()
           return
         }
-        SkywayTips.didChooseContext()
+        SkywayTips.didUseLens()
         if let item = context.endLens() {
           withAnimation(.smooth) {
             assistant.askAbout(item)
@@ -153,6 +170,30 @@ struct MessageComposerAccessory: View {
   }
 
   private static let dragThreshold: CGFloat = 8
+
+  /// Shows that + can be dragged: the lens slides out to the first item, lights it up, and returns.
+  private func peekIfNeeded() async {
+    guard !reduceMotion, ContextLensTip.shouldPeek else { return }
+    try? await Task.sleep(for: .seconds(1.2))
+    // Don't compete with a tip, the composer, or a selection the person started.
+    guard !Task.isCancelled, barTip == nil, isAssistantIdle, context.mode == .off,
+          !context.isLensActive, let plusCenter,
+          let target = context.peekTarget(above: plusCenter.y - 40)
+    else { return }
+
+    ContextLensTip.didPeek()
+    context.preparePeek(at: plusCenter)
+    // Let the lens settle at + before it moves, so it visibly travels from there.
+    try? await Task.sleep(for: .milliseconds(50))
+    withAnimation(.smooth(duration: 0.7)) {
+      context.movePeek(to: target)
+    }
+    try? await Task.sleep(for: .seconds(1.4))
+    guard context.isPeeking else { return }
+    withAnimation(.smooth(duration: 0.6)) {
+      context.cancelLens()
+    }
+  }
 
   private func compose() {
     withAnimation(.smooth) {

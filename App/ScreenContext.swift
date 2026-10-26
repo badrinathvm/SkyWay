@@ -32,6 +32,10 @@ final class ScreenContext {
   private(set) var isLensActive = false
   /// The item under the lens.
   private(set) var hoveredID: ContextItem.ID?
+  /// True while the lens demonstrates itself, before the person has touched it.
+  private(set) var isPeeking = false
+  /// Whether the current selection was picked by dragging the lens, rather than in selection mode.
+  private(set) var wasPickedWithLens = false
 
   /// How far above the finger the lens floats, so the finger doesn't cover it.
   static let lensLift: CGFloat = 72
@@ -76,6 +80,7 @@ final class ScreenContext {
   /// Moves the lens to float above the finger, and finds the item under it.
   func moveLens(fingerAt location: CGPoint, from origin: CGPoint) {
     let lens = CGPoint(x: location.x, y: location.y - Self.lensLift)
+    isPeeking = false
     lensOrigin = origin
     lensLocation = lens
     isLensActive = true
@@ -100,6 +105,7 @@ final class ScreenContext {
 
   /// Returns the lens to where the drag started without picking anything.
   func cancelLens() {
+    isPeeking = false
     lensLocation = lensOrigin
     isLensActive = false
     hoveredID = nil
@@ -110,6 +116,32 @@ final class ScreenContext {
     isPreviewing = false
     selectedIDs = [id]
     mode = .selecting
+    wasPickedWithLens = true
+  }
+
+  /// The first item that's fully on screen above `y`, for the lens to demonstrate on.
+  func peekTarget(above y: CGFloat) -> (id: ContextItem.ID, center: CGPoint)? {
+    for item in items {
+      guard let frame = frames[item.id], frame.minY > 0, frame.maxY < y else { continue }
+      return (item.id, CGPoint(x: frame.midX, y: frame.midY))
+    }
+    return nil
+  }
+
+  /// Puts the hidden lens at `origin`, ready to peek out.
+  func preparePeek(at origin: CGPoint) {
+    isPeeking = true
+    isLensActive = false
+    lensOrigin = origin
+    lensLocation = origin
+  }
+
+  /// Moves the peeking lens over an item, as if the person dragged it there.
+  func movePeek(to target: (id: ContextItem.ID, center: CGPoint)) {
+    guard isPeeking else { return }
+    isLensActive = true
+    lensLocation = target.center
+    hoveredID = target.id
   }
 
   /// Whether a long press in progress would select this item.
@@ -126,12 +158,14 @@ final class ScreenContext {
     isPreviewing = false
     selectedIDs = Set(items.filter(\.isSelectedByDefault).map(\.id))
     mode = .selecting
+    wasPickedWithLens = false
   }
 
   /// Goes back to selecting while keeping the current selection.
   func resumeSelecting() {
     isPreviewing = false
     mode = .selecting
+    wasPickedWithLens = false
   }
 
   func toggle(_ id: ContextItem.ID) {
@@ -159,5 +193,6 @@ final class ScreenContext {
   func clear() {
     mode = .off
     selectedIDs = []
+    wasPickedWithLens = false
   }
 }

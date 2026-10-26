@@ -22,7 +22,9 @@ struct ContextLens: View {
     .allowsHitTesting(false)
     .animation(.bouncy, value: context.isLensActive)
     .animation(.snappy, value: isHovering)
-    .sensoryFeedback(.selection, trigger: context.hoveredID) { _, new in new != nil }
+    .sensoryFeedback(.selection, trigger: context.hoveredID) { _, new in
+      new != nil && !context.isPeeking
+    }
     .accessibilityHidden(true)
   }
 
