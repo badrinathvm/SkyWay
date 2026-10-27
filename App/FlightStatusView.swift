@@ -2,30 +2,31 @@ import SwiftUI
 
 struct FlightStatusView: View {
   var assistant: FlightAssistant
+  /// Whether the assistant chat is open, kept per window.
+  @SceneStorage("isAssistantInspectorPresented") private var isShowingAssistant = false
 
   var body: some View {
     NavigationStack {
       ScrollView {
-        LazyVStack(spacing: 12) {
+        VStack(spacing: 16) {
           FlightStatusCard(trip: assistant.trip, boardingTime: assistant.boardingTime)
-            .padding(.bottom, 8)
-
-          if assistant.messages.isEmpty {
-            SuggestionList(assistant: assistant)
-          } else {
-            ForEach(assistant.messages) { message in
-              MessageBubble(message: message)
-            }
-          }
+          TripDetailsCard(trip: assistant.trip)
         }
         .padding()
         .frame(maxWidth: .infinity)
       }
-      .defaultScrollAnchor(.bottom, for: .sizeChanges)
-      .scrollDismissesKeyboard(.interactively)
       .background(Color(.systemGroupedBackground))
       .navigationTitle("Flight status")
-      .animation(.smooth, value: assistant.messages)
+      .toolbar {
+        Button("Assistant", systemImage: "bubble.left.and.text.bubble.right") {
+          isShowingAssistant.toggle()
+        }
+      }
+      // A trailing column in regular width, and a sheet in compact width.
+      .inspector(isPresented: $isShowingAssistant) {
+        AssistantChatView(assistant: assistant)
+          .inspectorColumnWidth(min: 300, ideal: 360, max: 460)
+      }
     }
   }
 }
@@ -75,21 +76,21 @@ private struct StatusDetail: View {
   }
 }
 
-private struct SuggestionList: View {
-  var assistant: FlightAssistant
+private struct TripDetailsCard: View {
+  var trip: Trip
 
   var body: some View {
-    VStack(alignment: .leading, spacing: 8) {
-      Text("Try asking")
-        .font(.subheadline.weight(.semibold))
-        .foregroundStyle(.secondary)
-      ForEach(FlightAssistant.suggestions, id: \.self) { suggestion in
-        Button(suggestion, systemImage: "sparkles") {
-          assistant.send(suggestion)
-        }
-        .buttonStyle(.bordered)
+    VStack(alignment: .leading, spacing: 12) {
+      Text("Your trip")
+        .font(.headline)
+      HStack(spacing: 24) {
+        StatusDetail(label: "Seat", value: trip.seat)
+        StatusDetail(label: "Group", value: trip.boardingGroup)
+        StatusDetail(label: "Confirmation", value: trip.confirmationCode)
       }
     }
     .frame(maxWidth: .infinity, alignment: .leading)
+    .padding(20)
+    .cardBackground()
   }
 }
