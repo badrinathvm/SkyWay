@@ -15,7 +15,7 @@
     "Skyway": {
       "deploymentTarget": "27.0",
       "info": {
-        "path": "App\/Info.plist",
+        "path": "App/Info.plist",
         "properties": {
           "CFBundleDisplayName": "Skyway",
           "CFBundleShortVersionString": "1.0",
@@ -30,7 +30,19 @@
             "UIInterfaceOrientationPortraitUpsideDown",
             "UIInterfaceOrientationLandscapeLeft",
             "UIInterfaceOrientationLandscapeRight"
-          ]
+          ],
+          "UIApplicationSceneManifest": {
+            "UIApplicationSupportsMultipleScenes": true,
+            "UISceneConfigurations": {
+              "CPTemplateApplicationSceneSessionRoleApplication": [
+                {
+                  "UISceneClassName": "CPTemplateApplicationScene",
+                  "UISceneConfigurationName": "CarPlay",
+                  "UISceneDelegateClassName": "$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate"
+                }
+              ]
+            }
+          }
         }
       },
       "platform": "iOS",
@@ -42,7 +54,8 @@
         "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.71b7b2c8-9dc8-4b74-825d-7b2e755ba4c3",
         "PRODUCT_NAME": "$(TARGET_NAME)",
         "SWIFT_VERSION": "5.0",
-        "TARGETED_DEVICE_FAMILY": "1,2"
+        "TARGETED_DEVICE_FAMILY": "1,2",
+        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": "App/App-Simulator.entitlements"
       },
       "sources": [
         {
