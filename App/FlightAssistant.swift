@@ -50,6 +50,12 @@ final class FlightAssistant {
     isComposing = true
   }
 
+  /// Opens the composer to ask about a single item, picked by dragging the lens onto it.
+  func askAbout(_ item: ContextItem) {
+    screenContext.select(only: item.id)
+    startComposing()
+  }
+
   /// Leaves the composer so the person can choose what's on screen, then returns with Ask.
   func chooseContextFromComposer() {
     isComposing = false
@@ -80,6 +86,10 @@ final class FlightAssistant {
     draft = ""
     sessionMessages = []
     contextItems = screenContext.mode == .off ? [] : screenContext.selectedItems
+    // Picking one item in selection mode is what the lens does faster, so suggest it.
+    if contextItems.count == 1 && !screenContext.wasPickedWithLens {
+      ContextLensTip.didAskAboutOneItem()
+    }
     isComposing = false
     send(question)
     isShowingAnswerSheet = true
@@ -109,11 +119,13 @@ final class FlightAssistant {
 
   private func answer(to question: String) -> String {
     let text = question.lowercased()
+    // Whole words, for keywords that hide inside other words, like "eat" in "seat".
+    let words = Set(text.split { !$0.isLetter }.map(String.init))
     let departure = trip.departure.formatted(date: .omitted, time: .shortened)
     let boarding = boardingTime.formatted(date: .omitted, time: .shortened)
 
     // Questions about the travel cards come first, since they often mention a gate or seat too.
-    if text.contains("menu") || text.contains("food") || text.contains("eat") || text.contains("drink") {
+    if text.contains("menu") || text.contains("food") || words.contains("eat") || text.contains("drink") {
       return """
       On \(trip.flightNumber) to \(trip.destinationCity) you can choose from:
       • Breakfast: Greek yogurt parfait with granola and berries

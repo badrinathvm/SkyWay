@@ -3,10 +3,15 @@ import TipKit
 
 /// A prompt in the tab bar accessory that opens the composer above the keyboard.
 /// Tab bar accessories stay behind the keyboard, so the text field itself lives in `AssistantComposer`.
-/// A long press switches it to a selection bar for choosing which on-screen items to share.
+/// A long press switches it to a selection bar for choosing which on-screen items to share,
+/// and dragging from + points a lens at a single item to ask about.
 struct MessageComposerAccessory: View {
   var assistant: FlightAssistant
   @Environment(\.tabViewBottomAccessoryPlacement) private var placement
+  @GestureState private var isTouchingPlus = false
+  /// The center of +, in global coordinates, where the peek starts.
+  @State private var plusCenter: CGPoint?
+  @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
     Group {
@@ -28,9 +33,9 @@ struct MessageComposerAccessory: View {
 
   private var isInline: Bool { placement == .inline }
 
-  /// The bar's tip, when it's the group's current tip, so only one screen-context tip shows at a time.
-  private var barTip: ScreenContextTip? {
-    SkywayTips.screenContext.currentTip as? ScreenContextTip
+  /// The group's current tip, so only one screen-context tip shows at a time.
+  private var barTip: (any Tip)? {
+    SkywayTips.screenContext.currentTip
   }
 
   private var isAssistantIdle: Bool {
@@ -40,12 +45,37 @@ struct MessageComposerAccessory: View {
   private var promptBar: some View {
     HStack(spacing: 8) {
       // A visible way to share what's on screen; the long press is a shortcut for the same thing.
-      Button("Add What's on Screen", systemImage: "plus", action: beginSelecting)
-        .labelStyle(.iconOnly)
+      // Tapping chooses from everything on screen, and dragging out a lens picks a single item.
+      Image(systemName: "plus")
         .foregroundStyle(.tint)
-        .buttonStyle(.borderless)
-        // Hide the tip while the person is asking a question or reading an answer.
-        .popoverTip(isAssistantIdle ? barTip : nil, arrowEdge: .bottom)
+        .frame(width: 32, height: 32)
+        .contentShape(.rect)
+        // Lifts on touch down, hinting that + can be picked up and dragged.
+        .scaleEffect(context.isLensActive ? 0.6 : isTouchingPlus ? 1.25 : 1)
+        .opacity(context.isLensActive ? 0.4 : 1)
+        .animation(.bouncy, value: context.isLensActive)
+        .animation(.snappy, value: isTouchingPlus)
+        .sensoryFeedback(.impact(weight: .light), trigger: isTouchingPlus) { _, touching in touching }
+        .onGeometryChange(for: CGPoint.self) { proxy in
+          let frame = proxy.frame(in: .global)
+          return CGPoint(x: frame.midX, y: frame.midY)
+        } action: { center in
+          plusCenter = center
+        }
+        .gesture(lensGesture)
+        .onChange(of: isTouchingPlus) { _, touching in
+          // A drag the system cancels never ends, so put the lens away here.
+          if !touching && context.isLensActive {
+            context.cancelLens()
+          }
+        }
+        .accessibilityElement(children: .ignore)
+        .accessibilityAddTraits(.isButton)
+        .accessibilityLabel("Add What's on Screen")
+        .accessibilityHint("Touch and drag onto an item to ask about it.")
+        .accessibilityAction { beginSelecting() }
+        // Hide the tip while the person is asking a question, reading an answer, or dragging.
+        .popoverTip(isAssistantIdle && !context.isLensActive ? barTip : nil, arrowEdge: .bottom)
 
       HStack(spacing: 8) {
         Text("Ask about your trip…")
@@ -74,6 +104,7 @@ struct MessageComposerAccessory: View {
       .accessibilityAction { compose() }
     }
     .transition(.blurReplace)
+    .task { await peekIfNeeded() }
   }
 
   private var selectionBar: some View {
@@ -108,6 +139,60 @@ struct MessageComposerAccessory: View {
         .buttonBorderShape(.circle)
     }
     .transition(.blurReplace)
+  }
+
+  /// A tap starts selecting; a drag shows the lens. Global coordinates match the frames
+  /// items report, and the touch keeps tracking after the finger leaves the bar.
+  private var lensGesture: some Gesture {
+    DragGesture(minimumDistance: 0, coordinateSpace: .global)
+      .updating($isTouchingPlus) { _, touching, _ in touching = true }
+      .onChanged { value in
+        // Touching + stops the demonstration, so it can't be mistaken for a drop.
+        if context.isPeeking {
+          context.cancelLens()
+        }
+        let distance = hypot(value.translation.width, value.translation.height)
+        guard context.isLensActive || distance > Self.dragThreshold else { return }
+        context.moveLens(fingerAt: value.location, from: value.startLocation)
+      }
+      .onEnded { value in
+        guard context.isLensActive else {
+          beginSelecting()
+          return
+        }
+        SkywayTips.didUseLens()
+        if let item = context.endLens() {
+          withAnimation(.smooth) {
+            assistant.askAbout(item)
+          }
+        }
+      }
+  }
+
+  private static let dragThreshold: CGFloat = 8
+
+  /// Shows that + can be dragged: the lens slides out to the first item, lights it up, and returns.
+  private func peekIfNeeded() async {
+    guard !reduceMotion, ContextLensTip.shouldPeek else { return }
+    try? await Task.sleep(for: .seconds(1.2))
+    // Don't compete with a tip, the composer, or a selection the person started.
+    guard !Task.isCancelled, barTip == nil, isAssistantIdle, context.mode == .off,
+          !context.isLensActive, let plusCenter,
+          let target = context.peekTarget(above: plusCenter.y - 40)
+    else { return }
+
+    ContextLensTip.didPeek()
+    context.preparePeek(at: plusCenter)
+    // Let the lens settle at + before it moves, so it visibly travels from there.
+    try? await Task.sleep(for: .milliseconds(50))
+    withAnimation(.smooth(duration: 0.7)) {
+      context.movePeek(to: target)
+    }
+    try? await Task.sleep(for: .seconds(1.4))
+    guard context.isPeeking else { return }
+    withAnimation(.smooth(duration: 0.6)) {
+      context.cancelLens()
+    }
   }
 
   private func compose() {

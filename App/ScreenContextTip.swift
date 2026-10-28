@@ -36,10 +36,17 @@ enum SkywayTips {
   /// The screen-context tips, shown one at a time. New ones can join this group.
   @MainActor static let screenContext = TipGroup(.firstAvailable) {
     ScreenContextTip()
+    ContextLensTip()
   }
 
-  /// Records that the person used screen context, which retires every screen-context tip.
+  /// Records that the person used screen context, which retires the introductory tip.
   static func didChooseContext() {
     ScreenContextTip.hasChosenContext = true
+  }
+
+  /// Records that the person dragged the lens, which retires every screen-context tip and the peek.
+  static func didUseLens() {
+    didChooseContext()
+    ContextLensTip.hasUsedLens = true
   }
 }
