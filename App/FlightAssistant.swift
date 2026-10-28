@@ -114,7 +114,7 @@ final class FlightAssistant {
   }
 
   var boardingTime: Date {
-    trip.departure.addingTimeInterval(-40 * 60)
+    trip.boardingTime
   }
 
   private func answer(to question: String) -> String {

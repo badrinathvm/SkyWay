@@ -19,6 +19,12 @@ struct Trip: Identifiable, Hashable {
 
   var title: String { "Trip to \(destinationCity)" }
 
+  /// Boarding starts 40 minutes before departure.
+  var boardingTime: Date { departure.addingTimeInterval(-40 * 60) }
+
+  /// When to leave for the airport: the drive plus time to get through security before boarding.
+  var leaveByTime: Date { boardingTime.addingTimeInterval(-(45 + 30) * 60) }
+
   var boardingPassPayload: String {
     "\(confirmationCode)|\(flightNumber)|\(originCode)-\(destinationCode)|\(seat)|\(passengerName)"
   }
