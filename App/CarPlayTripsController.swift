@@ -130,10 +130,8 @@ final class CarPlayTripsController: NSObject {
     let progress = "\(trip.milesText) · \(trip.estimatedDeductionText) est."
     let elapsed = "Started \(trip.startTimeText) · \(trip.minutesText())"
 
+    // Just the car: every point also gets a row in the side panel, and one trip should read as one card.
     var points: [CPPointOfInterest] = []
-    if let start = trip.start {
-      points.append(point(at: start.location, title: "Start", subtitle: trip.startAddress ?? elapsed, summary: progress, systemImage: "flag.fill"))
-    }
     if let current = store.currentLocation {
       points.append(point(at: current, title: progress, subtitle: elapsed, summary: "From \(trip.startAddress ?? "your start")", systemImage: "car.fill"))
     }
