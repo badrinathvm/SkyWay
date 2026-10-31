@@ -9,6 +9,8 @@ final class CarPlayTripsController: NSObject {
   private weak var interfaceController: CPInterfaceController?
   private let store = DriveTripStore.shared
   private var mapTemplate: CPPointOfInterestTemplate?
+  /// When the driver opened the car's card, which a refresh would close.
+  private var cardOpenedAt: Date?
   private var refreshTimer: Timer?
   private var shownListText: [String] = []
   private var isEnding = false
@@ -134,7 +136,7 @@ final class CarPlayTripsController: NSObject {
     // Back pops the map without telling this controller, so check what's actually showing.
     if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
     let points = carPoints()
-    let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: points, selectedIndex: points.isEmpty ? NSNotFound : 0)
+    let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: points, selectedIndex: NSNotFound)
     template.pointOfInterestDelegate = self
     // Always reachable, even before the first location fix puts the car on the map.
     template.trailingNavigationBarButtons = [
@@ -146,10 +148,13 @@ final class CarPlayTripsController: NSObject {
 
   private func refreshMap() {
     guard let mapTemplate else { return }
-    let points = carPoints()
-    // Selecting only highlights the car's row: CarPlay opens its card, and moves the map,
-    // only when the driver taps.
-    mapTemplate.setPointsOfInterest(points, selectedIndex: points.isEmpty ? NSNotFound : 0)
+    // Replacing the points closes the car's card, and CarPlay only redraws a point when it's
+    // replaced, so hold the card open for a while to give the driver time to tap End Trip.
+    if let cardOpenedAt, Date.now.timeIntervalSince(cardOpenedAt) < 30 { return }
+    cardOpenedAt = nil
+    // Leave it unselected: selecting from code only highlights the row, and CarPlay may report
+    // it as the driver opening the card.
+    mapTemplate.setPointsOfInterest(carPoints(), selectedIndex: NSNotFound)
   }
 
   /// Just the car: every point also gets a row in the side panel, and one trip should read as one row.
@@ -270,5 +275,13 @@ final class CarPlayTripsController: NSObject {
 extension CarPlayTripsController: CPPointOfInterestTemplateDelegate {
   nonisolated func pointOfInterestTemplate(_ pointOfInterestTemplate: CPPointOfInterestTemplate, didChangeMapRegion region: MKCoordinateRegion) {
     // The pins follow the trip, not the visible region, so there's nothing to reload.
+  }
+
+  nonisolated func pointOfInterestTemplate(_ pointOfInterestTemplate: CPPointOfInterestTemplate, didSelectPointOfInterest pointOfInterest: CPPointOfInterest) {
+    // CarPlay may call this off the main thread, so hop to it rather than assume.
+    let openedAt = Date.now
+    Task { @MainActor [weak self] in
+      self?.cardOpenedAt = openedAt
+    }
   }
 }
