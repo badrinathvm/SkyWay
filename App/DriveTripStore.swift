@@ -49,12 +49,17 @@ final class DriveTripStore {
     return address
   }
 
+  /// Saves the trip in progress. Pass `miles` and `endDate` to save what was shown when the
+  /// person chose to end it, rather than what was driven while they answered.
   @discardableResult
-  func endTrip(as purpose: DriveTrip.Purpose) -> DriveTrip? {
+  func endTrip(as purpose: DriveTrip.Purpose, miles: Double? = nil, endDate: Date = .now) -> DriveTrip? {
     guard var trip = activeTrip else { return nil }
     stopTracking()
-    trip.endDate = .now
+    trip.endDate = endDate
     trip.purpose = purpose
+    if let miles {
+      trip.miles = miles
+    }
     if let currentLocation {
       trip.end = DriveTrip.Coordinate(currentLocation.coordinate)
     }

@@ -112,7 +112,8 @@ final class CarPlayTripsController: NSObject {
   // MARK: - Map
 
   private func showMap(animated: Bool) {
-    guard mapTemplate == nil else { return }
+    // Back pops the map without telling this controller, so check what's actually showing.
+    if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
     let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: [], selectedIndex: NSNotFound)
     template.pointOfInterestDelegate = self
     // Always reachable, even before the first location fix puts a pin on the map.
@@ -136,8 +137,12 @@ final class CarPlayTripsController: NSObject {
     if let current = store.currentLocation {
       points.append(point(at: current, title: progress, subtitle: elapsed, summary: "From \(trip.startAddress ?? "your start")", systemImage: "car.fill"))
     }
-    // Select the car, so its card with the running totals is the one showing.
-    mapTemplate.setPointsOfInterest(points, selectedIndex: points.isEmpty ? NSNotFound : points.count - 1)
+    // Select the car, so its card with the running totals is showing. Clearing the selection
+    // first makes the map move to the car's new position instead of staying where it was.
+    mapTemplate.setPointsOfInterest(points, selectedIndex: NSNotFound)
+    if !points.isEmpty {
+      mapTemplate.selectedIndex = points.count - 1
+    }
   }
 
   private func point(at location: CLLocation, title: String, subtitle: String, summary: String, systemImage: String) -> CPPointOfInterest {
@@ -170,15 +175,18 @@ final class CarPlayTripsController: NSObject {
     Task { [weak self] in
       guard let self else { return }
       let address = await store.endingAddress()
-      guard let trip = store.activeTrip else {
+      guard var trip = store.activeTrip else {
         isEnding = false
         return
       }
+      // The car may still be moving while the sheet is up, so save the totals it shows.
+      let endDate = Date.now
+      trip.endDate = endDate
       let business = CPAlertAction(title: "Business (\(trip.estimatedDeductionText))", style: .default) { [weak self] _ in
-        self?.finish(as: .business)
+        self?.finish(as: .business, miles: trip.miles, endDate: endDate)
       }
       let personal = CPAlertAction(title: "Personal", style: .default) { [weak self] _ in
-        self?.finish(as: .personal)
+        self?.finish(as: .personal, miles: trip.miles, endDate: endDate)
       }
       let keepDriving = CPAlertAction(title: "Keep Driving", style: .cancel) { [weak self] _ in
         self?.isEnding = false
@@ -196,9 +204,9 @@ final class CarPlayTripsController: NSObject {
     }
   }
 
-  private func finish(as purpose: DriveTrip.Purpose) {
+  private func finish(as purpose: DriveTrip.Purpose, miles: Double, endDate: Date) {
     interfaceController?.dismissTemplate(animated: true, completion: nil)
-    store.endTrip(as: purpose)
+    store.endTrip(as: purpose, miles: miles, endDate: endDate)
     isEnding = false
     leaveMap()
     refreshList()
