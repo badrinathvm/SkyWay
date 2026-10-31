@@ -15,6 +15,14 @@ final class DriveTripStore {
   private(set) var currentLocation: CLLocation?
   /// Set when a trip couldn't be tracked because location access is off.
   var isLocationDenied = false
+  /// When the car last covered ground, to tell driving from parked.
+  private(set) var lastMovedAt: Date?
+
+  /// The car moved during the trip but has been still for a minute.
+  var isParked: Bool {
+    guard let lastMovedAt else { return false }
+    return Date.now.timeIntervalSince(lastMovedAt) > 60
+  }
 
   var recentTrips: ArraySlice<DriveTrip> { trips.prefix(5) }
 
@@ -74,6 +82,7 @@ final class DriveTripStore {
 
   private func track() {
     lastFix = nil
+    lastMovedAt = nil
     trackingTask = Task {
       for await event in tracker.events() {
         switch event {
@@ -115,6 +124,7 @@ final class DriveTripStore {
       // A jump faster than any car is a bad fix or a gap in tracking, not driving.
       if seconds > 0, meters / seconds < 70 {
         activeTrip?.miles += meters / 1609.344
+        lastMovedAt = location.timestamp
       }
     }
     lastFix = location
