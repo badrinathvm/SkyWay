@@ -1,14 +1,13 @@
 import CarPlay
 import MapKit
 
-/// The Trips tab: start a mileage trip, watch its miles and deduction add up, end it as
-/// business or personal, and look back at recent trips.
+/// The Trips tab: start a mileage trip, follow it on a map as its miles and deduction add up,
+/// end it as business or personal, and look back at recent trips.
 @MainActor
 final class CarPlayTripsController: NSObject {
   let rootTemplate: CPListTemplate
   private weak var interfaceController: CPInterfaceController?
   private let store = DriveTripStore.shared
-  private var tripTemplate: CPInformationTemplate?
   private var mapTemplate: CPPointOfInterestTemplate?
   private var refreshTimer: Timer?
   private var shownListText: [String] = []
@@ -27,7 +26,7 @@ final class CarPlayTripsController: NSObject {
   func didConnect() {
     store.resumeTrackingIfNeeded()
     if store.activeTrip != nil {
-      showTrip(animated: false)
+      showMap(animated: false)
     }
     // CarPlay templates aren't observable views, so poll: this keeps the trip current
     // and picks up trips started or ended with Siri.
@@ -39,7 +38,6 @@ final class CarPlayTripsController: NSObject {
   func didDisconnect() {
     refreshTimer?.invalidate()
     refreshTimer = nil
-    tripTemplate = nil
     mapTemplate = nil
   }
 
@@ -47,10 +45,9 @@ final class CarPlayTripsController: NSObject {
     refreshList()
     if store.isLocationDenied {
       showLocationAlert()
-    } else if store.activeTrip == nil, tripTemplate != nil || mapTemplate != nil, !isEnding {
-      leaveTrip()
+    } else if store.activeTrip == nil, mapTemplate != nil, !isEnding {
+      leaveMap()
     } else {
-      refreshTrip()
       refreshMap()
     }
   }
@@ -126,31 +123,38 @@ final class CarPlayTripsController: NSObject {
       store.startTrip()
       refreshList()
     }
-    showTrip(animated: true)
+    showMap(animated: true)
   }
 
   // MARK: - Trip in progress
 
-  /// The running totals as a card of values, with End Trip as the main button.
-  private func showTrip(animated: Bool) {
-    // Back pops these without telling this controller, so check what's actually showing.
-    if let top = interfaceController?.topTemplate, top === tripTemplate || top === mapTemplate { return }
-    let template = CPInformationTemplate(
-      title: "Trip in Progress",
-      layout: .leading,
-      items: tripItems(),
-      actions: [
-        CPTextButton(title: "End Trip", textStyle: .confirm) { [weak self] _ in self?.confirmEnd() },
-        CPTextButton(title: "Show Map", textStyle: .normal) { [weak self] _ in self?.showMap() },
-      ]
-    )
-    tripTemplate = template
-    mapTemplate = nil
+  /// The trip in progress: the car on a map, its totals in the side panel, and End Trip in the
+  /// navigation bar, so ending a trip is always one tap.
+  private func showMap(animated: Bool) {
+    // Back pops the map without telling this controller, so check what's actually showing.
+    if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
+    let points = carPoints()
+    let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: points, selectedIndex: points.isEmpty ? NSNotFound : 0)
+    template.pointOfInterestDelegate = self
+    // Always reachable, even before the first location fix puts the car on the map.
+    template.trailingNavigationBarButtons = [
+      CPBarButton(title: "End Trip") { [weak self] _ in self?.confirmEnd() },
+    ]
+    mapTemplate = template
     interfaceController?.pushTemplate(template, animated: animated, completion: nil)
   }
 
-  private func tripItems() -> [CPInformationItem] {
-    guard let trip = store.activeTrip else { return [] }
+  private func refreshMap() {
+    guard let mapTemplate else { return }
+    let points = carPoints()
+    // Selecting only highlights the car's row: CarPlay opens its card, and moves the map,
+    // only when the driver taps.
+    mapTemplate.setPointsOfInterest(points, selectedIndex: points.isEmpty ? NSNotFound : 0)
+  }
+
+  /// Just the car: every point also gets a row in the side panel, and one trip should read as one row.
+  private func carPoints() -> [CPPointOfInterest] {
+    guard let trip = store.activeTrip, let current = store.currentLocation else { return [] }
     // An emoji keeps its color where CarPlay text can't, standing in for a status light.
     let status = if store.isParked {
       "🟢 Parked · tap End Trip when you're done"
@@ -159,70 +163,23 @@ final class CarPlayTripsController: NSObject {
     } else {
       "🟢 Driving"
     }
-    // Values without labels, so the screen reads as one card like the mockup.
-    return [
-      CPInformationItem(title: nil, detail: status),
-      CPInformationItem(title: nil, detail: trip.milesText),
-      CPInformationItem(title: nil, detail: "\(trip.estimatedDeductionText) est."),
-      CPInformationItem(title: nil, detail: "Started \(trip.startTimeText) · \(trip.minutesText())"),
-      CPInformationItem(title: nil, detail: "From \(trip.startAddress ?? "your current location")"),
-    ]
-  }
-
-  private func refreshTrip() {
-    tripTemplate?.items = tripItems()
-  }
-
-  // MARK: - Map
-
-  private func showMap() {
-    if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
-    let points = carPoints()
-    let template = CPPointOfInterestTemplate(title: "Trip Map", pointsOfInterest: points, selectedIndex: points.isEmpty ? NSNotFound : 0)
-    template.pointOfInterestDelegate = self
-    // Always reachable, even before the first location fix puts a pin on the map.
-    template.trailingNavigationBarButtons = [
-      CPBarButton(title: "End Trip") { [weak self] _ in self?.confirmEnd() },
-    ]
-    mapTemplate = template
-    interfaceController?.pushTemplate(template, animated: true, completion: nil)
-  }
-
-  private func refreshMap() {
-    guard let mapTemplate else { return }
-    let points = carPoints()
-    // Selecting only highlights the car's row: CarPlay opens its card with End Trip, and moves
-    // the map, only when the driver taps. End Trip in the navigation bar needs no extra tap.
-    mapTemplate.setPointsOfInterest(points, selectedIndex: points.isEmpty ? NSNotFound : 0)
-  }
-
-  /// Just the car: every point also gets a row in the side panel, and one trip should read as one card.
-  private func carPoints() -> [CPPointOfInterest] {
-    guard let trip = store.activeTrip, let current = store.currentLocation else { return [] }
-    let progress = "\(trip.milesText) · \(trip.estimatedDeductionText) est."
-    let elapsed = "Started \(trip.startTimeText) · \(trip.minutesText())"
-    return [point(at: current, title: progress, subtitle: elapsed, summary: "From \(trip.startAddress ?? "your start")", systemImage: "car.fill")]
-  }
-
-  private func point(at location: CLLocation, title: String, subtitle: String, summary: String, systemImage: String) -> CPPointOfInterest {
     let point = CPPointOfInterest(
-      location: MKMapItem(location: location, address: nil),
-      title: title,
-      subtitle: subtitle,
-      summary: summary,
-      detailTitle: title,
-      detailSubtitle: subtitle,
-      detailSummary: summary,
-      pinImage: UIImage(systemName: systemImage)
+      location: MKMapItem(location: current, address: nil),
+      title: "\(trip.milesText) · \(trip.estimatedDeductionText) est.",
+      subtitle: "\(status) · \(trip.minutesText())",
+      summary: "From \(trip.startAddress ?? "your start")",
+      detailTitle: "\(trip.milesText) · \(trip.estimatedDeductionText) est.",
+      detailSubtitle: "Started \(trip.startTimeText) · \(trip.minutesText())",
+      detailSummary: "\(status)\nFrom \(trip.startAddress ?? "your start")",
+      pinImage: UIImage(systemName: "car.fill")
     )
     point.primaryButton = CPTextButton(title: "End Trip", textStyle: .confirm) { [weak self] _ in
       self?.confirmEnd()
     }
-    return point
+    return [point]
   }
 
-  private func leaveTrip() {
-    tripTemplate = nil
+  private func leaveMap() {
     mapTemplate = nil
     interfaceController?.popToRootTemplate(animated: true, completion: nil)
   }
@@ -268,14 +225,14 @@ final class CarPlayTripsController: NSObject {
     interfaceController?.dismissTemplate(animated: true, completion: nil)
     store.endTrip(as: purpose, miles: miles, endDate: endDate)
     isEnding = false
-    leaveTrip()
+    leaveMap()
     refreshList()
   }
 
   private func showLocationAlert() {
     store.isLocationDenied = false
-    if tripTemplate != nil || mapTemplate != nil {
-      leaveTrip()
+    if mapTemplate != nil {
+      leaveMap()
     }
     let ok = CPAlertAction(title: "OK", style: .cancel) { [weak self] _ in
       self?.interfaceController?.dismissTemplate(animated: true, completion: nil)
