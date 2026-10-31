@@ -177,33 +177,31 @@ final class CarPlayTripsController: NSObject {
 
   private func showMap() {
     if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
-    let template = CPPointOfInterestTemplate(title: "Trip Map", pointsOfInterest: [], selectedIndex: NSNotFound)
+    let points = carPoints()
+    let template = CPPointOfInterestTemplate(title: "Trip Map", pointsOfInterest: points, selectedIndex: points.isEmpty ? NSNotFound : 0)
     template.pointOfInterestDelegate = self
     // Always reachable, even before the first location fix puts a pin on the map.
     template.trailingNavigationBarButtons = [
       CPBarButton(title: "End Trip") { [weak self] _ in self?.confirmEnd() },
     ]
     mapTemplate = template
-    refreshMap()
     interfaceController?.pushTemplate(template, animated: true, completion: nil)
   }
 
   private func refreshMap() {
-    guard let mapTemplate, let trip = store.activeTrip else { return }
+    guard let mapTemplate else { return }
+    let points = carPoints()
+    // Selecting only highlights the car's row: CarPlay opens its card with End Trip, and moves
+    // the map, only when the driver taps. End Trip in the navigation bar needs no extra tap.
+    mapTemplate.setPointsOfInterest(points, selectedIndex: points.isEmpty ? NSNotFound : 0)
+  }
+
+  /// Just the car: every point also gets a row in the side panel, and one trip should read as one card.
+  private func carPoints() -> [CPPointOfInterest] {
+    guard let trip = store.activeTrip, let current = store.currentLocation else { return [] }
     let progress = "\(trip.milesText) · \(trip.estimatedDeductionText) est."
     let elapsed = "Started \(trip.startTimeText) · \(trip.minutesText())"
-
-    // Just the car: every point also gets a row in the side panel, and one trip should read as one card.
-    var points: [CPPointOfInterest] = []
-    if let current = store.currentLocation {
-      points.append(point(at: current, title: progress, subtitle: elapsed, summary: "From \(trip.startAddress ?? "your start")", systemImage: "car.fill"))
-    }
-    // Select the car, so its card with the running totals is showing. Clearing the selection
-    // first makes the map move to the car's new position instead of staying where it was.
-    mapTemplate.setPointsOfInterest(points, selectedIndex: NSNotFound)
-    if !points.isEmpty {
-      mapTemplate.selectedIndex = points.count - 1
-    }
+    return [point(at: current, title: progress, subtitle: elapsed, summary: "From \(trip.startAddress ?? "your start")", systemImage: "car.fill")]
   }
 
   private func point(at location: CLLocation, title: String, subtitle: String, summary: String, systemImage: String) -> CPPointOfInterest {
