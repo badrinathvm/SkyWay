@@ -15,5 +15,25 @@ struct SkywayShortcuts: AppShortcutsProvider {
       shortTitle: "Upcoming Trip",
       systemImageName: "airplane.departure"
     )
+    AppShortcut(
+      intent: StartDriveTripIntent(),
+      phrases: [
+        "Start a trip in \(.applicationName)",
+        "Start tracking miles in \(.applicationName)",
+        "Start a drive in \(.applicationName)",
+      ],
+      shortTitle: "Start a Trip",
+      systemImageName: "car.fill"
+    )
+    AppShortcut(
+      intent: EndDriveTripIntent(),
+      phrases: [
+        "End my trip in \(.applicationName)",
+        "End my \(\.$purpose) trip in \(.applicationName)",
+        "Stop tracking miles in \(.applicationName)",
+      ],
+      shortTitle: "End Trip",
+      systemImageName: "flag.checkered"
+    )
   }
 }
