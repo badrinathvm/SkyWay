@@ -1,12 +1,13 @@
 import CarPlay
 import MapKit
 
-/// Shows the next trip on the car's display: when to leave, where to go at the airport, and what's ready.
+/// Shows mileage trips first, then the next flight: when to leave, where to go at the airport, and what's ready.
 @MainActor
 final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegate {
   private var interfaceController: CPInterfaceController?
   private var scene: CPTemplateApplicationScene?
   private var tabBar: CPTabBarTemplate?
+  private var tripsController: CarPlayTripsController?
   private var tripTemplate: CPInformationTemplate?
   private var airportTemplate: CPPointOfInterestTemplate?
   private var refreshTimer: Timer?
@@ -22,11 +23,14 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     let tripTemplate = makeTripTemplate()
     let airportTemplate = makeAirportTemplate()
-    let tabBar = CPTabBarTemplate(templates: [tripTemplate, airportTemplate, makeChecklistTemplate()])
+    let tripsController = CarPlayTripsController(interfaceController: interfaceController)
+    let tabBar = CPTabBarTemplate(templates: [tripsController.rootTemplate, tripTemplate, airportTemplate, makeChecklistTemplate()])
     self.tripTemplate = tripTemplate
     self.airportTemplate = airportTemplate
     self.tabBar = tabBar
+    self.tripsController = tripsController
     interfaceController.setRootTemplate(tabBar, animated: true, completion: nil)
+    tripsController.didConnect()
 
     // Keep the leave-by countdown current while the car is connected.
     refreshTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
@@ -40,6 +44,8 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
   ) {
     refreshTimer?.invalidate()
     refreshTimer = nil
+    tripsController?.didDisconnect()
+    tripsController = nil
     self.interfaceController = nil
     scene = nil
     tabBar = nil
@@ -64,7 +70,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
       items: tripItems(),
       actions: [directions, parking]
     )
-    template.tabTitle = "Trip"
+    template.tabTitle = "Flight"
     template.tabImage = UIImage(systemName: "airplane")
     return template
   }
