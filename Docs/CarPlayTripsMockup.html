@@ -1,0 +1,535 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway CarPlay Trips</title>
+<style>
+  :root {
+    --page: #f5f5f7;
+    --page-text: #1d1d1f;
+    --page-secondary: #6e6e73;
+    --page-border: #d2d2d7;
+    /* The car screen itself stays dark, like CarPlay at night. */
+    --screen: #000000;
+    --bar: #1c1c1e;
+    --row: #1c1c1e;
+    --row-pressed: #2c2c2e;
+    --separator: #38383a;
+    --text: #ffffff;
+    --secondary: #98989d;
+    --blue: #0a84ff;
+    --green: #30d158;
+    --red: #ff453a;
+    --orange: #ff9f0a;
+    --map-land: #1f2a22;
+    --map-block: #26342a;
+    --map-road: #3d4a40;
+    --map-major: #55625a;
+    --map-water: #13324a;
+    --map-park: #1d3b24;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --page: #000000;
+      --page-text: #f5f5f7;
+      --page-secondary: #98989d;
+      --page-border: #3a3a3c;
+    }
+  }
+  :root[data-theme="dark"] {
+    --page: #000000;
+    --page-text: #f5f5f7;
+    --page-secondary: #98989d;
+    --page-border: #3a3a3c;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    background: var(--page);
+    color: var(--page-text);
+    font: 15px/1.45 -apple-system, BlinkMacSystemFont, "SF Pro Text", system-ui, sans-serif;
+  }
+  main { max-width: 920px; margin: 0 auto; padding: 32px 16px 48px; }
+  h1 { font-size: 28px; margin: 0 0 4px; letter-spacing: -0.02em; }
+  .lede { color: var(--page-secondary); margin: 0 0 24px; }
+
+  /* Car display */
+  .car {
+    background: #111;
+    border-radius: 28px;
+    padding: 14px;
+    box-shadow: 0 20px 50px rgba(0,0,0,.25);
+  }
+  .screen {
+    position: relative;
+    aspect-ratio: 800 / 480;
+    background: var(--screen);
+    border-radius: 16px;
+    overflow: hidden;
+    display: flex;
+    color: var(--text);
+    font-size: clamp(11px, 1.9vw, 16px);
+  }
+  /* CarPlay's own dashboard strip, which the app doesn't control. */
+  .dock {
+    width: 9%;
+    min-width: 44px;
+    background: #0d0d0d;
+    border-right: 1px solid #222;
+    display: flex; flex-direction: column; align-items: center;
+    padding: 4% 0; gap: 6%;
+  }
+  .dock .time { font-weight: 600; font-size: .9em; }
+  .dock .app {
+    width: 62%; aspect-ratio: 1; border-radius: 22%;
+    display: grid; place-items: center; font-size: 1.1em;
+  }
+  .app.skyway { background: linear-gradient(#3a8bff, #0a5cd8); outline: 2px solid #fff3; }
+  .app.maps { background: #2c2c2e; }
+  .app.music { background: #2c2c2e; }
+
+  .content { flex: 1; position: relative; display: flex; flex-direction: column; min-width: 0; }
+  .navbar {
+    height: 13%;
+    display: flex; align-items: center; justify-content: center;
+    position: relative;
+    background: var(--bar);
+    border-bottom: 1px solid var(--separator);
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .navbar .back {
+    position: absolute; left: 2%;
+    color: var(--blue); background: none; border: 0; font: inherit; font-weight: 500;
+    cursor: pointer; padding: 6px 8px;
+  }
+  .tabs { display: flex; height: 100%; width: 100%; }
+  .tabs button {
+    flex: 1; background: none; border: 0; color: var(--secondary);
+    font: inherit; font-size: .78em; font-weight: 600; cursor: pointer;
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  }
+  .tabs button .ico { font-size: 1.35em; line-height: 1; }
+  .tabs button[aria-selected="true"] { color: var(--blue); }
+
+  .body { flex: 1; overflow-y: auto; position: relative; }
+  .list { padding: 0 0 2%; }
+  .section-header {
+    color: var(--secondary); font-size: .72em; font-weight: 600; letter-spacing: .04em;
+    text-transform: uppercase; padding: 3% 4% 1.2%;
+  }
+  .row {
+    display: flex; align-items: center; gap: 3%;
+    width: 100%;
+    background: var(--row); color: var(--text);
+    border: 0; border-bottom: 1px solid var(--separator);
+    padding: 2.4% 4%;
+    font: inherit; text-align: left; cursor: pointer;
+  }
+  .row:active { background: var(--row-pressed); }
+  .row .ico { width: 1.6em; text-align: center; font-size: 1.15em; flex-shrink: 0; }
+  .row .txt { flex: 1; min-width: 0; }
+  .row .title { font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .row .detail { color: var(--secondary); font-size: .82em; }
+  .row .chev { color: var(--secondary); font-size: 1.2em; }
+  .row.primary .title { color: var(--blue); font-weight: 600; }
+  .row.live .title { color: var(--green); }
+  .placeholder {
+    height: 100%; display: grid; place-items: center; text-align: center;
+    color: var(--secondary); padding: 6%;
+  }
+
+  /* Information template */
+  .info { display: grid; grid-template-columns: 1fr 1fr; gap: 0 6%; padding: 3% 5%; }
+  .info div { padding: 2.2% 0; border-bottom: 1px solid var(--separator); }
+  .info dt { color: var(--secondary); font-size: .78em; }
+  .info dd { margin: 0; font-weight: 500; }
+
+  /* Point of interest template: full-bleed map with a floating card */
+  .poi { position: absolute; inset: 0; }
+  .poi svg { width: 100%; height: 100%; display: block; }
+  .card {
+    position: absolute; left: 2.5%; top: 4%; bottom: 4%;
+    width: 38%;
+    background: rgba(28,28,30,.92);
+    backdrop-filter: blur(12px);
+    border-radius: 14px;
+    padding: 4% 3.5%;
+    display: flex; flex-direction: column; gap: 3%;
+    box-shadow: 0 6px 20px rgba(0,0,0,.4);
+  }
+  .card .big { font-size: 1.55em; font-weight: 700; line-height: 1.1; font-variant-numeric: tabular-nums; }
+  .card .money { color: var(--green); }
+  .card .sub { color: var(--secondary); font-size: .82em; font-variant-numeric: tabular-nums; }
+  .card .spacer { flex: 1; }
+  .btn {
+    border: 0; border-radius: 10px; padding: 4.5% 0; width: 100%;
+    font: inherit; font-weight: 600; cursor: pointer;
+  }
+  .btn.confirm { background: var(--blue); color: #fff; }
+  .btn.normal { background: #3a3a3c; color: var(--text); }
+  .btn.cancel { background: #3a3a3c; color: var(--blue); }
+  .refresh-dot {
+    display: inline-block; width: .5em; height: .5em; border-radius: 50%;
+    background: var(--green); margin-right: .4em; vertical-align: middle;
+    transition: opacity .4s;
+  }
+
+  /* Action sheet */
+  .scrim {
+    position: absolute; inset: 0; background: rgba(0,0,0,.6);
+    display: grid; place-items: center; z-index: 5;
+  }
+  .sheet {
+    width: 56%; background: #2c2c2e; border-radius: 16px; padding: 4%;
+    display: flex; flex-direction: column; gap: 4%; text-align: center;
+  }
+  .sheet h2 { margin: 0; font-size: 1.05em; }
+  .sheet p { margin: 0 0 2%; color: var(--secondary); font-size: .85em; }
+
+  /* Controls and notes under the car display */
+  .controls {
+    display: flex; flex-wrap: wrap; gap: 8px 16px; align-items: center;
+    margin: 16px 2px 0; color: var(--page-secondary); font-size: 14px;
+  }
+  .controls select, .controls button {
+    font: inherit; padding: 4px 10px; border-radius: 8px;
+    border: 1px solid var(--page-border); background: transparent; color: var(--page-text);
+  }
+  .notes {
+    margin-top: 28px; border-top: 1px solid var(--page-border); padding-top: 16px;
+    color: var(--page-secondary); font-size: 14px;
+  }
+  .notes h2 { color: var(--page-text); font-size: 17px; margin: 0 0 8px; }
+  .notes li { margin-bottom: 6px; }
+  code { font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+  @media (max-width: 560px) {
+    .car { padding: 6px; border-radius: 16px; }
+    .dock { display: none; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>CarPlay Trips</h1>
+  <p class="lede">An interactive mockup of the proposed Skyway mileage trips on the CarPlay screen. Tap <strong>Start a Trip</strong>, pick a destination, and watch the car move while the miles and the $0.16/mile deduction count up.</p>
+
+  <div class="car">
+    <div class="screen" id="screen">
+      <aside class="dock" aria-hidden="true">
+        <div class="time" id="clock">9:41</div>
+        <div class="app maps">🗺</div>
+        <div class="app music">♫</div>
+        <div class="app skyway">✈︎</div>
+      </aside>
+      <section class="content" id="content"></section>
+    </div>
+  </div>
+
+  <div class="controls">
+    <label>Simulation speed
+      <select id="speed">
+        <option value="1">1× real time</option>
+        <option value="10">10×</option>
+        <option value="30" selected>30×</option>
+        <option value="90">90×</option>
+      </select>
+    </label>
+    <label><input type="checkbox" id="realRefresh"> Update only every 5 s, like real CarPlay</label>
+    <button id="reset" type="button">Reset mockup</button>
+  </div>
+
+  <section class="notes">
+    <h2>What the real app can and can't do</h2>
+    <ul>
+      <li>Every screen is a built-in CarPlay template: <code>CPTabBarTemplate</code>, <code>CPListTemplate</code>, <code>CPPointOfInterestTemplate</code>, <code>CPActionSheetTemplate</code>, <code>CPInformationTemplate</code>. CarPlay draws them in the system style, so the final look comes from Apple, not this page.</li>
+      <li>On the trip map, the app updates the pins and the card text about every 5 seconds. The faint trail and smooth motion here are only for the mockup. A Driving task app can't draw a route line or a map that follows the car; that needs the Navigation entitlement.</li>
+      <li>The destination comes from this list or from Siri ("Start a trip to Office in Skyway"). Driving task apps can't show a keyboard or take dictation.</li>
+      <li>The deduction is shown as an estimate while driving. It counts only if you save the trip as Business; Personal trips keep the miles with $0.</li>
+      <li>The other tabs (Flight, Airport, Checklist) are the existing Skyway CarPlay screens and stay unchanged.</li>
+    </ul>
+  </section>
+</main>
+
+<script>
+(() => {
+  const RATE = 0.16;            // dollars per mile
+  const MPH = 32;               // simulated average speed
+  const content = document.getElementById('content');
+  const speedSelect = document.getElementById('speed');
+  const realRefresh = document.getElementById('realRefresh');
+
+  const places = {
+    office: { name: 'Office', address: '1 Infinite Loop', ico: '🏢', miles: 14.2 },
+    client: { name: 'Client site', address: '500 Market St', ico: '📍', miles: 9.6 },
+    home:   { name: 'Home', address: '120 Main St', ico: '🏠', miles: 13.8 },
+  };
+
+  const seedTrips = () => [
+    { dest: 'Office', ico: '🏢', when: 'Today 8:12 AM', range: '8:12 – 8:36 AM', from: '120 Main St', miles: 14.2, purpose: 'Business', minutes: 24 },
+    { dest: 'Home', ico: '🏠', when: 'Yesterday 6:05 PM', range: '6:05 – 6:31 PM', from: '1 Infinite Loop', miles: 13.8, purpose: 'Personal', minutes: 26 },
+    { dest: 'Client site', ico: '📍', when: 'Oct 29', range: '1:10 – 1:52 PM', from: '1 Infinite Loop', miles: 32.5, purpose: 'Business', minutes: 42 },
+  ];
+
+  let state;
+  const reset = () => {
+    stopDrive();
+    state = { tab: 'trips', stack: [], trips: seedTrips(), drive: null, sheet: false };
+    render();
+  };
+
+  const money = n => '$' + n.toFixed(2);
+  const miles = n => n.toFixed(1) + ' mi';
+  const clockText = (d = new Date()) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/, '');
+
+  // Map geometry, in the SVG's 600×360 coordinate space.
+  const route = [[150,300],[150,250],[260,250],[260,170],[360,170],[360,110],[470,110],[470,60],[540,60]];
+  const segLens = route.slice(1).map((p, i) => Math.hypot(p[0] - route[i][0], p[1] - route[i][1]));
+  const routeLen = segLens.reduce((a, b) => a + b, 0);
+  const pointAt = t => {
+    let d = Math.min(t, 1) * routeLen;
+    for (let i = 0; i < segLens.length; i++) {
+      if (d <= segLens[i]) {
+        const [x1, y1] = route[i], [x2, y2] = route[i + 1], f = d / segLens[i];
+        return [x1 + (x2 - x1) * f, y1 + (y2 - y1) * f];
+      }
+      d -= segLens[i];
+    }
+    return route[route.length - 1];
+  };
+  const trailTo = t => {
+    const pts = [];
+    let d = Math.min(t, 1) * routeLen;
+    pts.push(route[0]);
+    for (let i = 0; i < segLens.length && d > 0; i++) {
+      if (d >= segLens[i]) { pts.push(route[i + 1]); d -= segLens[i]; }
+      else { pts.push(pointAt(t)); d = 0; }
+    }
+    return pts.map(p => p.join(',')).join(' ');
+  };
+
+  // MARK: Drive simulation
+
+  let timer = null, lastTick = 0, lastPaint = 0, lastRootPaint = 0;
+  function startDrive(place) {
+    const total = place ? place.miles : 18;
+    state.drive = {
+      place, totalMiles: total, miles: 0, seconds: 0,
+      startedAt: new Date(), shownMiles: 0, shownSeconds: 0, shownPos: route[0],
+    };
+    lastTick = performance.now();
+    lastPaint = 0;
+    timer = requestAnimationFrame(tick);
+  }
+  function stopDrive() { if (timer) cancelAnimationFrame(timer); timer = null; }
+
+  function tick(now) {
+    const d = state.drive;
+    if (!d) return;
+    const dt = (now - lastTick) / 1000 * Number(speedSelect.value);
+    lastTick = now;
+    if (!state.sheet && d.miles < d.totalMiles) {
+      d.seconds += dt;
+      d.miles = Math.min(d.totalMiles, d.seconds / 3600 * MPH);
+    }
+    // Real CarPlay refreshes the template on a timer; otherwise paint every frame.
+    const interval = realRefresh.checked ? 5000 : 0;
+    if (now - lastPaint >= interval) {
+      lastPaint = now;
+      d.shownMiles = d.miles;
+      d.shownSeconds = d.seconds;
+      d.shownPos = pointAt(d.miles / d.totalMiles);
+      paintDrive(interval > 0);
+    }
+    timer = requestAnimationFrame(tick);
+  }
+
+  // MARK: Navigation
+
+  const push = screen => { state.stack.push(screen); render(); };
+  const pop = () => { state.stack.pop(); render(); };
+  const top = () => state.stack[state.stack.length - 1];
+
+  function render() {
+    document.getElementById('clock').textContent = clockText();
+    const screen = top();
+    if (!screen) return renderRoot();
+    if (screen.type === 'where') return renderWhere();
+    if (screen.type === 'active') return renderActive();
+    if (screen.type === 'details') return renderDetails(screen.trip);
+  }
+
+  const navbar = (title, back = true) => `
+    <header class="navbar">
+      ${back ? '<button class="back" data-action="back">‹ Back</button>' : ''}
+      <span>${title}</span>
+    </header>`;
+
+  function renderRoot() {
+    const tabs = [
+      ['trips', '🚗', 'Trips'], ['flight', '✈︎', 'Flight'], ['airport', '🗺', 'Airport'], ['checklist', '☑︎', 'Checklist'],
+    ];
+    const bar = `<header class="navbar"><nav class="tabs" role="tablist">${tabs.map(([id, ico, label]) =>
+      `<button role="tab" aria-selected="${state.tab === id}" data-tab="${id}"><span class="ico">${ico}</span>${label}</button>`).join('')}</nav></header>`;
+
+    let body;
+    if (state.tab === 'trips') {
+      const d = state.drive;
+      const startRow = d
+        ? `<button class="row live" data-action="resume"><span class="ico">●</span><span class="txt"><div class="title">Trip in progress · ${miles(d.miles)}</div><div class="detail">${d.place ? 'To ' + d.place.name : 'No destination'} · ${money(d.miles * RATE)} est.</div></span><span class="chev">›</span></button>`
+        : `<button class="row primary" data-action="start"><span class="ico">▶</span><span class="txt"><div class="title">Start a Trip</div><div class="detail">Starts from your current location</div></span><span class="chev">›</span></button>`;
+      const recent = state.trips.slice(0, 5).map((t, i) => `
+        <button class="row" data-trip="${i}"><span class="ico">${t.ico}</span><span class="txt">
+          <div class="title">${t.dest} · ${t.when}</div>
+          <div class="detail">${miles(t.miles)} · ${t.purpose}${t.purpose === 'Business' ? ' · ' + money(t.miles * RATE) : ''}</div>
+        </span><span class="chev">›</span></button>`).join('');
+      body = `<div class="list">${startRow}<div class="section-header">Recent Trips</div>${recent}</div>`;
+    } else {
+      const names = { flight: 'Flight', airport: 'Airport', checklist: 'Checklist' };
+      body = `<div class="placeholder">The existing ${names[state.tab]} screen<br>(unchanged)</div>`;
+    }
+    content.innerHTML = bar + `<div class="body">${body}</div>`;
+  }
+
+  function renderWhere() {
+    const row = (key, p, detail) => `<button class="row" data-place="${key}"><span class="ico">${p.ico}</span><span class="txt"><div class="title">${p.name}</div><div class="detail">${detail}</div></span></button>`;
+    content.innerHTML = navbar('Where to?') + `<div class="body"><div class="list">
+      <button class="row" data-place=""><span class="ico">⊘</span><span class="txt"><div class="title">No destination</div><div class="detail">Just track the miles</div></span></button>
+      <div class="section-header">Recent</div>
+      ${row('office', places.office, places.office.address)}
+      ${row('client', places.client, places.client.address)}
+      <div class="section-header">Saved</div>
+      ${row('home', places.home, places.home.address)}
+      <div class="section-header">Or say “Start a trip to Office in Skyway”</div>
+    </div></div>`;
+  }
+
+  function renderActive() {
+    const d = state.drive;
+    const dest = route[route.length - 1];
+    content.innerHTML = navbar(d.place ? 'Trip to ' + d.place.name : 'Trip') + `
+      <div class="body"><div class="poi">
+        <svg viewBox="0 0 600 360" preserveAspectRatio="xMidYMid slice" aria-label="Map of the trip">
+          <rect width="600" height="360" fill="var(--map-land)"/>
+          <path d="M0 330 C120 300 220 345 320 320 S520 290 600 310 L600 360 L0 360Z" fill="var(--map-water)"/>
+          <rect x="390" y="190" width="120" height="80" rx="10" fill="var(--map-park)"/>
+          ${[...Array(12)].map((_, i) => `<line x1="${i*55+20}" y1="0" x2="${i*55+20}" y2="360" stroke="var(--map-road)" stroke-width="3"/>`).join('')}
+          ${[...Array(7)].map((_, i) => `<line x1="0" y1="${i*55+5}" x2="600" y2="${i*55+5}" stroke="var(--map-road)" stroke-width="3"/>`).join('')}
+          <polyline points="${route.map(p => p.join(',')).join(' ')}" fill="none" stroke="var(--map-major)" stroke-width="9" stroke-linejoin="round" stroke-linecap="round"/>
+          <polyline id="trail" points="" fill="none" stroke="var(--blue)" stroke-opacity=".45" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="2 9"/>
+          <g transform="translate(${route[0][0]},${route[0][1]})"><circle r="11" fill="var(--green)" stroke="#fff" stroke-width="3"/></g>
+          <text x="${route[0][0] + 16}" y="${route[0][1] + 5}" fill="#fff" font-size="13" font-weight="600">Start</text>
+          ${d.place ? `<g transform="translate(${dest[0]},${dest[1]})"><circle r="13" fill="var(--red)" stroke="#fff" stroke-width="3"/><text y="5" text-anchor="middle" font-size="13">🏁</text></g>
+          <text x="${dest[0]}" y="${dest[1] - 20}" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">${d.place.name}</text>` : ''}
+          <g id="car"><circle r="18" fill="var(--blue)" fill-opacity=".25"/><circle r="10" fill="var(--blue)" stroke="#fff" stroke-width="3"/></g>
+        </svg>
+        <div class="card">
+          <div class="sub"><span class="refresh-dot" id="dot"></span>Trip in progress</div>
+          <div class="big" id="milesText">0.0 mi</div>
+          <div class="big money" id="moneyText">$0.00 <span style="font-size:.55em;font-weight:600">est.</span></div>
+          <div class="sub" id="timeText"></div>
+          <div class="sub">From 120 Main St${d.place ? ' · To ' + d.place.name : ''}</div>
+          <div class="spacer"></div>
+          <button class="btn confirm" data-action="end">End Trip</button>
+          ${d.place ? '<button class="btn normal" data-action="noop">Directions</button>' : ''}
+        </div>
+      </div></div>` + (state.sheet ? sheetHTML() : '');
+    paintDrive(false);
+  }
+
+  function paintDrive(pulse) {
+    const d = state.drive;
+    if (!d || top()?.type !== 'active') {
+      // Keep the in-progress row current, but not every frame, so taps on the list still land.
+      if (!top() && state.tab === 'trips' && d && performance.now() - lastRootPaint > 1000) {
+        lastRootPaint = performance.now();
+        renderRoot();
+      }
+      return;
+    }
+    const car = document.getElementById('car');
+    if (!car) return;
+    const [x, y] = d.shownPos;
+    car.setAttribute('transform', `translate(${x},${y})`);
+    document.getElementById('trail').setAttribute('points', trailTo(d.shownMiles / d.totalMiles));
+    document.getElementById('milesText').textContent = miles(d.shownMiles);
+    document.getElementById('moneyText').firstChild.textContent = money(d.shownMiles * RATE) + ' ';
+    const mins = Math.floor(d.shownSeconds / 60);
+    const started = d.startedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    const arrived = d.place && d.miles >= d.totalMiles;
+    document.getElementById('timeText').textContent = `Started ${started} · ${mins} min${arrived ? ' · Arrived' : ''}`;
+    if (pulse) {
+      const dot = document.getElementById('dot');
+      dot.style.opacity = .2; setTimeout(() => dot.style.opacity = 1, 300);
+    }
+  }
+
+  function sheetHTML() {
+    const d = state.drive;
+    const mins = Math.max(1, Math.round(d.seconds / 60));
+    return `<div class="scrim"><div class="sheet" role="dialog" aria-label="End trip">
+      <h2>Trip ended · ${miles(d.miles)} · ${mins} min</h2>
+      <p>Was this trip for business?</p>
+      <button class="btn confirm" data-purpose="Business">Business (${money(d.miles * RATE)})</button>
+      <button class="btn normal" data-purpose="Personal">Personal</button>
+      <button class="btn cancel" data-action="keep">Keep Driving</button>
+    </div></div>`;
+  }
+
+  function renderDetails(t) {
+    content.innerHTML = navbar(t.dest === 'Drive' ? 'Drive' : 'Trip to ' + t.dest) + `<div class="body"><dl class="info">
+      <div><dt>Date</dt><dd>${t.when.split(' ')[0]}, ${t.range}</dd></div>
+      <div><dt>Distance</dt><dd>${miles(t.miles)}</dd></div>
+      <div><dt>From</dt><dd>${t.from}</dd></div>
+      <div><dt>Purpose</dt><dd>${t.purpose}</dd></div>
+      <div><dt>To</dt><dd>${t.dest}</dd></div>
+      <div><dt>Deduction</dt><dd>${t.purpose === 'Business' ? money(t.miles * RATE) + ' at $0.16/mi' : '$0.00'}</dd></div>
+    </dl></div>`;
+  }
+
+  function finish(purpose) {
+    const d = state.drive;
+    const end = new Date(d.startedAt.getTime() + d.seconds * 1000);
+    const fmt = t => t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    state.trips.unshift({
+      dest: d.place ? d.place.name : 'Drive', ico: d.place ? d.place.ico : '🚗',
+      when: 'Today ' + fmt(d.startedAt), range: `${fmt(d.startedAt)} – ${fmt(end)}`,
+      from: '120 Main St', miles: Math.round(d.miles * 10) / 10, purpose, minutes: Math.round(d.seconds / 60),
+    });
+    stopDrive();
+    state.drive = null;
+    state.sheet = false;
+    state.stack = [];
+    state.tab = 'trips';
+    render();
+  }
+
+  // MARK: Input
+
+  content.addEventListener('click', e => {
+    const el = e.target.closest('button');
+    if (!el) return;
+    const { action, tab, place, trip, purpose } = el.dataset;
+    if (tab) { state.tab = tab; render(); }
+    else if (action === 'back') pop();
+    else if (action === 'start') push({ type: 'where' });
+    else if (action === 'resume') push({ type: 'active' });
+    else if (place !== undefined) {
+      startDrive(place ? places[place] : null);
+      state.stack = [{ type: 'active' }];
+      render();
+    }
+    else if (trip !== undefined) push({ type: 'details', trip: state.trips[Number(trip)] });
+    else if (action === 'end') { state.sheet = true; render(); }
+    else if (action === 'keep') { state.sheet = false; render(); }
+    else if (purpose) finish(purpose);
+  });
+  document.getElementById('reset').addEventListener('click', reset);
+  setInterval(() => document.getElementById('clock').textContent = clockText(), 30000);
+
+  reset();
+})();
+</script>
+</body>
+</html>
