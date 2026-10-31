@@ -213,7 +213,7 @@
 <body>
 <main>
   <h1>CarPlay Trips</h1>
-  <p class="lede">An interactive mockup of the proposed Skyway mileage trips on the CarPlay screen. Tap <strong>Start a Trip</strong>, pick a destination, and watch the car move while the miles and the $0.16/mile deduction count up.</p>
+  <p class="lede">An interactive mockup of the proposed Skyway mileage trips on the CarPlay screen. Tap <strong>Start a Trip</strong> and the map opens right away. Watch the car move while the miles and the $0.16/mile deduction count up, then end the trip and choose Business or Personal.</p>
 
   <div class="car">
     <div class="screen" id="screen">
@@ -244,9 +244,11 @@
     <h2>What the real app can and can't do</h2>
     <ul>
       <li>Every screen is a built-in CarPlay template: <code>CPTabBarTemplate</code>, <code>CPListTemplate</code>, <code>CPPointOfInterestTemplate</code>, <code>CPActionSheetTemplate</code>, <code>CPInformationTemplate</code>. CarPlay draws them in the system style, so the final look comes from Apple, not this page.</li>
-      <li>On the trip map, the app updates the pins and the card text about every 5 seconds. The faint trail and smooth motion here are only for the mockup. A Driving task app can't draw a route line or a map that follows the car; that needs the Navigation entitlement.</li>
-      <li>The destination comes from this list or from Siri ("Start a trip to Office in Skyway"). Driving task apps can't show a keyboard or take dictation.</li>
+      <li>There's no destination to enter. GPS measures the miles, and the start and end addresses come from where the trip starts and ends. The end address is the destination in the mileage log.</li>
+      <li>On the trip map, the app updates the pins and the card text about every 5 seconds. The faint trail and smooth motion here are only for the mockup. A Driving task app can't draw a route line or a map that follows the car.</li>
+      <li>Siri can start and end a trip hands-free: “Start a trip in Skyway” and “End my trip in Skyway”. Siri then asks Business or Personal.</li>
       <li>The deduction is shown as an estimate while driving. It counts only if you save the trip as Business; Personal trips keep the miles with $0.</li>
+      <li>Renaming the destination, changing Business or Personal, or adding a note happens later on the iPhone.</li>
       <li>The other tabs (Flight, Airport, Checklist) are the existing Skyway CarPlay screens and stay unchanged.</li>
     </ul>
   </section>
@@ -256,20 +258,20 @@
 (() => {
   const RATE = 0.16;            // dollars per mile
   const MPH = 32;               // simulated average speed
+  const ROUTE_MILES = 16;       // the simulated drive parks at the end of the route
+  const HOME = '120 Main St';
   const content = document.getElementById('content');
   const speedSelect = document.getElementById('speed');
   const realRefresh = document.getElementById('realRefresh');
 
-  const places = {
-    office: { name: 'Office', address: '1 Infinite Loop', ico: '🏢', miles: 14.2 },
-    client: { name: 'Client site', address: '500 Market St', ico: '📍', miles: 9.6 },
-    home:   { name: 'Home', address: '120 Main St', ico: '🏠', miles: 13.8 },
-  };
+  // Addresses along the route, standing in for reverse-geocoding the last GPS fix.
+  const addressesAlongRoute = ['140 Main St', '22 Oak Ave', '310 Elm St', '75 Harbor Blvd', '500 Market St'];
+  const addressAt = fraction => addressesAlongRoute[Math.min(addressesAlongRoute.length - 1, Math.floor(fraction * addressesAlongRoute.length))];
 
   const seedTrips = () => [
-    { dest: 'Office', ico: '🏢', when: 'Today 8:12 AM', range: '8:12 – 8:36 AM', from: '120 Main St', miles: 14.2, purpose: 'Business', minutes: 24 },
-    { dest: 'Home', ico: '🏠', when: 'Yesterday 6:05 PM', range: '6:05 – 6:31 PM', from: '1 Infinite Loop', miles: 13.8, purpose: 'Personal', minutes: 26 },
-    { dest: 'Client site', ico: '📍', when: 'Oct 29', range: '1:10 – 1:52 PM', from: '1 Infinite Loop', miles: 32.5, purpose: 'Business', minutes: 42 },
+    { from: HOME, to: '1 Infinite Loop', when: 'Today 8:12 AM', range: '8:12 – 8:36 AM', miles: 14.2, purpose: 'Business', minutes: 24 },
+    { from: '1 Infinite Loop', to: HOME, when: 'Yesterday 6:05 PM', range: '6:05 – 6:31 PM', miles: 13.8, purpose: 'Personal', minutes: 26 },
+    { from: '1 Infinite Loop', to: '500 Market St', when: 'Oct 29', range: '1:10 – 1:52 PM', miles: 32.5, purpose: 'Business', minutes: 42 },
   ];
 
   let state;
@@ -281,7 +283,8 @@
 
   const money = n => '$' + n.toFixed(2);
   const miles = n => n.toFixed(1) + ' mi';
-  const clockText = (d = new Date()) => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' }).replace(/\s?[AP]M/, '');
+  const timeText = d => d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+  const clockText = (d = new Date()) => timeText(d).replace(/\s?[AP]M/, '');
 
   // Map geometry, in the SVG's 600×360 coordinate space.
   const route = [[150,300],[150,250],[260,250],[260,170],[360,170],[360,110],[470,110],[470,60],[540,60]];
@@ -299,9 +302,8 @@
     return route[route.length - 1];
   };
   const trailTo = t => {
-    const pts = [];
+    const pts = [route[0]];
     let d = Math.min(t, 1) * routeLen;
-    pts.push(route[0]);
     for (let i = 0; i < segLens.length && d > 0; i++) {
       if (d >= segLens[i]) { pts.push(route[i + 1]); d -= segLens[i]; }
       else { pts.push(pointAt(t)); d = 0; }
@@ -312,26 +314,23 @@
   // MARK: Drive simulation
 
   let timer = null, lastTick = 0, lastPaint = 0, lastRootPaint = 0;
-  function startDrive(place) {
-    const total = place ? place.miles : 18;
-    state.drive = {
-      place, totalMiles: total, miles: 0, seconds: 0,
-      startedAt: new Date(), shownMiles: 0, shownSeconds: 0, shownPos: route[0],
-    };
+  function startDrive() {
+    state.drive = { miles: 0, seconds: 0, startedAt: new Date(), shownMiles: 0, shownSeconds: 0, shownPos: route[0] };
     lastTick = performance.now();
     lastPaint = 0;
     timer = requestAnimationFrame(tick);
   }
   function stopDrive() { if (timer) cancelAnimationFrame(timer); timer = null; }
+  const isParked = d => d.miles >= ROUTE_MILES;
 
   function tick(now) {
     const d = state.drive;
     if (!d) return;
     const dt = (now - lastTick) / 1000 * Number(speedSelect.value);
     lastTick = now;
-    if (!state.sheet && d.miles < d.totalMiles) {
+    if (!state.sheet) {
       d.seconds += dt;
-      d.miles = Math.min(d.totalMiles, d.seconds / 3600 * MPH);
+      if (!isParked(d)) d.miles = Math.min(ROUTE_MILES, d.miles + dt / 3600 * MPH);
     }
     // Real CarPlay refreshes the template on a timer; otherwise paint every frame.
     const interval = realRefresh.checked ? 5000 : 0;
@@ -339,7 +338,7 @@
       lastPaint = now;
       d.shownMiles = d.miles;
       d.shownSeconds = d.seconds;
-      d.shownPos = pointAt(d.miles / d.totalMiles);
+      d.shownPos = pointAt(d.miles / ROUTE_MILES);
       paintDrive(interval > 0);
     }
     timer = requestAnimationFrame(tick);
@@ -355,7 +354,6 @@
     document.getElementById('clock').textContent = clockText();
     const screen = top();
     if (!screen) return renderRoot();
-    if (screen.type === 'where') return renderWhere();
     if (screen.type === 'active') return renderActive();
     if (screen.type === 'details') return renderDetails(screen.trip);
   }
@@ -377,12 +375,12 @@
     if (state.tab === 'trips') {
       const d = state.drive;
       const startRow = d
-        ? `<button class="row live" data-action="resume"><span class="ico">●</span><span class="txt"><div class="title">Trip in progress · ${miles(d.miles)}</div><div class="detail">${d.place ? 'To ' + d.place.name : 'No destination'} · ${money(d.miles * RATE)} est.</div></span><span class="chev">›</span></button>`
-        : `<button class="row primary" data-action="start"><span class="ico">▶</span><span class="txt"><div class="title">Start a Trip</div><div class="detail">Starts from your current location</div></span><span class="chev">›</span></button>`;
+        ? `<button class="row live" data-action="resume"><span class="ico">●</span><span class="txt"><div class="title">Trip in progress · ${miles(d.miles)}</div><div class="detail">Started ${timeText(d.startedAt)} · ${money(d.miles * RATE)} est.</div></span><span class="chev">›</span></button>`
+        : `<button class="row primary" data-action="start"><span class="ico">▶</span><span class="txt"><div class="title">Start a Trip</div><div class="detail">Tracks miles from where you are now</div></span><span class="chev">›</span></button>`;
       const recent = state.trips.slice(0, 5).map((t, i) => `
-        <button class="row" data-trip="${i}"><span class="ico">${t.ico}</span><span class="txt">
-          <div class="title">${t.dest} · ${t.when}</div>
-          <div class="detail">${miles(t.miles)} · ${t.purpose}${t.purpose === 'Business' ? ' · ' + money(t.miles * RATE) : ''}</div>
+        <button class="row" data-trip="${i}"><span class="ico">${t.purpose === 'Business' ? '💼' : '🚗'}</span><span class="txt">
+          <div class="title">${t.from} → ${t.to}</div>
+          <div class="detail">${t.when} · ${miles(t.miles)} · ${t.purpose}${t.purpose === 'Business' ? ' · ' + money(t.miles * RATE) : ''}</div>
         </span><span class="chev">›</span></button>`).join('');
       body = `<div class="list">${startRow}<div class="section-header">Recent Trips</div>${recent}</div>`;
     } else {
@@ -392,23 +390,8 @@
     content.innerHTML = bar + `<div class="body">${body}</div>`;
   }
 
-  function renderWhere() {
-    const row = (key, p, detail) => `<button class="row" data-place="${key}"><span class="ico">${p.ico}</span><span class="txt"><div class="title">${p.name}</div><div class="detail">${detail}</div></span></button>`;
-    content.innerHTML = navbar('Where to?') + `<div class="body"><div class="list">
-      <button class="row" data-place=""><span class="ico">⊘</span><span class="txt"><div class="title">No destination</div><div class="detail">Just track the miles</div></span></button>
-      <div class="section-header">Recent</div>
-      ${row('office', places.office, places.office.address)}
-      ${row('client', places.client, places.client.address)}
-      <div class="section-header">Saved</div>
-      ${row('home', places.home, places.home.address)}
-      <div class="section-header">Or say “Start a trip to Office in Skyway”</div>
-    </div></div>`;
-  }
-
   function renderActive() {
-    const d = state.drive;
-    const dest = route[route.length - 1];
-    content.innerHTML = navbar(d.place ? 'Trip to ' + d.place.name : 'Trip') + `
+    content.innerHTML = navbar('Trip in Progress') + `
       <div class="body"><div class="poi">
         <svg viewBox="0 0 600 360" preserveAspectRatio="xMidYMid slice" aria-label="Map of the trip">
           <rect width="600" height="360" fill="var(--map-land)"/>
@@ -420,19 +403,16 @@
           <polyline id="trail" points="" fill="none" stroke="var(--blue)" stroke-opacity=".45" stroke-width="5" stroke-linejoin="round" stroke-linecap="round" stroke-dasharray="2 9"/>
           <g transform="translate(${route[0][0]},${route[0][1]})"><circle r="11" fill="var(--green)" stroke="#fff" stroke-width="3"/></g>
           <text x="${route[0][0] + 16}" y="${route[0][1] + 5}" fill="#fff" font-size="13" font-weight="600">Start</text>
-          ${d.place ? `<g transform="translate(${dest[0]},${dest[1]})"><circle r="13" fill="var(--red)" stroke="#fff" stroke-width="3"/><text y="5" text-anchor="middle" font-size="13">🏁</text></g>
-          <text x="${dest[0]}" y="${dest[1] - 20}" text-anchor="middle" fill="#fff" font-size="13" font-weight="600">${d.place.name}</text>` : ''}
           <g id="car"><circle r="18" fill="var(--blue)" fill-opacity=".25"/><circle r="10" fill="var(--blue)" stroke="#fff" stroke-width="3"/></g>
         </svg>
         <div class="card">
-          <div class="sub"><span class="refresh-dot" id="dot"></span>Trip in progress</div>
+          <div class="sub"><span class="refresh-dot" id="dot"></span><span id="statusText">Trip in progress</span></div>
           <div class="big" id="milesText">0.0 mi</div>
           <div class="big money" id="moneyText">$0.00 <span style="font-size:.55em;font-weight:600">est.</span></div>
           <div class="sub" id="timeText"></div>
-          <div class="sub">From 120 Main St${d.place ? ' · To ' + d.place.name : ''}</div>
+          <div class="sub">From ${HOME}</div>
           <div class="spacer"></div>
           <button class="btn confirm" data-action="end">End Trip</button>
-          ${d.place ? '<button class="btn normal" data-action="noop">Directions</button>' : ''}
         </div>
       </div></div>` + (state.sheet ? sheetHTML() : '');
     paintDrive(false);
@@ -452,13 +432,11 @@
     if (!car) return;
     const [x, y] = d.shownPos;
     car.setAttribute('transform', `translate(${x},${y})`);
-    document.getElementById('trail').setAttribute('points', trailTo(d.shownMiles / d.totalMiles));
+    document.getElementById('trail').setAttribute('points', trailTo(d.shownMiles / ROUTE_MILES));
     document.getElementById('milesText').textContent = miles(d.shownMiles);
     document.getElementById('moneyText').firstChild.textContent = money(d.shownMiles * RATE) + ' ';
-    const mins = Math.floor(d.shownSeconds / 60);
-    const started = d.startedAt.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
-    const arrived = d.place && d.miles >= d.totalMiles;
-    document.getElementById('timeText').textContent = `Started ${started} · ${mins} min${arrived ? ' · Arrived' : ''}`;
+    document.getElementById('timeText').textContent = `Started ${timeText(d.startedAt)} · ${Math.floor(d.shownSeconds / 60)} min`;
+    document.getElementById('statusText').textContent = isParked(d) ? 'Parked · tap End Trip when you’re done' : 'Trip in progress';
     if (pulse) {
       const dot = document.getElementById('dot');
       dot.style.opacity = .2; setTimeout(() => dot.style.opacity = 1, 300);
@@ -470,7 +448,7 @@
     const mins = Math.max(1, Math.round(d.seconds / 60));
     return `<div class="scrim"><div class="sheet" role="dialog" aria-label="End trip">
       <h2>Trip ended · ${miles(d.miles)} · ${mins} min</h2>
-      <p>Was this trip for business?</p>
+      <p>Ended at ${addressAt(d.miles / ROUTE_MILES)}<br>Was this trip for business?</p>
       <button class="btn confirm" data-purpose="Business">Business (${money(d.miles * RATE)})</button>
       <button class="btn normal" data-purpose="Personal">Personal</button>
       <button class="btn cancel" data-action="keep">Keep Driving</button>
@@ -478,12 +456,12 @@
   }
 
   function renderDetails(t) {
-    content.innerHTML = navbar(t.dest === 'Drive' ? 'Drive' : 'Trip to ' + t.dest) + `<div class="body"><dl class="info">
+    content.innerHTML = navbar('Trip Details') + `<div class="body"><dl class="info">
       <div><dt>Date</dt><dd>${t.when.split(' ')[0]}, ${t.range}</dd></div>
       <div><dt>Distance</dt><dd>${miles(t.miles)}</dd></div>
       <div><dt>From</dt><dd>${t.from}</dd></div>
       <div><dt>Purpose</dt><dd>${t.purpose}</dd></div>
-      <div><dt>To</dt><dd>${t.dest}</dd></div>
+      <div><dt>To</dt><dd>${t.to}</dd></div>
       <div><dt>Deduction</dt><dd>${t.purpose === 'Business' ? money(t.miles * RATE) + ' at $0.16/mi' : '$0.00'}</dd></div>
     </dl></div>`;
   }
@@ -491,11 +469,10 @@
   function finish(purpose) {
     const d = state.drive;
     const end = new Date(d.startedAt.getTime() + d.seconds * 1000);
-    const fmt = t => t.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
     state.trips.unshift({
-      dest: d.place ? d.place.name : 'Drive', ico: d.place ? d.place.ico : '🚗',
-      when: 'Today ' + fmt(d.startedAt), range: `${fmt(d.startedAt)} – ${fmt(end)}`,
-      from: '120 Main St', miles: Math.round(d.miles * 10) / 10, purpose, minutes: Math.round(d.seconds / 60),
+      from: HOME, to: addressAt(d.miles / ROUTE_MILES),
+      when: 'Today ' + timeText(d.startedAt), range: `${timeText(d.startedAt)} – ${timeText(end)}`,
+      miles: Math.round(d.miles * 10) / 10, purpose, minutes: Math.round(d.seconds / 60),
     });
     stopDrive();
     state.drive = null;
@@ -510,16 +487,11 @@
   content.addEventListener('click', e => {
     const el = e.target.closest('button');
     if (!el) return;
-    const { action, tab, place, trip, purpose } = el.dataset;
+    const { action, tab, trip, purpose } = el.dataset;
     if (tab) { state.tab = tab; render(); }
     else if (action === 'back') pop();
-    else if (action === 'start') push({ type: 'where' });
+    else if (action === 'start') { startDrive(); push({ type: 'active' }); }
     else if (action === 'resume') push({ type: 'active' });
-    else if (place !== undefined) {
-      startDrive(place ? places[place] : null);
-      state.stack = [{ type: 'active' }];
-      render();
-    }
     else if (trip !== undefined) push({ type: 'details', trip: state.trips[Number(trip)] });
     else if (action === 'end') { state.sheet = true; render(); }
     else if (action === 'keep') { state.sheet = false; render(); }
