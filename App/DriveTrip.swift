@@ -76,9 +76,20 @@ struct DriveTrip: Identifiable, Codable, Hashable, Sendable {
     "\(startAddress ?? "Start") → \(endAddress ?? "End")"
   }
 
-  /// For a recent-trips row, such as "Oct 31, 8:12 AM · 14.2 mi · Business · $2.27".
+  /// "Today 8:12 AM", "Yesterday 6:05 PM", or "Oct 29" for older trips.
+  var dayText: String {
+    let calendar = Calendar.current
+    if calendar.isDateInToday(startDate) {
+      return "Today \(startTimeText)"
+    } else if calendar.isDateInYesterday(startDate) {
+      return "Yesterday \(startTimeText)"
+    }
+    return startDate.formatted(.dateTime.month(.abbreviated).day())
+  }
+
+  /// For a recent-trips row, such as "Today 8:12 AM · 14.2 mi · Business · $2.27".
   var summaryText: String {
-    var parts = [startDate.formatted(.dateTime.month(.abbreviated).day().hour().minute()), milesText]
+    var parts = [dayText, milesText]
     if let purpose {
       parts.append(purpose.title)
     }

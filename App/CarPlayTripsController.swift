@@ -61,15 +61,15 @@ final class CarPlayTripsController: NSObject {
     let startItem: CPListItem
     if let trip = store.activeTrip {
       startItem = CPListItem(
-        text: "Trip in Progress · \(trip.milesText)",
+        text: "Trip in progress · \(trip.milesText)",
         detailText: "Started \(trip.startTimeText) · \(trip.estimatedDeductionText) est.",
-        image: UIImage(systemName: "record.circle")
+        image: Self.statusDot
       )
     } else {
       startItem = CPListItem(
         text: "Start a Trip",
         detailText: "Tracks miles from where you are now",
-        image: UIImage(systemName: "play.circle.fill")
+        image: Self.icon("play.fill", .systemBlue)
       )
     }
     startItem.accessoryType = .disclosureIndicator
@@ -82,7 +82,7 @@ final class CarPlayTripsController: NSObject {
       let item = CPListItem(
         text: trip.routeText,
         detailText: trip.summaryText,
-        image: UIImage(systemName: trip.purpose == .business ? "briefcase.fill" : "car.fill")
+        image: trip.purpose == .business ? Self.icon("briefcase.fill", .systemBrown) : Self.icon("car.fill", .systemRed)
       )
       item.accessoryType = .disclosureIndicator
       item.handler = { [weak self] _, completion in
@@ -104,6 +104,23 @@ final class CarPlayTripsController: NSObject {
     rootTemplate.updateSections(sections)
   }
 
+  /// CarPlay draws text and symbol images in its own colors, so draw the symbol into a plain
+  /// bitmap, which keeps the color.
+  private static func icon(_ systemName: String, _ color: UIColor) -> UIImage? {
+    let configuration = UIImage.SymbolConfiguration(pointSize: 40, weight: .semibold)
+    guard let symbol = UIImage(systemName: systemName, withConfiguration: configuration)?
+      .withTintColor(color, renderingMode: .alwaysOriginal) else { return nil }
+    return UIGraphicsImageRenderer(size: symbol.size).image { _ in
+      symbol.draw(at: .zero)
+    }
+  }
+
+  /// A small green light, like the mockup's, centered in a full-size row image so it isn't scaled up.
+  private static let statusDot = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 40)).image { _ in
+    UIColor.systemGreen.setFill()
+    UIBezierPath(ovalIn: CGRect(x: 12, y: 12, width: 16, height: 16)).fill()
+  }
+
   private func startOrShowTrip() {
     if store.activeTrip == nil {
       store.startTrip()
@@ -114,7 +131,7 @@ final class CarPlayTripsController: NSObject {
 
   // MARK: - Trip in progress
 
-  /// The running totals as label and value rows, with End Trip as the main button.
+  /// The running totals as a card of values, with End Trip as the main button.
   private func showTrip(animated: Bool) {
     // Back pops these without telling this controller, so check what's actually showing.
     if let top = interfaceController?.topTemplate, top === tripTemplate || top === mapTemplate { return }
@@ -134,19 +151,21 @@ final class CarPlayTripsController: NSObject {
 
   private func tripItems() -> [CPInformationItem] {
     guard let trip = store.activeTrip else { return [] }
+    // An emoji keeps its color where CarPlay text can't, standing in for a status light.
     let status = if store.isParked {
-      "Parked · tap End Trip when you're done"
+      "🟢 Parked · tap End Trip when you're done"
     } else if store.lastMovedAt == nil {
-      "Waiting to start moving"
+      "🟢 Trip in progress"
     } else {
-      "Driving"
+      "🟢 Driving"
     }
+    // Values without labels, so the screen reads as one card like the mockup.
     return [
-      CPInformationItem(title: "Status", detail: status),
-      CPInformationItem(title: "Distance", detail: trip.milesText),
-      CPInformationItem(title: "Deduction", detail: "\(trip.estimatedDeductionText) est. at $0.16/mi"),
-      CPInformationItem(title: "Started", detail: "\(trip.startTimeText) · \(trip.minutesText())"),
-      CPInformationItem(title: "From", detail: trip.startAddress ?? "Finding the address…"),
+      CPInformationItem(title: nil, detail: status),
+      CPInformationItem(title: nil, detail: trip.milesText),
+      CPInformationItem(title: nil, detail: "\(trip.estimatedDeductionText) est."),
+      CPInformationItem(title: nil, detail: "Started \(trip.startTimeText) · \(trip.minutesText())"),
+      CPInformationItem(title: nil, detail: "From \(trip.startAddress ?? "your current location")"),
     ]
   }
 
