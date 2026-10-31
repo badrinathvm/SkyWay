@@ -156,8 +156,9 @@ final class CarPlayTripsController: NSObject {
   private func carPoints() -> [CPPointOfInterest] {
     guard let trip = store.activeTrip, let current = store.currentLocation else { return [] }
     // An emoji keeps its color where CarPlay text can't, standing in for a status light.
+    // Short enough to fit the side panel's row; End Trip sits in the navigation bar.
     let status = if store.isParked {
-      "🟢 Parked · tap End Trip when you're done"
+      "🟢 Parked"
     } else if store.lastMovedAt == nil {
       "🟢 Trip in progress"
     } else {
