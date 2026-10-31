@@ -21,6 +21,10 @@
           "CFBundleShortVersionString": "1.0",
           "CFBundleVersion": "1",
           "ITSAppUsesNonExemptEncryption": false,
+          "NSLocationWhenInUseUsageDescription": "Skyway uses your location to measure the miles you drive for mileage deductions.",
+          "UIBackgroundModes": [
+            "location"
+          ],
           "NSUserActivityTypes": [
             "app.skyway.viewTrip"
           ],
@@ -66,7 +70,8 @@
       "scheme": {
         "commandLineArguments": {
           "-resetTips": false,
-          "-showAllTips": false
+          "-showAllTips": false,
+          "-simulateDrive": false
         }
       }
     }
