@@ -39,6 +39,12 @@ struct DriveTrip: Identifiable, Codable, Hashable, Sendable {
   var endAddress: String?
   var miles = 0.0
   var purpose: Purpose?
+  /// When the backend confirmed it saved this trip. `nil` means it's still waiting to upload,
+  /// which is how `TripSyncer` finds its queue. Optional, so trips saved before syncing existed
+  /// still decode, and upload on the next pass.
+  var syncedAt: Date?
+
+  var isSynced: Bool { syncedAt != nil }
 
   /// What the trip would be worth as a business trip, shown while driving.
   var estimatedDeduction: Double { miles * Self.deductionPerMile }

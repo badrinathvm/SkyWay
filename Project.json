@@ -71,7 +71,8 @@
         "commandLineArguments": {
           "-resetTips": false,
           "-showAllTips": false,
-          "-simulateDrive": false
+          "-simulateDrive": false,
+          "-failTripSync": false
         }
       }
     }

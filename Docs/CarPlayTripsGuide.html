@@ -259,6 +259,7 @@
       <li><a href="#refresh">Keeping the car screen current</a></li>
       <li><a href="#data">The data layer: store, tracker, model</a></li>
       <li><a href="#siri">Siri: starting and ending hands-free</a></li>
+      <li><a href="#sync">Syncing trips to the backend</a></li>
       <li><a href="#journeys">End-to-end journeys</a></li>
       <li><a href="#classes">CarPlay class reference</a></li>
       <li><a href="#testing">Testing in the simulator</a></li>
@@ -799,6 +800,40 @@ backgroundSession = <span class="ty">CLBackgroundActivitySession</span>()       
   </div>
   <p>Intents change the <b>same</b> <code>DriveTripStore.shared</code>. The CarPlay screen finds out on the next 5 s tick: the list row changes and the map closes. <code>DriveTrip.Purpose</code> conforms to <code>AppEnum</code> so Siri can say and recognize “Business” and “Personal”.</p>
 
+
+  <!-- 11b ─────────────────────────────────────────────── -->
+  <h2 id="sync"><span class="chapter">Chapter 11b</span>Syncing trips to the backend</h2>
+  <p class="intro">When a trip ends, it's saved on the iPhone first and uploaded afterward. For now the "backend" is a SwiftData store on the iPhone, behind a protocol so a real server can replace it.</p>
+  <div class="pipeline">
+    <div class="box ui"><strong>Business / Personal tap</strong><small>or Siri</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>endTrip(as:)</strong><small>save() to DriveTrips.json</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>TripSyncer.syncNow()</strong><small>background task</small></div>
+    <span class="sep">→</span>
+    <div class="box svc"><strong>TripBackend.upload</strong><small>SwiftDataTripBackend today</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>syncedAt = now</strong><small>save() again</small></div>
+  </div>
+  <table>
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>App/TripBackend.swift</code></td><td>Protocol with one method, <code>upload(_:)</code>. Uploads must be safe to repeat (keyed by <code>trip.id</code>).</td></tr>
+      <tr><td><code>App/SwiftDataTripBackend.swift</code></td><td>Stand-in server: upserts into <code>SyncedTrips.store</code>. <code>-failTripSync</code> makes every upload fail, for testing retries.</td></tr>
+      <tr><td><code>App/SyncedTripRecord.swift</code></td><td>The SwiftData <code>@Model</code>, shaped like the server's data. Delete it when the real server exists.</td></tr>
+      <tr><td><code>App/TripSyncer.swift</code></td><td>The queue: uploads oldest first, stops at the first failure, retries with backoff, and gets extra background time.</td></tr>
+    </tbody>
+  </table>
+  <h3>When a sync runs</h3>
+  <ul>
+    <li>Right after a trip ends, from CarPlay or Siri.</li>
+    <li>On app launch, and when the car connects (<code>didConnect()</code>).</li>
+    <li>When Skyway on iPhone becomes active.</li>
+    <li>After a failure: 30 s, then 1, 2, 4… minutes, up to 15.</li>
+  </ul>
+  <div class="callout"><b>Why a background task?</b>Location tracking stops when the trip ends, and that was the only thing keeping the app running. If the driver switches to Maps on the car screen, iOS can suspend Skyway within seconds. <code>beginBackgroundTask</code> gives the upload about 30 seconds. If that runs out, the trip stays in the queue and is sent on the next pass.</div>
+  <div class="callout tip"><b>Moving to a real server</b>Write an <code>HTTPTripBackend: TripBackend</code> that POSTs (or PUTs to <code>/trips/{id}</code>) with <code>URLSession</code> and throws on errors and non-2xx responses. Pass it to <code>TripSyncer</code> in <code>DriveTripStore</code>. Store any auth token in the Keychain with <code>kSecAttrAccessibleAfterFirstUnlock</code> so it can be read while the iPhone is locked.</div>
+
   <!-- 12 ─────────────────────────────────────────────── -->
   <h2 id="journeys"><span class="chapter">Chapter 12</span>End-to-end journeys</h2>
 
@@ -905,7 +940,7 @@ Scripts/simulate-drive.sh stop     <span class="cm"># stop and clear</span></cod
 
   <footer>
     Related: <a href="CarPlayLifecycle.html">CarPlay scene lifecycle</a> · <a href="CarPlayTripsMockup.html">Interactive Trips mockup</a><br>
-    Source: <code>App/CarPlaySceneDelegate.swift</code>, <code>App/CarPlayTripsController.swift</code>, <code>App/DriveTripStore.swift</code>, <code>App/DriveTracker.swift</code>, <code>App/DriveTrip.swift</code>, <code>App/DriveTripIntents.swift</code>, <code>App/SkywayShortcuts.swift</code>
+    Source: <code>App/CarPlaySceneDelegate.swift</code>, <code>App/CarPlayTripsController.swift</code>, <code>App/DriveTripStore.swift</code>, <code>App/DriveTracker.swift</code>, <code>App/DriveTrip.swift</code>, <code>App/DriveTripIntents.swift</code>, <code>App/SkywayShortcuts.swift</code>, <code>App/TripSyncer.swift</code>, <code>App/TripBackend.swift</code>, <code>App/SwiftDataTripBackend.swift</code>, <code>App/SyncedTripRecord.swift</code>
   </footer>
 </main>
 </body>

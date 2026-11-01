@@ -30,9 +30,24 @@ final class DriveTripStore {
   private var trackingTask: Task<Void, Never>?
   private var lastFix: CLLocation?
   private var lastSave = Date.distantPast
+  /// Uploads ended trips. Swap `SwiftDataTripBackend` for a network backend when the server is ready.
+  private let syncer = TripSyncer(backend: SwiftDataTripBackend())
 
   private init() {
     load()
+    syncer.configure(
+      // Oldest first, so the backend receives trips in the order they were driven.
+      pendingTrips: { [unowned self] in trips.filter { !$0.isSynced }.reversed() },
+      markSynced: { [unowned self] id, date in markSynced(id, at: date) }
+    )
+    // Catch up on trips that ended while there was no signal, or before the app was suspended.
+    syncer.syncNow()
+  }
+
+  /// Uploads any trips the backend doesn't have yet. Called on launch and whenever a trip ends;
+  /// CarPlay also calls it when the car connects, since that's when a driver is likely to have signal.
+  func syncPendingTrips() {
+    syncer.syncNow()
   }
 
   func startTrip() {
@@ -74,8 +89,20 @@ final class DriveTripStore {
     trips.insert(trip, at: 0)
     activeTrip = nil
     currentLocation = nil
+    // Save to disk first, then upload: if the upload fails, or the app is suspended mid-request,
+    // the trip is already safe in DriveTrips.json and stays in the queue until it goes through.
     save()
+    // Here rather than in the CarPlay code, so trips ended with Siri upload too.
+    syncer.syncNow()
     return trip
+  }
+
+  private func markSynced(_ id: DriveTrip.ID, at date: Date) {
+    guard let index = trips.firstIndex(where: { $0.id == id }) else { return }
+    trips[index].syncedAt = date
+    // Saved right away, so a trip isn't uploaded again after a relaunch. Even if it were, the
+    // backend treats a repeat as an update, so nothing would be duplicated.
+    save()
   }
 
   // MARK: Tracking

@@ -27,6 +27,7 @@ final class CarPlayTripsController: NSObject {
   /// Call once the Trips tab is on screen.
   func didConnect() {
     store.resumeTrackingIfNeeded()
+    store.syncPendingTrips()
     if store.activeTrip != nil {
       showMap(animated: false)
     }
