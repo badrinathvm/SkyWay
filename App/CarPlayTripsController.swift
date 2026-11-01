@@ -15,8 +15,12 @@ final class CarPlayTripsController: NSObject {
   private var shownListText: [String] = []
   private var isEnding = false
 
-  init(interfaceController: CPInterfaceController) {
+  /// `carScreenHeight` is the car display's height in points, from the scene's `carWindow`.
+  /// Car screens range from short, wide strips to tall portrait displays, so it decides how
+  /// many recent trips to fetch.
+  init(interfaceController: CPInterfaceController, carScreenHeight: CGFloat) {
     self.interfaceController = interfaceController
+    store.recentTripLimit = Self.recentTripLimit(forScreenHeight: carScreenHeight)
     rootTemplate = CPListTemplate(title: "Trips", sections: [])
     rootTemplate.tabTitle = "Trips"
     rootTemplate.tabImage = UIImage(systemName: "car.fill")
@@ -28,6 +32,9 @@ final class CarPlayTripsController: NSObject {
   func didConnect() {
     store.resumeTrackingIfNeeded()
     store.syncPendingTrips()
+    // Pick up trips uploaded since the car was last connected, including from other devices once
+    // there's a real server.
+    store.refreshRecentTrips()
     if store.activeTrip != nil {
       showMap(animated: false)
     }
@@ -102,6 +109,22 @@ final class CarPlayTripsController: NSObject {
       sections.append(CPListSection(items: recentItems, header: "Recent Trips", sectionIndexTitle: nil))
     }
     rootTemplate.updateSections(sections)
+  }
+
+  /// Six recent trips when the screen has room to show them, five otherwise.
+  ///
+  /// CarPlay doesn't say how tall its rows are, so this estimates how many trip rows fit below
+  /// the navigation bar, the Start a Trip row, and the Recent Trips header. On the common
+  /// 800×480 screen that's about 7, so it shows 6; on a short 360-point screen about 4, so it
+  /// still shows 5 and the driver scrolls for the last one. More than 6 isn't worth the
+  /// glances it takes to read while driving.
+  private static func recentTripLimit(forScreenHeight height: CGFloat) -> Int {
+    let navigationBarHeight = 44.0
+    let startRowHeight = 44.0
+    let sectionHeaderHeight = 28.0
+    let tripRowHeight = 50.0  // two lines of text
+    let fittingRows = Int((height - navigationBarHeight - startRowHeight - sectionHeaderHeight) / tripRowHeight)
+    return min(max(fittingRows, 5), 6)
   }
 
   /// CarPlay draws text and symbol images in its own colors, so draw the symbol into a plain

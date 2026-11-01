@@ -24,17 +24,39 @@ final class DriveTripStore {
     return Date.now.timeIntervalSince(lastMovedAt) > 60
   }
 
-  var recentTrips: ArraySlice<DriveTrip> { trips.prefix(5) }
+  /// The newest trips for the Recent Trips list, newest first: what the backend has saved, plus
+  /// trips still waiting to upload. Updated by `refreshRecentTrips()`.
+  private(set) var recentTrips: [DriveTrip] = []
+
+  /// How many trips `recentTrips` holds. CarPlay sets this from the car screen's height, since
+  /// a taller screen has room for another row.
+  var recentTripLimit = 5 {
+    didSet {
+      if recentTripLimit != oldValue {
+        refreshRecentTrips()
+      }
+    }
+  }
 
   private let tracker = DriveTracker()
   private var trackingTask: Task<Void, Never>?
   private var lastFix: CLLocation?
   private var lastSave = Date.distantPast
-  /// Uploads ended trips. Swap `SwiftDataTripBackend` for a network backend when the server is ready.
-  private let syncer = TripSyncer(backend: SwiftDataTripBackend())
+  /// Where trips are uploaded to and recent trips are read from. Swap `SwiftDataTripBackend` for a
+  /// network backend when the server is ready.
+  private let backend: any TripBackend
+  /// Uploads ended trips to `backend`.
+  private let syncer: TripSyncer
+  private var recentTripsTask: Task<Void, Never>?
 
   private init() {
+    let backend = SwiftDataTripBackend()
+    self.backend = backend
+    syncer = TripSyncer(backend: backend)
     load()
+    // Show the trips saved on the iPhone at once, so the list isn't empty while the backend answers.
+    recentTrips = Array(trips.prefix(recentTripLimit))
+    refreshRecentTrips()
     syncer.configure(
       // Oldest first, so the backend receives trips in the order they were driven.
       pendingTrips: { [unowned self] in trips.filter { !$0.isSynced }.reversed() },
@@ -48,6 +70,41 @@ final class DriveTripStore {
   /// CarPlay also calls it when the car connects, since that's when a driver is likely to have signal.
   func syncPendingTrips() {
     syncer.syncNow()
+  }
+
+  /// Fetches the newest trips from the backend into `recentTrips`.
+  ///
+  /// Called on launch, when the car connects, and whenever a trip ends or finishes uploading,
+  /// which are the only times the list can change. CarPlay's 5-second refresh just reads
+  /// `recentTrips`, so the backend isn't asked every few seconds while driving.
+  func refreshRecentTrips() {
+    // A newer refresh replaces an older one still waiting, so a slow answer can't overwrite a newer list.
+    recentTripsTask?.cancel()
+    let limit = recentTripLimit
+    recentTripsTask = Task {
+      let fetched: [DriveTrip]
+      do {
+        fetched = try await backend.recentTrips(limit: limit)
+      } catch {
+        // No signal: the iPhone has every trip it logged, so show those instead.
+        print("Couldn't fetch recent trips: \(error)")
+        fetched = []
+      }
+      guard !Task.isCancelled else { return }
+      recentTrips = mergedRecentTrips(fetched: fetched, limit: limit)
+    }
+  }
+
+  /// Combines the backend's trips with the iPhone's, newest first, without listing a trip twice.
+  ///
+  /// The backend only has trips that finished uploading, so trips still in the upload queue come
+  /// from the iPhone. When the fetch failed, `fetched` is empty and every trip comes from the iPhone.
+  /// A trip in both lists uses the iPhone's copy, which is never older than what was uploaded.
+  private func mergedRecentTrips(fetched: [DriveTrip], limit: Int) -> [DriveTrip] {
+    let local = fetched.isEmpty ? trips : trips.filter { !$0.isSynced }
+    let localIDs = Set(local.map(\.id))
+    let combined = local + fetched.filter { !localIDs.contains($0.id) }
+    return Array(combined.sorted { $0.startDate > $1.startDate }.prefix(limit))
   }
 
   func startTrip() {
@@ -92,6 +149,8 @@ final class DriveTripStore {
     // Save to disk first, then upload: if the upload fails, or the app is suspended mid-request,
     // the trip is already safe in DriveTrips.json and stays in the queue until it goes through.
     save()
+    // Show the trip in Recent Trips right away, before it's uploaded.
+    recentTrips = mergedRecentTrips(fetched: recentTrips, limit: recentTripLimit)
     // Here rather than in the CarPlay code, so trips ended with Siri upload too.
     syncer.syncNow()
     return trip
@@ -103,6 +162,8 @@ final class DriveTripStore {
     // Saved right away, so a trip isn't uploaded again after a relaunch. Even if it were, the
     // backend treats a repeat as an update, so nothing would be duplicated.
     save()
+    // The backend has a new trip, so read the list back from it.
+    refreshRecentTrips()
   }
 
   // MARK: Tracking

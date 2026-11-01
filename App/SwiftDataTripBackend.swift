@@ -35,6 +35,22 @@ final class SwiftDataTripBackend: TripBackend {
     try context.save()
   }
 
+  func recentTrips(limit: Int) async throws -> [DriveTrip] {
+    #if DEBUG
+    // Offline means fetching fails too, so the store's fallback to local trips can be tested.
+    if ProcessInfo.processInfo.arguments.contains("-failTripSync") {
+      throw URLError(.notConnectedToInternet)
+    }
+    #endif
+
+    let context = try makeContainer().mainContext
+    // Sorting and limiting in the fetch, not afterward, is what a server query would do:
+    // only the rows the screen shows are read, however many trips are stored.
+    var newest = FetchDescriptor<SyncedTripRecord>(sortBy: [SortDescriptor(\.startDate, order: .reverse)])
+    newest.fetchLimit = limit
+    return try context.fetch(newest).map(\.trip)
+  }
+
   private func makeContainer() throws -> ModelContainer {
     if let container {
       return container

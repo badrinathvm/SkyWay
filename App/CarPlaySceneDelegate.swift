@@ -23,7 +23,10 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
 
     let tripTemplate = makeTripTemplate()
     let airportTemplate = makeAirportTemplate()
-    let tripsController = CarPlayTripsController(interfaceController: interfaceController)
+    let tripsController = CarPlayTripsController(
+      interfaceController: interfaceController,
+      carScreenHeight: templateApplicationScene.carWindow.bounds.height
+    )
     let tabBar = CPTabBarTemplate(templates: [tripsController.rootTemplate, tripTemplate, airportTemplate, makeChecklistTemplate()])
     self.tripTemplate = tripTemplate
     self.airportTemplate = airportTemplate

@@ -16,4 +16,11 @@ protocol TripBackend {
   ///
   /// Throw for anything that should be retried later, such as no signal or a server error.
   func upload(_ trip: DriveTrip) async throws
+
+  /// The most recently started trips the backend has saved, newest first, at most `limit` of them.
+  ///
+  /// Only trips that finished uploading are included, so `DriveTripStore` adds trips still
+  /// waiting in the upload queue before showing them. Throw if the backend can't be reached;
+  /// the store then falls back to the trips saved on the iPhone.
+  func recentTrips(limit: Int) async throws -> [DriveTrip]
 }

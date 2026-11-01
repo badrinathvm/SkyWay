@@ -1,3 +1,4 @@
+import CoreLocation
 import Foundation
 import SwiftData
 
@@ -31,6 +32,27 @@ final class SyncedTripRecord {
     miles = trip.miles
     self.receivedAt = receivedAt
     update(from: trip, receivedAt: receivedAt)
+  }
+
+  /// The record turned back into the app's trip, as decoding a server's JSON response would.
+  /// It's in the backend, so it's synced: `syncedAt` is when the backend received it.
+  var trip: DriveTrip {
+    DriveTrip(
+      id: tripID,
+      startDate: startDate,
+      endDate: endDate,
+      start: startLatitude.flatMap { latitude in
+        startLongitude.map { DriveTrip.Coordinate(CLLocationCoordinate2D(latitude: latitude, longitude: $0)) }
+      },
+      end: endLatitude.flatMap { latitude in
+        endLongitude.map { DriveTrip.Coordinate(CLLocationCoordinate2D(latitude: latitude, longitude: $0)) }
+      },
+      startAddress: startAddress,
+      endAddress: endAddress,
+      miles: miles,
+      purpose: purpose.flatMap(DriveTrip.Purpose.init(rawValue:)),
+      syncedAt: receivedAt
+    )
   }
 
   /// Copies every field from the app's trip, for both a new record and a repeat upload.
