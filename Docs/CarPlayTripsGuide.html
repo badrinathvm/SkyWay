@@ -572,7 +572,7 @@ shownListText = listText
 rootTemplate.updateSections(sections)</code></pre>
   <ul>
     <li><b>The top row does two jobs.</b> With no trip it's “Start a Trip”. During a trip it shows live miles and opens the map.</li>
-    <li><b>Recent trips</b> (up to 5) each open <code>showDetails(of:)</code>. A briefcase means business, a car means personal.</li>
+    <li><b>Recent trips</b> (5 or 6 depending on the car screen's height, fetched from the backend) each open <code>showDetails(of:)</code>. A briefcase means business, a car means personal.</li>
     <li><b>The handler's <code>completion()</code> must always be called</b>, or CarPlay keeps showing a loading spinner on the row.</li>
     <li><code>updateSections</code> replaces the list's contents without replacing the template, so the tab stays put.</li>
   </ul>
@@ -824,6 +824,12 @@ backgroundSession = <span class="ty">CLBackgroundActivitySession</span>()       
       <tr><td><code>App/TripSyncer.swift</code></td><td>The queue: uploads oldest first, stops at the first failure, retries with backoff, and gets extra background time.</td></tr>
     </tbody>
   </table>
+  <h3>Recent Trips come from the backend</h3>
+  <p><code>TripBackend.recentTrips(limit:)</code> returns the newest saved trips. <code>SwiftDataTripBackend</code> sorts and limits in the <code>FetchDescriptor</code>, as a server query would. <code>DriveTripStore.refreshRecentTrips()</code> then adds trips still waiting to upload, so a trip ended with no signal still appears. If the fetch fails, the list falls back to the trips saved on the iPhone.</p>
+  <ul>
+    <li><b>How many:</b> <code>CarPlayTripsController.recentTripLimit(forScreenHeight:)</code> estimates how many rows fit on <code>carWindow.bounds.height</code>: 6 on the common 800×480 screen, 5 on shorter ones.</li>
+    <li><b>When it fetches:</b> on launch, when the car connects, and after a trip ends or finishes uploading. The 5-second refresh only reads <code>store.recentTrips</code>, so the backend isn't asked every few seconds.</li>
+  </ul>
   <h3>When a sync runs</h3>
   <ul>
     <li>Right after a trip ends, from CarPlay or Siri.</li>
