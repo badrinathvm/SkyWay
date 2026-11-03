@@ -1,0 +1,953 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway · How the CarPlay Trips tab works</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #3a3df0;
+    --accent-soft: #ececfe;
+    --green: #1f8a3b;
+    --green-soft: #e3f5e8;
+    --orange: #b25000;
+    --orange-soft: #fdf0e3;
+    --purple: #8e3bd1;
+    --purple-soft: #f3e8fc;
+    --code-bg: #f0f0f3;
+    --kw: #ad3da4;
+    --type: #3900a0;
+    --str: #c41a16;
+    --com: #5d6c79;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #98989d;
+      --border: #3a3a3c;
+      --accent: #8a8cff;
+      --accent-soft: #24244a;
+      --green: #30d158;
+      --green-soft: #12301b;
+      --orange: #ff9f0a;
+      --orange-soft: #3a2608;
+      --purple: #bf5af2;
+      --purple-soft: #2e1840;
+      --code-bg: #2c2c2e;
+      --kw: #ff7ab2;
+      --type: #dabaff;
+      --str: #ff8170;
+      --com: #7f8c98;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 48px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  main { max-width: 860px; margin: 0 auto; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 64px 0 8px; padding-top: 8px; }
+  h2 .chapter { color: var(--accent); font-size: 14px; font-weight: 600; display: block; letter-spacing: 0.02em; text-transform: uppercase; }
+  h3 { font-size: 18px; margin: 32px 0 8px; }
+  .lede { color: var(--secondary); margin: 0 0 32px; font-size: 17px; }
+  .intro { color: var(--secondary); margin: 0 0 20px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font: 13px "SF Mono", ui-monospace, Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font: 12.5px/1.55 "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .file { display: block; color: var(--secondary); font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kw { color: var(--kw); font-weight: 600; }
+  .ty { color: var(--type); }
+  .st { color: var(--str); }
+  .cm { color: var(--com); font-style: italic; }
+
+  /* Table of contents */
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    columns: 2;
+    column-gap: 32px;
+  }
+  nav.toc ol { margin: 0; padding-left: 18px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+
+  /* Cards */
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--orange);
+    background: var(--orange-soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+  }
+  .callout.tip { border-color: var(--green); background: var(--green-soft); }
+  .callout.info { border-color: var(--accent); background: var(--accent-soft); }
+  .callout b:first-child { display: block; margin-bottom: 2px; }
+
+  /* Flow (vertical) */
+  .flow { display: flex; flex-direction: column; align-items: stretch; }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 20px;
+  }
+  .step.callback { border: 2px solid var(--accent); background: var(--accent-soft); }
+  .step.system { border: 2px dashed var(--border); }
+  .step header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 4px; }
+  .num {
+    flex: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transform: translateY(-2px);
+  }
+  .callback .num { background: var(--accent); color: #fff; }
+  .step h4 { margin: 0; font-size: 16px; }
+  .step ul { margin: 4px 0 0; padding-left: 20px; }
+  .step li { margin: 2px 0; }
+  .tag { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--accent); white-space: nowrap; }
+  .arrow {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--secondary); font-size: 13px;
+    padding: 4px 0;
+  }
+  .arrow::before { content: ""; width: 2px; height: 16px; background: var(--border); }
+  .arrow::after { content: ""; border: 7px solid transparent; border-top-color: var(--border); border-bottom: 0; }
+  .arrow span { padding: 2px 0; }
+
+  /* Architecture */
+  .arch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .layer-label { grid-column: 1 / -1; color: var(--secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+  .box {
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    border: 2px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+  }
+  .box strong { display: block; font-size: 14px; }
+  .box small { color: var(--secondary); display: block; margin-top: 2px; font-size: 12px; }
+  .box.system { border-style: dashed; }
+  .box.ui { border-color: var(--accent); background: var(--accent-soft); }
+  .box.model { border-color: var(--green); background: var(--green-soft); }
+  .box.svc { border-color: var(--orange); background: var(--orange-soft); }
+  .box.siri { border-color: var(--purple); background: var(--purple-soft); }
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: 1 / -1; }
+  .down { grid-column: 1 / -1; text-align: center; color: var(--secondary); font-size: 13px; }
+
+  /* Screen mockups */
+  .screens { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 14px; margin: 14px 0; }
+  .car {
+    background: #111;
+    color: #f5f5f7;
+    border-radius: 14px;
+    padding: 10px;
+    font-size: 12.5px;
+    min-height: 170px;
+    border: 3px solid #333;
+  }
+  .car .bar { display: flex; justify-content: space-between; color: #aaa; font-size: 11px; margin-bottom: 6px; }
+  .car .title { font-weight: 600; font-size: 14px; margin-bottom: 6px; display: flex; justify-content: space-between; }
+  .car .title .btn { background: #2c2c2e; padding: 1px 8px; border-radius: 8px; font-weight: 500; font-size: 12px; }
+  .car .row { background: #222; border-radius: 8px; padding: 6px 8px; margin: 4px 0; display: flex; gap: 8px; align-items: center; }
+  .car .row div small { display: block; color: #9a9a9e; font-size: 11px; }
+  .car .row .chev { margin-left: auto; color: #777; }
+  .car .hdr { color: #9a9a9e; font-size: 11px; margin: 8px 2px 2px; text-transform: uppercase; }
+  .car .map { display: grid; grid-template-columns: 1fr 1.3fr; gap: 6px; }
+  .car .mapbg { background: linear-gradient(135deg, #2d3b2f, #33404d); border-radius: 8px; min-height: 110px; display: flex; align-items: center; justify-content: center; font-size: 22px; }
+  .car .sheet { background: #2c2c2e; border-radius: 10px; padding: 8px; text-align: center; }
+  .car .sheet .a { background: #3a3a3c; border-radius: 8px; padding: 5px; margin-top: 5px; }
+  .car .tabs { display: flex; justify-content: space-around; border-top: 1px solid #333; margin-top: 8px; padding-top: 5px; color: #888; font-size: 11px; }
+  .car .tabs .on { color: #4da3ff; font-weight: 600; }
+  .dot { color: #30d158; }
+  .caption { color: var(--secondary); font-size: 13px; text-align: center; margin-top: 6px; }
+
+  /* Stack diagram */
+  .stack { display: flex; flex-direction: column-reverse; gap: 6px; max-width: 520px; margin: 14px auto; }
+  .stack .lvl { border-radius: 10px; padding: 10px 14px; border: 2px solid var(--border); background: var(--card); display: flex; justify-content: space-between; align-items: center; gap: 12px; font-size: 14px; }
+  .stack .lvl small { color: var(--secondary); font-size: 12px; text-align: right; }
+  .stack .lvl.root { border-color: var(--accent); background: var(--accent-soft); }
+  .stack .lvl.modal { border-color: var(--orange); background: var(--orange-soft); margin: 0 24px; }
+  .stack .lvl.pushed { margin: 0 12px; }
+
+  /* State machine */
+  .states { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 8px; align-items: center; margin: 14px 0; }
+  .state { border-radius: 999px; padding: 10px 14px; text-align: center; border: 2px solid var(--border); background: var(--card); font-weight: 600; font-size: 14px; }
+  .state small { display: block; font-weight: 400; color: var(--secondary); font-size: 12px; }
+  .state.active { border-color: var(--green); background: var(--green-soft); }
+  .state.ending { border-color: var(--orange); background: var(--orange-soft); }
+  .tr { color: var(--secondary); font-size: 12px; text-align: center; }
+  .tr::after { content: "→"; display: block; font-size: 20px; color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  .pipeline { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; margin: 12px 0; }
+  .pipeline .box { flex: 1 1 130px; }
+  .pipeline .sep { color: var(--secondary); font-size: 18px; }
+
+  footer { margin-top: 64px; color: var(--secondary); font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+  @media (max-width: 640px) {
+    nav.toc { columns: 1; }
+    .arch { grid-template-columns: 1fr; }
+    .span2 { grid-column: auto; }
+    .states { grid-template-columns: 1fr; }
+    .tr::after { content: "↓"; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>How the CarPlay Trips tab works</h1>
+  <p class="lede">A walkthrough of Skyway's mileage-trip feature on CarPlay: how iOS starts the car screen, which CarPlay classes build each screen, and what each part of the code does. Keep it as a reference for future CarPlay work.</p>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#big-picture">The big picture</a></li>
+      <li><a href="#setup">Project setup: plist and entitlements</a></li>
+      <li><a href="#concepts">CarPlay concepts in 2 minutes</a></li>
+      <li><a href="#connect">Connecting: the scene delegate</a></li>
+      <li><a href="#tabs">The tab bar</a></li>
+      <li><a href="#screens">The Trips screens at a glance</a></li>
+      <li><a href="#controller">CarPlayTripsController, section by section</a></li>
+      <li><a href="#stack">The template stack</a></li>
+      <li><a href="#refresh">Keeping the car screen current</a></li>
+      <li><a href="#data">The data layer: store, tracker, model</a></li>
+      <li><a href="#siri">Siri: starting and ending hands-free</a></li>
+      <li><a href="#sync">Syncing trips to the backend</a></li>
+      <li><a href="#journeys">End-to-end journeys</a></li>
+      <li><a href="#classes">CarPlay class reference</a></li>
+      <li><a href="#testing">Testing in the simulator</a></li>
+      <li><a href="#lessons">Gotchas we hit</a></li>
+    </ol>
+  </nav>
+
+  <!-- 1 ─────────────────────────────────────────────── -->
+  <h2 id="big-picture"><span class="chapter">Chapter 1</span>The big picture</h2>
+  <p class="intro">Seven files make up the feature. CarPlay code only shows things and handles taps. The trip itself lives in a shared store, which Siri also uses.</p>
+
+  <div class="card">
+    <div class="arch">
+      <div class="layer-label">iOS (system)</div>
+      <div class="box system span3"><strong>CarPlay head unit</strong><small>Draws the templates you hand it. Your app never draws pixels on the car screen.</small></div>
+      <div class="down">↓ creates the scene and calls the delegate</div>
+
+      <div class="layer-label">CarPlay UI layer</div>
+      <div class="box ui"><strong>CarPlaySceneDelegate</strong><small>Connect/disconnect, builds the tab bar</small></div>
+      <div class="box ui span2"><strong>CarPlayTripsController</strong><small>Everything in the Trips tab: list, map, end-trip sheet, details</small></div>
+      <div class="down">↓ reads <code>activeTrip</code>, <code>recentTrips</code>, <code>currentLocation</code> · calls <code>startTrip()</code>, <code>endTrip(as:)</code></div>
+
+      <div class="layer-label">Model layer</div>
+      <div class="box model span2"><strong>DriveTripStore.shared</strong><small>One source of truth. Tracks the active trip, adds up miles, saves to disk.</small></div>
+      <div class="box model"><strong>DriveTrip</strong><small>The trip value + display text</small></div>
+      <div class="down">↓ location events</div>
+
+      <div class="layer-label">Services</div>
+      <div class="box svc"><strong>DriveTracker</strong><small>CoreLocation → <code>AsyncStream</code></small></div>
+      <div class="box svc"><strong>MKReverseGeocodingRequest</strong><small>Coordinates → street address</small></div>
+      <div class="box svc"><strong>DriveTrips.json</strong><small>Application Support file</small></div>
+
+      <div class="layer-label">Also uses the store</div>
+      <div class="box siri span3"><strong>StartDriveTripIntent · EndDriveTripIntent · SkywayShortcuts</strong><small>“Start a trip in Skyway” / “End my business trip in Skyway”</small></div>
+    </div>
+  </div>
+
+  <table>
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>App/CarPlaySceneDelegate.swift</code></td><td>Entry point iOS calls when the car connects. Builds the 4 tabs and hands the Trips tab to the controller.</td></tr>
+      <tr><td><code>App/CarPlayTripsController.swift</code></td><td>Builds and updates every Trips screen, and handles every tap.</td></tr>
+      <tr><td><code>App/DriveTripStore.swift</code></td><td>Shared, saved state: the active trip, past trips, current location, and the mileage math.</td></tr>
+      <tr><td><code>App/DriveTracker.swift</code></td><td>Turns <code>CLLocationUpdate.liveUpdates</code> into a stream of accurate fixes. Includes a fake drive for testing.</td></tr>
+      <tr><td><code>App/DriveTrip.swift</code></td><td>The trip struct: dates, coordinates, addresses, miles, purpose, and formatted text.</td></tr>
+      <tr><td><code>App/DriveTripIntents.swift</code></td><td>Siri / Shortcuts actions to start and end a trip.</td></tr>
+      <tr><td><code>App/SkywayShortcuts.swift</code></td><td>The spoken phrases for those actions.</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 2 ─────────────────────────────────────────────── -->
+  <h2 id="setup"><span class="chapter">Chapter 2</span>Project setup: plist and entitlements</h2>
+  <p class="intro">Before any Swift runs, three settings tell iOS that Skyway has a CarPlay screen and may use location in the background.</p>
+
+  <h3>① Scene manifest: “this app has a CarPlay scene”</h3>
+  <pre><code><span class="file">Project.json → Info.plist</span>"UIApplicationSceneManifest": {
+  "UIApplicationSupportsMultipleScenes": true,
+  "UISceneConfigurations": {
+    <span class="st">"CPTemplateApplicationSceneSessionRoleApplication"</span>: [{
+      "UISceneClassName": <span class="st">"CPTemplateApplicationScene"</span>,
+      "UISceneConfigurationName": "CarPlay",
+      "UISceneDelegateClassName": <span class="st">"$(PRODUCT_MODULE_NAME).CarPlaySceneDelegate"</span>
+    }]
+  }
+}</code></pre>
+  <ul>
+    <li><b>Session role</b> <code>CPTemplateApplicationSceneSessionRoleApplication</code> means “a scene for the car's main display”.</li>
+    <li><b>Scene class</b> is always <code>CPTemplateApplicationScene</code> for template-based CarPlay apps.</li>
+    <li><b>Delegate class</b> is found by name at runtime, so the module prefix matters. If it's wrong, the car screen stays blank with no compile error.</li>
+    <li>The iPhone UI is still SwiftUI's <code>WindowGroup</code>. Both scenes live in the same app process.</li>
+  </ul>
+
+  <h3>② Entitlement: “this app is allowed in CarPlay”</h3>
+  <pre><code><span class="file">Project.json → App/App.entitlements</span>&lt;key&gt;com.apple.developer.carplay-driving-task&lt;/key&gt;
+&lt;true/&gt;</code></pre>
+  <div class="callout info"><b>Why “driving task”?</b>Each CarPlay entitlement category unlocks a fixed set of templates. <em>Driving task</em> apps (for example mileage logs, toll payments, or parking) get: tab bar, list, grid, information, point of interest, alert, and action sheet. They do <em>not</em> get <code>CPMapTemplate</code> or turn-by-turn navigation, which is why the trip map is a <code>CPPointOfInterestTemplate</code>. Apple has granted Skyway this entitlement, so simulator and iPhone builds both carry it. Automatic signing picks it up because CarPlay is enabled on the App ID in the Apple Developer site.</div>
+
+  <h3>③ Location permission and background mode</h3>
+  <pre><code><span class="file">Project.json → Info.plist</span>"NSLocationWhenInUseUsageDescription": "Skyway uses your location to measure the miles you drive for mileage deductions.",
+"UIBackgroundModes": ["location"]</code></pre>
+  <ul>
+    <li>The usage string is shown on the <b>iPhone</b> the first time a trip starts. CarPlay can't show permission prompts.</li>
+    <li>The <code>location</code> background mode, together with <code>CLBackgroundActivitySession</code>, keeps fixes coming while the iPhone is locked in a cupholder.</li>
+  </ul>
+
+  <!-- 3 ─────────────────────────────────────────────── -->
+  <h2 id="concepts"><span class="chapter">Chapter 3</span>CarPlay concepts in 2 minutes</h2>
+  <div class="card">
+    <ul>
+      <li><b>Templates, not views.</b> You don't write UI for the car. You build <code>CPTemplate</code> objects (a list, a map, an alert) and fill them with data. CarPlay draws them in the car's style, sizes, and colors, which keeps them safe to use while driving.</li>
+      <li><b><code>CPInterfaceController</code> is the navigation controller.</b> It's given to you on connect. It has a root template, a <b>push/pop stack</b> on top, and a single <b>modal</b> slot for alerts and action sheets.</li>
+      <li><b>Taps are closures.</b> Rows, buttons, and alert actions take a handler closure. There's no target/action or SwiftUI binding.</li>
+      <li><b>Nothing updates on its own.</b> Templates don't observe your model. To change the screen you set new items or sections on an existing template. In this feature, a 5-second timer does that.</li>
+      <li><b>Limits apply.</b> A tab bar has at most 4–5 tabs, the stack is at most 5 deep, lists have item limits, and text is truncated by the car. Keep strings short.</li>
+    </ul>
+  </div>
+
+  <!-- 4 ─────────────────────────────────────────────── -->
+  <h2 id="connect"><span class="chapter">Chapter 4</span>Connecting: the scene delegate</h2>
+  <p class="intro">The order of calls from plugging in to the Trips tab appearing.</p>
+
+  <div class="flow">
+    <section class="step system">
+      <header><span class="num">1</span><h4>Driver taps the Skyway icon on the car screen</h4></header>
+      <ul><li>iOS launches the app if needed (even with the iPhone locked), creates a <code>CPTemplateApplicationScene</code>, and creates <code>CarPlaySceneDelegate</code> from the plist name.</li></ul>
+    </section>
+    <div class="arrow"></div>
+    <section class="step callback">
+      <header><span class="num">2</span><h4><code>templateApplicationScene(_:didConnect:)</code></h4><span class="tag">Delegate call</span></header>
+      <ul>
+        <li>Saves the <code>CPInterfaceController</code> and scene.</li>
+        <li>Creates <code>CarPlayTripsController(interfaceController:)</code>. Its <code>init</code> builds an empty <code>CPListTemplate</code> and fills it straight away with <code>refreshList()</code>.</li>
+        <li>Builds a <code>CPTabBarTemplate</code> with Trips <b>first</b>, then Flight, Airport, and Checklist.</li>
+        <li><code>setRootTemplate(tabBar)</code> puts it on the car screen.</li>
+      </ul>
+    </section>
+    <div class="arrow"></div>
+    <section class="step callback">
+      <header><span class="num">3</span><h4><code>tripsController.didConnect()</code></h4><span class="tag">Our code</span></header>
+      <ul>
+        <li><code>store.resumeTrackingIfNeeded()</code>: if the app was relaunched mid-trip, starts GPS again.</li>
+        <li>If a trip is already active, pushes the map right away (without animation), so the driver goes straight back to it.</li>
+        <li>Starts the 5-second refresh timer.</li>
+      </ul>
+    </section>
+    <div class="arrow"><span>…driving…</span></div>
+    <section class="step callback">
+      <header><span class="num">4</span><h4><code>templateApplicationScene(_:didDisconnectInterfaceController:)</code></h4><span class="tag">Delegate call</span></header>
+      <ul>
+        <li><code>tripsController.didDisconnect()</code> stops its timer and forgets the map.</li>
+        <li>All template references are set to <code>nil</code>. <b>The trip keeps tracking</b>: the store, not the car screen, owns it.</li>
+      </ul>
+    </section>
+  </div>
+
+  <pre><code><span class="file">App/CarPlaySceneDelegate.swift</span><span class="kw">func</span> templateApplicationScene(
+  <span class="kw">_</span> templateApplicationScene: <span class="ty">CPTemplateApplicationScene</span>,
+  didConnect interfaceController: <span class="ty">CPInterfaceController</span>
+) {
+  <span class="kw">self</span>.interfaceController = interfaceController
+  scene = templateApplicationScene
+
+  <span class="kw">let</span> tripTemplate = makeTripTemplate()
+  <span class="kw">let</span> airportTemplate = makeAirportTemplate()
+  <span class="kw">let</span> tripsController = <span class="ty">CarPlayTripsController</span>(interfaceController: interfaceController)
+  <span class="kw">let</span> tabBar = <span class="ty">CPTabBarTemplate</span>(templates: [tripsController.rootTemplate, tripTemplate, airportTemplate, makeChecklistTemplate()])
+  ...
+  <span class="kw">self</span>.tripsController = tripsController            <span class="cm">// keep it alive: templates only hold weak refs to handlers' owners</span>
+  interfaceController.setRootTemplate(tabBar, animated: <span class="kw">true</span>, completion: <span class="kw">nil</span>)
+  tripsController.didConnect()
+  ...
+}</code></pre>
+  <div class="callout"><b>Why a separate controller?</b>The delegate already handles three flight tabs. Putting Trips in its own <code>CarPlayTripsController</code> keeps each file about one feature. The delegate only has to create it, put its <code>rootTemplate</code> in the tab bar, and pass on connect and disconnect. Use this pattern for any new CarPlay tab.</div>
+  <div class="callout"><b>Must do:</b> set a root template before <code>didConnect</code> returns, or the car screen stays blank.</div>
+
+  <!-- 5 ─────────────────────────────────────────────── -->
+  <h2 id="tabs"><span class="chapter">Chapter 5</span>The tab bar</h2>
+  <p class="intro"><code>CPTabBarTemplate</code> is the root. Each tab is a template whose <code>tabTitle</code> and <code>tabImage</code> become the tab button.</p>
+  <table>
+    <thead><tr><th>Tab</th><th>Template</th><th>Built by</th></tr></thead>
+    <tbody>
+      <tr><td>🚗 <b>Trips</b> (new)</td><td><code>CPListTemplate</code></td><td><code>CarPlayTripsController.rootTemplate</code></td></tr>
+      <tr><td>✈️ Flight (renamed from “Trip”)</td><td><code>CPInformationTemplate</code></td><td><code>makeTripTemplate()</code></td></tr>
+      <tr><td>🗺 Airport</td><td><code>CPPointOfInterestTemplate</code></td><td><code>makeAirportTemplate()</code></td></tr>
+      <tr><td>☑️ Checklist</td><td><code>CPListTemplate</code></td><td><code>makeChecklistTemplate()</code></td></tr>
+    </tbody>
+  </table>
+  <p>The flight tab was renamed to <b>Flight</b> so drivers don't confuse it with the new mileage <b>Trips</b> tab.</p>
+
+  <!-- 6 ─────────────────────────────────────────────── -->
+  <h2 id="screens"><span class="chapter">Chapter 6</span>The Trips screens at a glance</h2>
+  <p class="intro">Sketches of the four screens the driver sees, and the template behind each.</p>
+
+  <div class="screens">
+    <div>
+      <div class="car">
+        <div class="title">Trips</div>
+        <div class="row">▶︎<div>Start a Trip<small>Tracks miles from where you are now</small></div><span class="chev">›</span></div>
+        <div class="hdr">Recent Trips</div>
+        <div class="row">💼<div>1 Infinite Loop → Castro St<small>Today 8:12 AM · 14.2 mi · Business · $2.27</small></div><span class="chev">›</span></div>
+        <div class="row">🚗<div>Home → Market<small>Yesterday · 3.1 mi · Personal</small></div><span class="chev">›</span></div>
+        <div class="tabs"><span class="on">Trips</span><span>Flight</span><span>Airport</span><span>Checklist</span></div>
+      </div>
+      <div class="caption">A · Trips list · <code>CPListTemplate</code></div>
+    </div>
+    <div>
+      <div class="car">
+        <div class="title">Trip in Progress <span class="btn">End Trip</span></div>
+        <div class="map">
+          <div>
+            <div class="row" style="display:block">7.4 mi · $1.18 est.<small style="color:#9a9a9e;display:block">🟢 Driving · 12 min</small></div>
+          </div>
+          <div class="mapbg">🚗</div>
+        </div>
+      </div>
+      <div class="caption">B · Trip map · <code>CPPointOfInterestTemplate</code></div>
+    </div>
+    <div>
+      <div class="car">
+        <div class="sheet">
+          <b>Trip Ended · 7.4 mi · 12 min</b>
+          <div style="color:#aaa;font-size:11px">Ended at Castro St. Was this trip for business?</div>
+          <div class="a">Business ($1.18)</div>
+          <div class="a">Personal</div>
+          <div class="a">Keep Driving</div>
+        </div>
+      </div>
+      <div class="caption">C · End sheet · <code>CPActionSheetTemplate</code></div>
+    </div>
+    <div>
+      <div class="car">
+        <div class="title">Trip Details</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <div class="row" style="display:block"><small style="color:#9a9a9e">Date</small>Oct 31, 8:12 – 8:24 AM</div>
+          <div class="row" style="display:block"><small style="color:#9a9a9e">Distance</small>14.2 mi</div>
+          <div class="row" style="display:block"><small style="color:#9a9a9e">From</small>1 Infinite Loop</div>
+          <div class="row" style="display:block"><small style="color:#9a9a9e">To</small>Castro St</div>
+          <div class="row" style="display:block"><small style="color:#9a9a9e">Purpose</small>Business</div>
+          <div class="row" style="display:block"><small style="color:#9a9a9e">Deduction</small>$2.27 at $0.16/mi</div>
+        </div>
+      </div>
+      <div class="caption">D · Details · <code>CPInformationTemplate</code></div>
+    </div>
+  </div>
+  <p>There's one more: if location access is off, a <code>CPAlertTemplate</code> says “Allow Location on iPhone to Track Miles”.</p>
+
+  <!-- 7 ─────────────────────────────────────────────── -->
+  <h2 id="controller"><span class="chapter">Chapter 7</span>CarPlayTripsController, section by section</h2>
+  <p class="intro">This file holds all the Trips UI. Each part below is shown as code, followed by what it does and why.</p>
+
+  <h3>7.1 · Properties and init</h3>
+  <pre><code><span class="file">App/CarPlayTripsController.swift</span><span class="kw">@MainActor</span>
+<span class="kw">final class</span> <span class="ty">CarPlayTripsController</span>: <span class="ty">NSObject</span> {
+  <span class="kw">let</span> rootTemplate: <span class="ty">CPListTemplate</span>
+  <span class="kw">private weak var</span> interfaceController: <span class="ty">CPInterfaceController</span>?
+  <span class="kw">private let</span> store = <span class="ty">DriveTripStore</span>.shared
+  <span class="kw">private var</span> mapTemplate: <span class="ty">CPPointOfInterestTemplate</span>?
+  <span class="kw">private var</span> cardOpenedAt: <span class="ty">Date</span>?
+  <span class="kw">private var</span> refreshTimer: <span class="ty">Timer</span>?
+  <span class="kw">private var</span> shownListText: [<span class="ty">String</span>] = []
+  <span class="kw">private var</span> isEnding = <span class="kw">false</span>
+
+  <span class="kw">init</span>(interfaceController: <span class="ty">CPInterfaceController</span>) {
+    <span class="kw">self</span>.interfaceController = interfaceController
+    rootTemplate = <span class="ty">CPListTemplate</span>(title: <span class="st">"Trips"</span>, sections: [])
+    rootTemplate.tabTitle = <span class="st">"Trips"</span>
+    rootTemplate.tabImage = <span class="ty">UIImage</span>(systemName: <span class="st">"car.fill"</span>)
+    <span class="kw">super</span>.init()
+    refreshList()
+  }</code></pre>
+  <table>
+    <thead><tr><th>Property</th><th>Why it exists</th></tr></thead>
+    <tbody>
+      <tr><td><code>rootTemplate</code></td><td>The Trips tab. Created once and kept, so it can be updated in place.</td></tr>
+      <tr><td><code>interfaceController</code></td><td><b>weak</b>, because the scene delegate owns it. Used to push, pop, and present.</td></tr>
+      <tr><td><code>mapTemplate</code></td><td>The trip map while it's on the stack, or <code>nil</code>. Lets refresh update it, and tells us whether it's showing.</td></tr>
+      <tr><td><code>cardOpenedAt</code></td><td>When the driver opened the car's card on the map. Refresh holds off for 30 s so the card doesn't close under their finger.</td></tr>
+      <tr><td><code>shownListText</code></td><td>The text last put in the list, so the list is only replaced when something changed (no flicker).</td></tr>
+      <tr><td><code>isEnding</code></td><td>True while the end sheet is up. Stops a double tap from opening two sheets, and stops refresh from closing the map.</td></tr>
+    </tbody>
+  </table>
+  <p><code>NSObject</code> is needed because it conforms to <code>CPPointOfInterestTemplateDelegate</code>, an Objective-C protocol. <code>@MainActor</code> because CarPlay templates must only be touched on the main thread.</p>
+
+  <h3>7.2 · Connect / disconnect / refresh</h3>
+  <pre><code><span class="kw">func</span> didConnect() {
+  store.resumeTrackingIfNeeded()
+  <span class="kw">if</span> store.activeTrip != <span class="kw">nil</span> {
+    showMap(animated: <span class="kw">false</span>)
+  }
+  refreshTimer = <span class="ty">Timer</span>.scheduledTimer(withTimeInterval: <span class="st">5</span>, repeats: <span class="kw">true</span>) { [<span class="kw">weak self</span>] <span class="kw">_ in</span>
+    <span class="ty">MainActor</span>.assumeIsolated { <span class="kw">self</span>?.refresh() }
+  }
+}
+
+<span class="kw">private func</span> refresh() {
+  refreshList()
+  <span class="kw">if</span> store.isLocationDenied {
+    showLocationAlert()
+  } <span class="kw">else if</span> store.activeTrip == <span class="kw">nil</span>, mapTemplate != <span class="kw">nil</span>, !isEnding {
+    leaveMap()            <span class="cm">// trip ended elsewhere (e.g. Siri) → close the map</span>
+  } <span class="kw">else</span> {
+    refreshMap()
+  }
+}</code></pre>
+  <p>The timer is the only way the car screen learns about changes it didn't cause, like new miles from GPS, or a trip started or ended with Siri. <code>MainActor.assumeIsolated</code> is safe here because a timer scheduled on the main run loop fires on the main thread.</p>
+
+  <h3>7.3 · The list: <code>refreshList()</code></h3>
+  <pre><code><span class="kw">let</span> startItem: <span class="ty">CPListItem</span>
+<span class="kw">if let</span> trip = store.activeTrip {
+  startItem = <span class="ty">CPListItem</span>(text: <span class="st">"Trip in progress · \(trip.milesText)"</span>,
+                         detailText: <span class="st">"Started \(trip.startTimeText) · \(trip.estimatedDeductionText) est."</span>,
+                         image: <span class="kw">Self</span>.statusDot)
+} <span class="kw">else</span> {
+  startItem = <span class="ty">CPListItem</span>(text: <span class="st">"Start a Trip"</span>, detailText: <span class="st">"Tracks miles from where you are now"</span>,
+                         image: <span class="kw">Self</span>.icon(<span class="st">"play.fill"</span>, .systemBlue))
+}
+startItem.accessoryType = .disclosureIndicator
+startItem.handler = { [<span class="kw">weak self</span>] <span class="kw">_</span>, completion <span class="kw">in</span>
+  <span class="kw">self</span>?.startOrShowTrip()
+  completion()                       <span class="cm">// tell CarPlay the tap is handled (stops the spinner)</span>
+}
+...
+<span class="kw">let</span> listText = ([startItem] + recentItems).flatMap { [$0.text ?? <span class="st">""</span>, $0.detailText ?? <span class="st">""</span>] }
+<span class="kw">guard</span> listText != shownListText <span class="kw">else</span> { <span class="kw">return</span> }
+shownListText = listText
+<span class="kw">var</span> sections = [<span class="ty">CPListSection</span>(items: [startItem])]
+<span class="kw">if</span> !recentItems.isEmpty {
+  sections.append(<span class="ty">CPListSection</span>(items: recentItems, header: <span class="st">"Recent Trips"</span>, sectionIndexTitle: <span class="kw">nil</span>))
+}
+rootTemplate.updateSections(sections)</code></pre>
+  <ul>
+    <li><b>The top row does two jobs.</b> With no trip it's “Start a Trip”. During a trip it shows live miles and opens the map.</li>
+    <li><b>Recent trips</b> (5 or 6 depending on the car screen's height, fetched from the backend) each open <code>showDetails(of:)</code>. A briefcase means business, a car means personal.</li>
+    <li><b>The handler's <code>completion()</code> must always be called</b>, or CarPlay keeps showing a loading spinner on the row.</li>
+    <li><code>updateSections</code> replaces the list's contents without replacing the template, so the tab stays put.</li>
+  </ul>
+
+  <h3>7.4 · Colored icons</h3>
+  <pre><code><span class="kw">private static func</span> icon(<span class="kw">_</span> systemName: <span class="ty">String</span>, <span class="kw">_</span> color: <span class="ty">UIColor</span>) -&gt; <span class="ty">UIImage</span>? {
+  <span class="kw">let</span> configuration = <span class="ty">UIImage</span>.<span class="ty">SymbolConfiguration</span>(pointSize: <span class="st">40</span>, weight: .semibold)
+  <span class="kw">guard let</span> symbol = <span class="ty">UIImage</span>(systemName: systemName, withConfiguration: configuration)?
+    .withTintColor(color, renderingMode: .alwaysOriginal) <span class="kw">else</span> { <span class="kw">return nil</span> }
+  <span class="kw">return</span> <span class="ty">UIGraphicsImageRenderer</span>(size: symbol.size).image { <span class="kw">_ in</span> symbol.draw(at: .zero) }
+}</code></pre>
+  <p>CarPlay re-tints SF Symbols to its own colors. Drawing the symbol into a plain bitmap keeps the blue, brown, or red. <code>statusDot</code> draws a small green circle in the middle of a 40×40 image so CarPlay doesn't scale it up.</p>
+
+  <h3>7.5 · Starting a trip and showing the map</h3>
+  <pre><code><span class="kw">private func</span> startOrShowTrip() {
+  <span class="kw">if</span> store.activeTrip == <span class="kw">nil</span> {
+    store.startTrip()
+    refreshList()
+  }
+  showMap(animated: <span class="kw">true</span>)
+}
+
+<span class="kw">private func</span> showMap(animated: <span class="ty">Bool</span>) {
+  <span class="kw">if let</span> mapTemplate, interfaceController?.topTemplate === mapTemplate { <span class="kw">return</span> }
+  <span class="kw">let</span> template = <span class="ty">CPPointOfInterestTemplate</span>(title: <span class="st">"Trip in Progress"</span>,
+                                           pointsOfInterest: carPoints(), selectedIndex: <span class="ty">NSNotFound</span>)
+  template.pointOfInterestDelegate = <span class="kw">self</span>
+  template.trailingNavigationBarButtons = [
+    <span class="ty">CPBarButton</span>(title: <span class="st">"End Trip"</span>) { [<span class="kw">weak self</span>] <span class="kw">_ in self</span>?.confirmEnd() },
+  ]
+  mapTemplate = template
+  interfaceController?.pushTemplate(template, animated: animated, completion: <span class="kw">nil</span>)
+}</code></pre>
+  <ul>
+    <li><b>The duplicate-push guard checks <code>topTemplate</code></b>, not just <code>mapTemplate != nil</code>. The Back button pops the map without telling us, so <code>mapTemplate</code> can point to a map that's no longer on screen.</li>
+    <li><b>End Trip is in the navigation bar</b> (<code>CPBarButton</code>), so it's there even before the first GPS fix puts the car on the map.</li>
+    <li><code>selectedIndex: NSNotFound</code> starts with nothing selected.</li>
+  </ul>
+
+  <h3>7.6 · The car on the map: <code>carPoints()</code></h3>
+  <pre><code><span class="kw">guard let</span> trip = store.activeTrip, <span class="kw">let</span> current = store.currentLocation <span class="kw">else</span> { <span class="kw">return</span> [] }
+<span class="kw">let</span> status = <span class="kw">if</span> store.isParked { <span class="st">"🟢 Parked"</span> }
+             <span class="kw">else if</span> store.lastMovedAt == <span class="kw">nil</span> { <span class="st">"🟢 Trip in progress"</span> }
+             <span class="kw">else</span> { <span class="st">"🟢 Driving"</span> }
+<span class="kw">let</span> point = <span class="ty">CPPointOfInterest</span>(
+  location: <span class="ty">MKMapItem</span>(location: current, address: <span class="kw">nil</span>),
+  title: <span class="st">"\(trip.milesText) · \(trip.estimatedDeductionText) est."</span>,   <span class="cm">// side-panel row</span>
+  subtitle: <span class="st">"\(status) · \(trip.minutesText())"</span>,
+  summary: <span class="st">"From \(trip.startAddress ?? "your start")"</span>,
+  detailTitle: ..., detailSubtitle: ..., detailSummary: ...,              <span class="cm">// the card when tapped</span>
+  pinImage: <span class="ty">UIImage</span>(systemName: <span class="st">"car.fill"</span>)
+)
+point.primaryButton = <span class="ty">CPTextButton</span>(title: <span class="st">"End Trip"</span>, textStyle: .confirm) { [<span class="kw">weak self</span>] <span class="kw">_ in</span>
+  <span class="kw">self</span>?.confirmEnd()
+}
+<span class="kw">return</span> [point]</code></pre>
+  <p>A <code>CPPointOfInterestTemplate</code> shows a map with pins, plus a side panel with one row per pin. Tapping a row opens a <b>card</b> using the <code>detail*</code> fields and up to two buttons. There's exactly one point, the car, so the trip reads as one row. The 🟢 emoji works as a colored status light, since CarPlay text is always one color.</p>
+
+  <h3>7.7 · Updating the map without closing the card</h3>
+  <pre><code><span class="kw">private func</span> refreshMap() {
+  <span class="kw">guard let</span> mapTemplate <span class="kw">else</span> { <span class="kw">return</span> }
+  <span class="kw">if let</span> cardOpenedAt, <span class="ty">Date</span>.now.timeIntervalSince(cardOpenedAt) &lt; <span class="st">30</span> { <span class="kw">return</span> }
+  cardOpenedAt = <span class="kw">nil</span>
+  mapTemplate.setPointsOfInterest(carPoints(), selectedIndex: <span class="ty">NSNotFound</span>)
+}
+
+<span class="cm">// CPPointOfInterestTemplateDelegate</span>
+<span class="kw">nonisolated func</span> pointOfInterestTemplate(<span class="kw">_</span>: <span class="ty">CPPointOfInterestTemplate</span>, didSelectPointOfInterest <span class="kw">_</span>: <span class="ty">CPPointOfInterest</span>) {
+  <span class="kw">let</span> openedAt = <span class="ty">Date</span>.now
+  <span class="ty">Task</span> { <span class="kw">@MainActor</span> [<span class="kw">weak self</span>] <span class="kw">in self</span>?.cardOpenedAt = openedAt }
+}</code></pre>
+  <p>The only way to move the pin or change its text is to <b>replace the points</b> with <code>setPointsOfInterest</code>, and that closes any open card. So when the driver opens the card, refreshes pause for 30 seconds to give them time to tap End Trip. The delegate is <code>nonisolated</code> and hops to the main actor with a <code>Task</code>, because CarPlay may call it from another thread.</p>
+
+  <h3>7.8 · Ending: <code>confirmEnd()</code> and <code>finish(as:)</code></h3>
+  <pre><code><span class="kw">private func</span> confirmEnd() {
+  <span class="kw">guard</span> store.activeTrip != <span class="kw">nil</span>, !isEnding <span class="kw">else</span> { <span class="kw">return</span> }
+  isEnding = <span class="kw">true</span>
+  <span class="ty">Task</span> { [<span class="kw">weak self</span>] <span class="kw">in</span>
+    <span class="kw">guard let self else</span> { <span class="kw">return</span> }
+    <span class="kw">let</span> address = <span class="kw">await</span> store.endingAddress()          <span class="cm">// reverse-geocode where we are</span>
+    <span class="kw">guard var</span> trip = store.activeTrip <span class="kw">else</span> { isEnding = <span class="kw">false</span>; <span class="kw">return</span> }
+    <span class="kw">let</span> endDate = <span class="ty">Date</span>.now
+    trip.endDate = endDate                                 <span class="cm">// freeze what the sheet shows</span>
+    <span class="kw">let</span> business = <span class="ty">CPAlertAction</span>(title: <span class="st">"Business (\(trip.estimatedDeductionText))"</span>, style: .default) { ... finish(as: .business, miles: trip.miles, endDate: endDate) }
+    <span class="kw">let</span> personal = <span class="ty">CPAlertAction</span>(title: <span class="st">"Personal"</span>, style: .default) { ... finish(as: .personal, ...) }
+    <span class="kw">let</span> keepDriving = <span class="ty">CPAlertAction</span>(title: <span class="st">"Keep Driving"</span>, style: .cancel) { ... isEnding = <span class="kw">false</span>; dismissTemplate }
+    <span class="kw">let</span> sheet = <span class="ty">CPActionSheetTemplate</span>(title: <span class="st">"Trip Ended · \(trip.milesText) · \(trip.minutesText())"</span>,
+                                      message: message, actions: [business, personal, keepDriving])
+    interfaceController?.presentTemplate(sheet, animated: <span class="kw">true</span>, completion: <span class="kw">nil</span>)
+  }
+}
+
+<span class="kw">private func</span> finish(as purpose: <span class="ty">DriveTrip</span>.<span class="ty">Purpose</span>, miles: <span class="ty">Double</span>, endDate: <span class="ty">Date</span>) {
+  interfaceController?.dismissTemplate(animated: <span class="kw">true</span>, completion: <span class="kw">nil</span>)   <span class="cm">// close sheet</span>
+  store.endTrip(as: purpose, miles: miles, endDate: endDate)                <span class="cm">// save</span>
+  isEnding = <span class="kw">false</span>
+  leaveMap()                                                                <span class="cm">// pop to the list</span>
+  refreshList()
+}</code></pre>
+  <ul>
+    <li>The address lookup is <code>async</code>, so this runs in a <code>Task</code>. <code>isEnding</code> is set first so a second tap is ignored.</li>
+    <li><b>The miles and end time are captured when the sheet opens.</b> The car may keep moving while the driver decides, but the saved trip matches the numbers on the sheet.</li>
+    <li><code>presentTemplate</code> shows the sheet modally, and <code>dismissTemplate</code> closes it. Only one modal can show at a time.</li>
+    <li>One question (“Business or Personal?”) both ends the trip and files it, so ending takes one tap plus one choice.</li>
+  </ul>
+
+  <h3>7.9 · Location denied</h3>
+  <pre><code><span class="kw">let</span> alert = <span class="ty">CPAlertTemplate</span>(
+  titleVariants: [<span class="st">"Allow Location on iPhone to Track Miles"</span>, <span class="st">"Allow Location on iPhone"</span>],
+  actions: [ok]
+)
+interfaceController?.presentTemplate(alert, animated: <span class="kw">true</span>, completion: <span class="kw">nil</span>)</code></pre>
+  <p><code>titleVariants</code> are longest to shortest. CarPlay picks the longest one that fits the car's screen. Clearing <code>store.isLocationDenied</code> first makes sure the alert only shows once.</p>
+
+  <h3>7.10 · Trip details</h3>
+  <p><code>showDetails(of:)</code> pushes a <code>CPInformationTemplate</code> with <code>.twoColumn</code> layout and six <code>CPInformationItem</code> title/detail pairs. It has no actions, because it's read-only. Back pops it automatically.</p>
+
+  <!-- 8 ─────────────────────────────────────────────── -->
+  <h2 id="stack"><span class="chapter">Chapter 8</span>The template stack</h2>
+  <p class="intro"><code>CPInterfaceController</code> has three layers. This is what's on each layer while ending a trip (read bottom to top):</p>
+  <div class="stack">
+    <div class="lvl root"><b>Root · CPTabBarTemplate</b><small>setRootTemplate · Trips tab = CPListTemplate</small></div>
+    <div class="lvl pushed"><b>Pushed · CPPointOfInterestTemplate</b><small>pushTemplate / popToRootTemplate · “Trip in Progress”</small></div>
+    <div class="lvl modal"><b>Modal · CPActionSheetTemplate</b><small>presentTemplate / dismissTemplate · “Trip Ended”</small></div>
+  </div>
+  <table>
+    <thead><tr><th>Call</th><th>Used for</th></tr></thead>
+    <tbody>
+      <tr><td><code>setRootTemplate(_:animated:completion:)</code></td><td>Tab bar, once on connect</td></tr>
+      <tr><td><code>pushTemplate(_:animated:completion:)</code></td><td>Trip map, trip details</td></tr>
+      <tr><td><code>popToRootTemplate(animated:completion:)</code></td><td><code>leaveMap()</code> after ending, or when a trip ends through Siri</td></tr>
+      <tr><td><code>presentTemplate(_:animated:completion:)</code></td><td>End-trip action sheet, location alert</td></tr>
+      <tr><td><code>dismissTemplate(animated:completion:)</code></td><td>Closing either of those</td></tr>
+      <tr><td><code>topTemplate</code></td><td>Checking whether the map is really still showing</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 9 ─────────────────────────────────────────────── -->
+  <h2 id="refresh"><span class="chapter">Chapter 9</span>Keeping the car screen current</h2>
+  <p class="intro">What happens on every 5-second tick:</p>
+  <div class="flow">
+    <section class="step"><header><span class="num">⏱</span><h4>Timer fires → <code>refresh()</code></h4></header></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">1</span><h4><code>refreshList()</code></h4></header><ul><li>Rebuilds the rows, compares their text with <code>shownListText</code>, and only calls <code>updateSections</code> if something changed.</li></ul></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">2</span><h4>Then the first of these that's true:</h4></header>
+      <table>
+        <thead><tr><th>Condition</th><th>Action</th></tr></thead>
+        <tbody>
+          <tr><td><code>store.isLocationDenied</code></td><td><code>showLocationAlert()</code> closes the map and shows the alert</td></tr>
+          <tr><td>No active trip, map open, not ending</td><td><code>leaveMap()</code>: the trip was ended with Siri</td></tr>
+          <tr><td>Otherwise</td><td><code>refreshMap()</code> moves the car and updates the miles (unless the card was opened in the last 30 s)</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+  <div class="callout tip"><b>Why poll instead of observing?</b><code>DriveTripStore</code> is <code>@Observable</code>, which suits SwiftUI on the iPhone. CarPlay templates aren't views and don't re-render, so something has to push new data into them. A 5 s timer is simple, picks up changes from any source (GPS, Siri, relaunch), and is cheap because the list only updates when its text changes.</div>
+
+  <!-- 10 ─────────────────────────────────────────────── -->
+  <h2 id="data"><span class="chapter">Chapter 10</span>The data layer: store, tracker, model</h2>
+
+  <h3>10.1 · DriveTripStore: the single source of truth</h3>
+  <table>
+    <thead><tr><th>Member</th><th>What it does</th></tr></thead>
+    <tbody>
+      <tr><td><code>static let shared</code></td><td>One instance used by CarPlay and Siri, so they always agree.</td></tr>
+      <tr><td><code>trips</code> / <code>recentTrips</code></td><td>Saved trips, newest first. CarPlay shows the first 5.</td></tr>
+      <tr><td><code>activeTrip</code></td><td>The trip in progress, or <code>nil</code>.</td></tr>
+      <tr><td><code>currentLocation</code></td><td>The latest fix, which places the car on the map.</td></tr>
+      <tr><td><code>lastMovedAt</code> / <code>isParked</code></td><td>Parked = moved during the trip but still for over 60 s. Drives the 🟢 status text.</td></tr>
+      <tr><td><code>startTrip()</code></td><td>Creates the trip, saves it, and starts tracking.</td></tr>
+      <tr><td><code>resumeTrackingIfNeeded()</code></td><td>Restarts GPS after a relaunch, since the active trip is loaded from disk.</td></tr>
+      <tr><td><code>endingAddress()</code></td><td>Reverse-geocodes the current location for the end sheet.</td></tr>
+      <tr><td><code>endTrip(as:miles:endDate:)</code></td><td>Stops tracking, sets the purpose, moves the trip to <code>trips</code>, and saves.</td></tr>
+    </tbody>
+  </table>
+
+  <h3>10.2 · From GPS to miles</h3>
+  <div class="pipeline">
+    <div class="box svc"><strong>CLLocationUpdate</strong><small>.liveUpdates(.automotiveNavigation)</small></div>
+    <span class="sep">→</span>
+    <div class="box svc"><strong>Accuracy filter</strong><small>keep fixes ≤ 50 m</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>record(_:)</strong><small>first fix → start address</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>Jitter filter</strong><small>skip moves &lt; 5 m</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>Speed filter</strong><small>skip jumps ≥ 70 m/s</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>miles += m / 1609.344</strong><small>save every 15 s</small></div>
+  </div>
+  <pre><code><span class="file">App/DriveTracker.swift</span>serviceSession = <span class="ty">CLServiceSession</span>(authorization: .whenInUse)   <span class="cm">// asks for permission on iPhone</span>
+backgroundSession = <span class="ty">CLBackgroundActivitySession</span>()             <span class="cm">// keeps updates coming while locked</span>
+<span class="kw">for try await</span> update <span class="kw">in</span> <span class="ty">CLLocationUpdate</span>.liveUpdates(.automotiveNavigation) {
+  <span class="kw">if</span> update.authorizationDenied || update.authorizationDeniedGlobally || update.authorizationRestricted {
+    continuation.yield(.denied); <span class="kw">break</span>
+  }
+  <span class="kw">if let</span> location = update.location, location.horizontalAccuracy &gt;= <span class="st">0</span>, location.horizontalAccuracy &lt;= <span class="st">50</span> {
+    continuation.yield(.location(location))
+  }
+}</code></pre>
+  <ul>
+    <li><b>Why the filters?</b> Bad GPS fixes wander around. Without filtering, a phone sitting in a parking lot would slowly add up miles. Skipping moves under 5 m also <em>keeps the older fix</em>, so a slow crawl still adds up once it passes 5 m.</li>
+    <li>The tracker exposes an <code>AsyncStream&lt;Event&gt;</code>. The store reads it with <code>for await</code> in a <code>Task</code>, and cancelling that task stops the stream.</li>
+    <li><code>-simulateDrive</code> (DEBUG only) swaps in <code>SimulatedDrive</code>, which drives through Cupertino at about 67 mph.</li>
+  </ul>
+
+  <h3>10.3 · Saving</h3>
+  <p>The store writes <code>{ trips, activeTrip }</code> as JSON to <code>Application Support/DriveTrips.json</code>. It uses <code>.completeFileProtectionUntilFirstUserAuthentication</code> because CarPlay usually runs with the iPhone <b>locked</b>. Stricter protection would make the file unreadable while driving. Because the active trip is saved too, a trip survives the app being killed. On relaunch, <code>didConnect()</code> → <code>resumeTrackingIfNeeded()</code> picks it back up.</p>
+
+  <h3>10.4 · DriveTrip: the model</h3>
+  <p>A <code>Codable</code> struct with <code>startDate</code>, <code>endDate</code>, <code>start</code>/<code>end</code> coordinates, addresses, <code>miles</code>, and an optional <code>purpose</code>. It also builds all the display text, such as <code>milesText</code> (“14.2 mi”), <code>summaryText</code> (“Today 8:12 AM · 14.2 mi · Business · $2.27”), and <code>routeText</code>. Keeping text formatting in the model means the CarPlay code and Siri replies always match. The deduction is <code>miles × $0.16</code> and only counts for <code>.business</code> trips.</p>
+
+  <!-- 11 ─────────────────────────────────────────────── -->
+  <h2 id="siri"><span class="chapter">Chapter 11</span>Siri: starting and ending hands-free</h2>
+  <div class="card">
+    <table>
+      <thead><tr><th>Phrase</th><th>Intent</th><th>Effect</th></tr></thead>
+      <tbody>
+        <tr><td>“Start a trip in Skyway”</td><td><code>StartDriveTripIntent</code></td><td><code>store.startTrip()</code></td></tr>
+        <tr><td>“End my trip in Skyway”</td><td><code>EndDriveTripIntent</code></td><td>Siri asks “Business or Personal?” because <code>purpose</code> is a required <code>AppEnum</code></td></tr>
+        <tr><td>“End my business trip in Skyway”</td><td><code>EndDriveTripIntent</code></td><td>Purpose is filled in from the phrase, so Siri doesn't ask</td></tr>
+      </tbody>
+    </table>
+  </div>
+  <p>Intents change the <b>same</b> <code>DriveTripStore.shared</code>. The CarPlay screen finds out on the next 5 s tick: the list row changes and the map closes. <code>DriveTrip.Purpose</code> conforms to <code>AppEnum</code> so Siri can say and recognize “Business” and “Personal”.</p>
+
+
+  <!-- 11b ─────────────────────────────────────────────── -->
+  <h2 id="sync"><span class="chapter">Chapter 11b</span>Syncing trips to the backend</h2>
+  <p class="intro">When a trip ends, it's saved on the iPhone first and uploaded afterward. For now the "backend" is a SwiftData store on the iPhone, behind a protocol so a real server can replace it.</p>
+  <div class="pipeline">
+    <div class="box ui"><strong>Business / Personal tap</strong><small>or Siri</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>endTrip(as:)</strong><small>save() to DriveTrips.json</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>TripSyncer.syncNow()</strong><small>background task</small></div>
+    <span class="sep">→</span>
+    <div class="box svc"><strong>TripBackend.upload</strong><small>SwiftDataTripBackend today</small></div>
+    <span class="sep">→</span>
+    <div class="box model"><strong>syncedAt = now</strong><small>save() again</small></div>
+  </div>
+  <table>
+    <thead><tr><th>File</th><th>Role</th></tr></thead>
+    <tbody>
+      <tr><td><code>App/TripBackend.swift</code></td><td>Protocol with one method, <code>upload(_:)</code>. Uploads must be safe to repeat (keyed by <code>trip.id</code>).</td></tr>
+      <tr><td><code>App/SwiftDataTripBackend.swift</code></td><td>Stand-in server: upserts into <code>SyncedTrips.store</code>. <code>-failTripSync</code> makes every upload fail, for testing retries.</td></tr>
+      <tr><td><code>App/SyncedTripRecord.swift</code></td><td>The SwiftData <code>@Model</code>, shaped like the server's data. Delete it when the real server exists.</td></tr>
+      <tr><td><code>App/TripSyncer.swift</code></td><td>The queue: uploads oldest first, stops at the first failure, retries with backoff, and gets extra background time.</td></tr>
+    </tbody>
+  </table>
+  <h3>Recent Trips come from the backend</h3>
+  <p><code>TripBackend.recentTrips(limit:)</code> returns the newest saved trips. <code>SwiftDataTripBackend</code> sorts and limits in the <code>FetchDescriptor</code>, as a server query would. <code>DriveTripStore.refreshRecentTrips()</code> then adds trips still waiting to upload, so a trip ended with no signal still appears. If the fetch fails, the list falls back to the trips saved on the iPhone.</p>
+  <ul>
+    <li><b>How many:</b> <code>CarPlayTripsController.recentTripLimit(forScreenHeight:)</code> estimates how many rows fit on <code>carWindow.bounds.height</code>: 6 on the common 800×480 screen, 5 on shorter ones.</li>
+    <li><b>When it fetches:</b> on launch, when the car connects, and after a trip ends or finishes uploading. The 5-second refresh only reads <code>store.recentTrips</code>, so the backend isn't asked every few seconds.</li>
+  </ul>
+  <h3>When a sync runs</h3>
+  <ul>
+    <li>Right after a trip ends, from CarPlay or Siri.</li>
+    <li>On app launch, and when the car connects (<code>didConnect()</code>).</li>
+    <li>When Skyway on iPhone becomes active.</li>
+    <li>After a failure: 30 s, then 1, 2, 4… minutes, up to 15.</li>
+  </ul>
+  <div class="callout"><b>Why a background task?</b>Location tracking stops when the trip ends, and that was the only thing keeping the app running. If the driver switches to Maps on the car screen, iOS can suspend Skyway within seconds. <code>beginBackgroundTask</code> gives the upload about 30 seconds. If that runs out, the trip stays in the queue and is sent on the next pass.</div>
+  <div class="callout tip"><b>Moving to a real server</b>Write an <code>HTTPTripBackend: TripBackend</code> that POSTs (or PUTs to <code>/trips/{id}</code>) with <code>URLSession</code> and throws on errors and non-2xx responses. Pass it to <code>TripSyncer</code> in <code>DriveTripStore</code>. Store any auth token in the Keychain with <code>kSecAttrAccessibleAfterFirstUnlock</code> so it can be read while the iPhone is locked.</div>
+
+  <!-- 12 ─────────────────────────────────────────────── -->
+  <h2 id="journeys"><span class="chapter">Chapter 12</span>End-to-end journeys</h2>
+
+  <h3>Trip state</h3>
+  <div class="states">
+    <div class="state">No trip<small>list shows “Start a Trip”</small></div>
+    <div class="tr">Start a Trip tap<br>or Siri</div>
+    <div class="state active">Active<small>tracking · map pushed</small></div>
+    <div class="tr">End Trip tap</div>
+    <div class="state ending">Ending<small>action sheet up</small></div>
+  </div>
+  <ul>
+    <li><b>Ending → Active:</b> “Keep Driving” closes the sheet and the trip carries on.</li>
+    <li><b>Ending → No trip:</b> Business or Personal saves it, pops to the list, and adds it under Recent Trips.</li>
+    <li><b>Active → No trip:</b> Siri “End my trip” (the map closes on the next tick), or location denied (the trip is discarded and the alert shows).</li>
+  </ul>
+
+  <h3>Journey: tap Start a Trip → drive → end as Business</h3>
+  <div class="flow">
+    <section class="step"><header><span class="num">1</span><h4>Tap “Start a Trip”</h4></header><ul><li><code>CPListItem.handler</code> → <code>startOrShowTrip()</code> → <code>store.startTrip()</code> → <code>DriveTracker.events()</code> starts. The iPhone may ask for location permission.</li></ul></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">2</span><h4>Map pushed</h4></header><ul><li><code>showMap(animated: true)</code> → <code>pushTemplate(CPPointOfInterestTemplate)</code>. No pin until the first fix, but End Trip is already in the nav bar.</li></ul></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">3</span><h4>Fixes arrive</h4></header><ul><li><code>record(_:)</code> sets <code>currentLocation</code>, looks up the start address once, and adds miles. Each 5 s tick → <code>setPointsOfInterest</code> moves the car.</li></ul></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">4</span><h4>Tap “End Trip”</h4></header><ul><li><code>confirmEnd()</code> → <code>await endingAddress()</code> → <code>presentTemplate(CPActionSheetTemplate)</code>.</li></ul></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">5</span><h4>Tap “Business ($1.18)”</h4></header><ul><li><code>finish(as: .business)</code> → dismiss → <code>store.endTrip</code> saves to JSON → <code>popToRootTemplate</code> → the list shows it under Recent Trips.</li></ul></section>
+  </div>
+
+  <h3>Journey: car disconnects mid-trip, then reconnects</h3>
+  <div class="flow">
+    <section class="step"><header><span class="num">1</span><h4>Unplug</h4></header><ul><li><code>didDisconnect</code> stops the UI timer only. <code>DriveTripStore</code> keeps tracking in the background.</li></ul></section>
+    <div class="arrow"></div>
+    <section class="step"><header><span class="num">2</span><h4>Plug back in</h4></header><ul><li>New <code>didConnect</code> → a new controller → <code>didConnect()</code> sees <code>activeTrip</code> and pushes the map straight away, with the miles driven so far.</li></ul></section>
+  </div>
+
+  <!-- 13 ─────────────────────────────────────────────── -->
+  <h2 id="classes"><span class="chapter">Chapter 13</span>CarPlay class reference</h2>
+  <p class="intro">Every CarPlay type used by the Trips feature, and how it's used.</p>
+  <table>
+    <thead><tr><th>Class / protocol</th><th>What it is</th><th>Where it's used in Trips</th></tr></thead>
+    <tbody>
+      <tr><td><code>CPTemplateApplicationScene</code></td><td>The <code>UIScene</code> for the car screen. Can also open URLs, such as Maps directions.</td><td>Created by iOS, stored by the delegate</td></tr>
+      <tr><td><code>CPTemplateApplicationSceneDelegate</code></td><td>Gets connect and disconnect calls.</td><td><code>CarPlaySceneDelegate</code></td></tr>
+      <tr><td><code>CPInterfaceController</code></td><td>Navigation: root, push/pop stack, and one modal.</td><td>Every screen change</td></tr>
+      <tr><td><code>CPTabBarTemplate</code></td><td>Root with tabs at the bottom (or side).</td><td>Trips · Flight · Airport · Checklist</td></tr>
+      <tr><td><code>CPListTemplate</code></td><td>A scrolling list of sections. Update it with <code>updateSections</code>.</td><td>Trips tab root</td></tr>
+      <tr><td><code>CPListSection</code></td><td>A group of rows with an optional header.</td><td>Start row; “Recent Trips”</td></tr>
+      <tr><td><code>CPListItem</code></td><td>A row with text, detail, image, accessory, and <code>handler</code>.</td><td>Start a Trip / Trip in progress; each recent trip</td></tr>
+      <tr><td><code>CPPointOfInterestTemplate</code></td><td>A map with pins and a side panel of rows. Allowed for driving-task apps.</td><td>“Trip in Progress” map</td></tr>
+      <tr><td><code>CPPointOfInterestTemplateDelegate</code></td><td>Map region changes and pin selection.</td><td>Holding the card open for 30 s</td></tr>
+      <tr><td><code>CPPointOfInterest</code></td><td>One pin: location, row text, card text, pin image, and buttons.</td><td>The car</td></tr>
+      <tr><td><code>CPTextButton</code></td><td>A text button on a card or information template. <code>.confirm</code> style is emphasized.</td><td>End Trip on the car's card</td></tr>
+      <tr><td><code>CPBarButton</code></td><td>A navigation bar button (<code>leading</code>/<code>trailingNavigationBarButtons</code>).</td><td>End Trip on the map's nav bar</td></tr>
+      <tr><td><code>CPActionSheetTemplate</code></td><td>A modal with a title, message, and a list of actions.</td><td>“Trip Ended” Business / Personal / Keep Driving</td></tr>
+      <tr><td><code>CPAlertTemplate</code></td><td>A small modal with title variants and actions.</td><td>Location access is off</td></tr>
+      <tr><td><code>CPAlertAction</code></td><td>One button in a sheet or alert (<code>.default</code>, <code>.cancel</code>, <code>.destructive</code>).</td><td>Sheet and alert buttons</td></tr>
+      <tr><td><code>CPInformationTemplate</code></td><td>Read-only title/detail pairs in one or two columns, plus optional buttons.</td><td>Trip Details</td></tr>
+      <tr><td><code>CPInformationItem</code></td><td>One title/detail pair.</td><td>Date, Distance, From, To, Purpose, Deduction</td></tr>
+    </tbody>
+  </table>
+
+  <!-- 14 ─────────────────────────────────────────────── -->
+  <h2 id="testing"><span class="chapter">Chapter 14</span>Testing in the simulator</h2>
+  <div class="card">
+    <p><b>Option A, built-in fake drive:</b> turn on the <code>-simulateDrive</code> launch argument in the scheme (Project.json → <code>commandLineArguments</code>). <code>DriveTracker</code> then plays back a drive through Cupertino at about 67 mph and parks at the end.</p>
+    <p><b>Option B, simulated location:</b> start a trip in CarPlay, then run</p>
+    <pre><code>Scripts/simulate-drive.sh          <span class="cm"># 7.5 mi through Cupertino at 30 mph</span>
+Scripts/simulate-drive.sh 70       <span class="cm"># same route at 70 mph</span>
+Scripts/simulate-drive.sh freeway  <span class="cm"># Apple's Freeway Drive scenario</span>
+Scripts/simulate-drive.sh stop     <span class="cm"># stop and clear</span></code></pre>
+    <p>This uses <code>xcrun simctl location</code> on the booted Bitrig iPhone simulator, so it tests the real CoreLocation path, including the permission prompt.</p>
+  </div>
+
+  <!-- 15 ─────────────────────────────────────────────── -->
+  <h2 id="lessons"><span class="chapter">Chapter 15</span>Gotchas we hit</h2>
+  <div class="card">
+    <ol>
+      <li><b>Back doesn't tell you.</b> Popping with the system Back button doesn't notify your code. Check <code>interfaceController.topTemplate</code> before deciding a template is still showing.</li>
+      <li><b>Replacing points closes the card.</b> <code>setPointsOfInterest</code> is the only way to update a pin, and it closes an open card. Hold off refreshes while the driver is reading it.</li>
+      <li><b>Selecting from code isn't “opening the card”.</b> Passing a <code>selectedIndex</code> only highlights the row, and may trigger the selection delegate as if the driver tapped. Use <code>NSNotFound</code>.</li>
+      <li><b>Colors get stripped.</b> CarPlay re-tints text and symbols. Draw icons into bitmaps, or use emoji, for color.</li>
+      <li><b>Always call <code>completion()</code></b> in a <code>CPListItem.handler</code>, or the row spins forever.</li>
+      <li><b>Freeze values shown in a sheet.</b> Data keeps changing while a modal is up. Save what the driver saw.</li>
+      <li><b>File protection vs. a locked phone.</b> Use <code>…UntilFirstUserAuthentication</code> for anything CarPlay reads or writes.</li>
+      <li><b>Short strings.</b> Side-panel rows truncate early, which is why the status became “🟢 Parked” and not a longer phrase.</li>
+      <li><b>Don't rebuild templates on every tick.</b> Compare first, then update in place (<code>updateSections</code>), to avoid flicker and stay within CarPlay's update limits.</li>
+    </ol>
+  </div>
+
+  <h2>Adding a new CarPlay tab: checklist</h2>
+  <div class="card">
+    <ol>
+      <li>Check that your entitlement category allows the templates you need.</li>
+      <li>Put the data and logic in a shared <code>@MainActor</code> store, not in the CarPlay code.</li>
+      <li>Create a <code>CarPlayXController</code> with a <code>rootTemplate</code>, <code>didConnect()</code>, and <code>didDisconnect()</code>.</li>
+      <li>Give the root template a <code>tabTitle</code> and <code>tabImage</code>, and add it to the <code>CPTabBarTemplate</code> in <code>CarPlaySceneDelegate</code>.</li>
+      <li>Keep a strong reference to the controller in the delegate, and release it on disconnect.</li>
+      <li>Refresh by updating templates in place, with a timer or store callbacks.</li>
+      <li>Add any permissions to <code>Info.plist</code>. Prompts appear on the iPhone, not the car.</li>
+    </ol>
+  </div>
+
+  <footer>
+    Related: <a href="CarPlayLifecycle.html">CarPlay scene lifecycle</a> · <a href="CarPlayTripsMockup.html">Interactive Trips mockup</a><br>
+    Source: <code>App/CarPlaySceneDelegate.swift</code>, <code>App/CarPlayTripsController.swift</code>, <code>App/DriveTripStore.swift</code>, <code>App/DriveTracker.swift</code>, <code>App/DriveTrip.swift</code>, <code>App/DriveTripIntents.swift</code>, <code>App/SkywayShortcuts.swift</code>, <code>App/TripSyncer.swift</code>, <code>App/TripBackend.swift</code>, <code>App/SwiftDataTripBackend.swift</code>, <code>App/SyncedTripRecord.swift</code>
+  </footer>
+</main>
+</body>
+</html>
