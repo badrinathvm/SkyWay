@@ -333,9 +333,9 @@
   </ul>
 
   <h3>② Entitlement: “this app is allowed in CarPlay”</h3>
-  <pre><code><span class="file">App/App-Simulator.entitlements</span>&lt;key&gt;com.apple.developer.carplay-driving-task&lt;/key&gt;
+  <pre><code><span class="file">Project.json → App/App.entitlements</span>&lt;key&gt;com.apple.developer.carplay-driving-task&lt;/key&gt;
 &lt;true/&gt;</code></pre>
-  <div class="callout info"><b>Why “driving task”?</b>Each CarPlay entitlement category unlocks a fixed set of templates. <em>Driving task</em> apps (for example mileage logs, toll payments, or parking) get: tab bar, list, grid, information, point of interest, alert, and action sheet. They do <em>not</em> get <code>CPMapTemplate</code> or turn-by-turn navigation, which is why the trip map is a <code>CPPointOfInterestTemplate</code>. The simulator entitlements file is only used for simulator builds. For a real car, request the entitlement from Apple and add it to a provisioning profile.</div>
+  <div class="callout info"><b>Why “driving task”?</b>Each CarPlay entitlement category unlocks a fixed set of templates. <em>Driving task</em> apps (for example mileage logs, toll payments, or parking) get: tab bar, list, grid, information, point of interest, alert, and action sheet. They do <em>not</em> get <code>CPMapTemplate</code> or turn-by-turn navigation, which is why the trip map is a <code>CPPointOfInterestTemplate</code>. Apple has granted Skyway this entitlement, so simulator and iPhone builds both carry it. Automatic signing picks it up because CarPlay is enabled on the App ID in the Apple Developer site.</div>
 
   <h3>③ Location permission and background mode</h3>
   <pre><code><span class="file">Project.json → Info.plist</span>"NSLocationWhenInUseUsageDescription": "Skyway uses your location to measure the miles you drive for mileage deductions.",
