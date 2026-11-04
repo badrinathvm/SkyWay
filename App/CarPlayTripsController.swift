@@ -13,14 +13,18 @@ final class CarPlayTripsController: NSObject {
   private var cardOpenedAt: Date?
   private var refreshTimer: Timer?
   private var followTimer: Timer?
-  /// Where the car was when the map was made, which is where CarPlay framed it.
+  /// Where the car was when the map was made.
   private var mapCenter: CLLocation?
+  /// Where the car's point sits, which is where CarPlay centered the map. It's offset from the
+  /// car so the car shows in the open part of the map; see `focus(for:)`.
+  private var mapFocus: CLLocation?
+  /// Where the car was when the map before this one was made, for its heading.
+  private var previousMapCenter: CLLocation?
   private var shownListText: [String] = []
   private var isEnding = false
 
-  /// `carScreenHeight` is the car display's height in points, from the scene's `carWindow`.
-  /// Car screens range from short, wide strips to tall portrait displays, so it decides how
-  /// many recent trips to fetch.
+  /// `carScreenHeight` is the car display's height in points. Car screens range from short, wide
+  /// strips to tall portrait displays, so it decides how many recent trips to fetch.
   init(interfaceController: CPInterfaceController, carScreenHeight: CGFloat) {
     self.interfaceController = interfaceController
     store.recentTripLimit = Self.recentTripLimit(forScreenHeight: carScreenHeight)
@@ -60,6 +64,8 @@ final class CarPlayTripsController: NSObject {
     followTimer = nil
     mapTemplate = nil
     mapCenter = nil
+    mapFocus = nil
+    previousMapCenter = nil
   }
 
   private func refresh() {
@@ -170,8 +176,9 @@ final class CarPlayTripsController: NSObject {
   private func showMap(animated: Bool) {
     // Back pops the map without telling this controller, so check what's actually showing.
     if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
-    let points = carPoints()
+    mapFocus = store.currentLocation.map { focus(for: $0) }
     mapCenter = store.currentLocation
+    let points = carPoints()
     let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: points, selectedIndex: NSNotFound)
     template.pointOfInterestDelegate = self
     // Always reachable, even before the first location fix puts the car on the map.
@@ -204,6 +211,7 @@ final class CarPlayTripsController: NSObject {
           let current = store.currentLocation else { return }
     if let cardOpenedAt, Date.now.timeIntervalSince(cardOpenedAt) < 30 { return }
     if let mapCenter, current.distance(from: mapCenter) < 120 { return }
+    previousMapCenter = mapCenter
     interfaceController?.popTemplate(animated: false) { [weak self] _, _ in
       MainActor.assumeIsolated {
         self?.mapTemplate = nil
@@ -215,7 +223,7 @@ final class CarPlayTripsController: NSObject {
   /// Just the car: every point also gets a row in the side panel, and one trip should read as one row.
   /// Its pin is invisible, because the map's own location dot already shows where the car is.
   private func carPoints() -> [CPPointOfInterest] {
-    guard let trip = store.activeTrip, let current = store.currentLocation else { return [] }
+    guard let trip = store.activeTrip, let current = mapFocus ?? store.currentLocation else { return [] }
     // An emoji keeps its color where CarPlay text can't, standing in for a status light.
     // Short enough to fit the side panel's row; End Trip sits in the navigation bar.
     let status = if store.isParked {
@@ -241,6 +249,48 @@ final class CarPlayTripsController: NSObject {
     return [point]
   }
 
+  /// Where to put the car's invisible point, which CarPlay centers the map on, so the location
+  /// dot lands in the open part of the map instead of under the side panel.
+  ///
+  /// The panel covers about a third of the map on the driver's side, so the point moves that
+  /// way, which pushes the car toward the middle of what's left. It also moves ahead of the car,
+  /// so the car starts behind the middle and drives into view, the way navigation apps look
+  /// ahead, rather than out of it before the next map. The distances assume CarPlay's zoom for
+  /// a single point, about 0.7 m per screen point.
+  private func focus(for car: CLLocation) -> CLLocation {
+    let metersPerMapPoint = MKMetersPerMapPointAtLatitude(car.coordinate.latitude)
+    var point = MKMapPoint(car.coordinate)
+    // CarPlay doesn't say which side the panel is on, and templates get no window to measure,
+    // so assume the left, where it is in left-hand-drive cars. Map x grows eastward, which is
+    // right on a north-up map, so moving the point west moves the car right.
+    point.x -= Self.panelShift / metersPerMapPoint
+    if let course = heading(of: car) {
+      let ahead = Self.lookAhead / metersPerMapPoint
+      let radians = course * .pi / 180
+      // Map y grows southward, and course is clockwise from north.
+      point.x += ahead * sin(radians)
+      point.y -= ahead * cos(radians)
+    }
+    let coordinate = point.coordinate
+    return CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+  }
+
+  /// The way the car is going: from Core Location when it knows, otherwise from where the
+  /// previous map was made.
+  private func heading(of car: CLLocation) -> CLLocationDirection? {
+    if car.course >= 0 { return car.course }
+    guard let previousMapCenter, car.distance(from: previousMapCenter) > 20 else { return nil }
+    let from = MKMapPoint(previousMapCenter.coordinate)
+    let to = MKMapPoint(car.coordinate)
+    let degrees = atan2(to.x - from.x, from.y - to.y) * 180 / .pi
+    return degrees < 0 ? degrees + 360 : degrees
+  }
+
+  /// How far toward the panel to center the map: about 100 points at CarPlay's zoom.
+  private static let panelShift: CLLocationDistance = 70
+  /// How far ahead of the car to center the map: about half of the next 120 m.
+  private static let lookAhead: CLLocationDistance = 50
+
   /// A clear pin: without a pin image CarPlay draws its own marker over the location dot. It's
   /// full size, because CarPlay draws a stand-in for one too small to see.
   private static let invisiblePin = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 40)).image { _ in }
@@ -248,6 +298,8 @@ final class CarPlayTripsController: NSObject {
   private func leaveMap() {
     mapTemplate = nil
     mapCenter = nil
+    mapFocus = nil
+    previousMapCenter = nil
     interfaceController?.popToRootTemplate(animated: true, completion: nil)
   }
 
