@@ -9,6 +9,7 @@ struct AssistantAnswerSheet: View {
   @State private var contentHeight: CGFloat = 320
   @State private var promptBarHeight: CGFloat = 0
   @State private var detent: PresentationDetent = .height(320)
+  @State private var isPickingPhoto = false
 
   /// Space for the drag indicator and sheet padding around the content.
   private let chromeHeight: CGFloat = 24
@@ -19,7 +20,7 @@ struct AssistantAnswerSheet: View {
         header
 
         ForEach(assistant.sessionMessages) { message in
-          MessageBubble(message: message)
+          MessageBubble(message: message, trip: assistant.trip)
             .transition(.move(edge: .bottom).combined(with: .opacity))
         }
 
@@ -64,12 +65,40 @@ struct AssistantAnswerSheet: View {
 
   /// Lets the person type their own follow-up without leaving the sheet.
   private var promptBar: some View {
+    VStack(alignment: .leading, spacing: 8) {
+      if let image = assistant.draftImage {
+        AttachedPhotoThumbnail(image: image) {
+          withAnimation(.smooth) { assistant.draftImage = nil }
+        }
+        .padding(.leading, 8)
+        .transition(.scale.combined(with: .opacity))
+      }
+      promptRow
+    }
+    .padding(6)
+    .glassEffect(in: .rect(cornerRadius: 26))
+    .padding(.horizontal, 16)
+    .padding(.bottom, 8)
+    .animation(.smooth, value: assistant.draftImage)
+    .photoAttachmentPicker(isPresented: $isPickingPhoto, image: $assistant.draftImage)
+  }
+
+  private var promptRow: some View {
     HStack(spacing: 8) {
-      TextField("Ask a follow-up…", text: $assistant.draft)
+      if assistant.canAttachPhotos {
+        Button("Attach Photo", systemImage: "photo.badge.plus") {
+          isPickingPhoto = true
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+      }
+
+      TextField(assistant.draftImage == nil ? "Ask a follow-up…" : "Ask about this photo…", text: $assistant.draft)
         .focused($isPromptFocused)
         .submitLabel(.send)
         .onSubmit(sendPrompt)
-        .padding(.leading, 16)
+        .padding(.leading, assistant.canAttachPhotos ? 0 : 16)
 
       Button("Send", systemImage: "arrow.up", action: sendPrompt)
         .labelStyle(.iconOnly)
@@ -78,10 +107,6 @@ struct AssistantAnswerSheet: View {
         .buttonBorderShape(.circle)
         .disabled(!assistant.canSend)
     }
-    .padding(6)
-    .glassEffect(in: .capsule)
-    .padding(.horizontal, 16)
-    .padding(.bottom, 8)
   }
 
   private func sendPrompt() {

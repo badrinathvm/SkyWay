@@ -6,6 +6,7 @@ struct AssistantComposer: View {
   @Bindable var assistant: FlightAssistant
   @FocusState private var isFocused: Bool
   @State private var plusBounce = 0
+  @State private var isPickingPhoto = false
   @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
   var body: some View {
@@ -19,6 +20,13 @@ struct AssistantComposer: View {
           .transition(.blurReplace)
       }
 
+      if let image = assistant.draftImage {
+        AttachedPhotoThumbnail(image: image) {
+          withAnimation(.smooth) { assistant.draftImage = nil }
+        }
+        .transition(.scale.combined(with: .opacity))
+      }
+
       inputRow
     }
     .padding(12)
@@ -26,10 +34,21 @@ struct AssistantComposer: View {
     .padding(.horizontal)
     .padding(.bottom, 8)
     .animation(.smooth, value: showsAddChip)
-    .onAppear { isFocused = true }
+    .photoAttachmentPicker(isPresented: $isPickingPhoto, image: $assistant.draftImage)
+    .onAppear {
+      isFocused = true
+      assistant.prepareToAnswer()
+    }
+    .onChange(of: isPickingPhoto) { _, picking in
+      // Back to typing once a photo is chosen, or the picker is cancelled.
+      if !picking {
+        isFocused = true
+      }
+    }
     .onChange(of: isFocused) { _, focused in
       // Choosing context and sending already leave the composer, so this only catches dismissals.
-      if !focused && assistant.isComposing {
+      // Picking a photo also takes focus, but the person is still composing.
+      if !focused && assistant.isComposing && !isPickingPhoto {
         withAnimation(.smooth) {
           assistant.stopComposing()
         }
@@ -54,6 +73,15 @@ struct AssistantComposer: View {
         .buttonBorderShape(.circle)
         .symbolEffect(.bounce, value: plusBounce)
 
+      if assistant.canAttachPhotos {
+        Button("Attach Photo", systemImage: "photo.badge.plus") {
+          isPickingPhoto = true
+        }
+        .labelStyle(.iconOnly)
+        .buttonStyle(.bordered)
+        .buttonBorderShape(.circle)
+      }
+
       TextField(
         placeholder,
         text: $assistant.draft
@@ -76,6 +104,9 @@ struct AssistantComposer: View {
   }
 
   private var placeholder: String {
+    if assistant.draftImage != nil {
+      return "Ask about this photo…"
+    }
     let count = assistant.screenContext.mode == .off ? 0 : assistant.screenContext.selectedIDs.count
     return switch count {
     case 0: "Ask about your trip…"

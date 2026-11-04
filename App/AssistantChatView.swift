@@ -14,7 +14,7 @@ struct AssistantChatView: View {
           suggestions
         } else {
           ForEach(assistant.messages) { message in
-            MessageBubble(message: message)
+            MessageBubble(message: message, trip: assistant.trip)
               .transition(.move(edge: .bottom).combined(with: .opacity))
           }
         }
@@ -74,7 +74,7 @@ struct AssistantChatView: View {
         .fontWeight(.semibold)
         .buttonStyle(.borderedProminent)
         .buttonBorderShape(.circle)
-        .disabled(!canSend)
+        .disabled(!canSend || assistant.isResponding)
     }
     .padding(6)
     .glassEffect(in: .capsule)
@@ -87,7 +87,7 @@ struct AssistantChatView: View {
   }
 
   private func send() {
-    guard canSend else { return }
+    guard canSend, !assistant.isResponding else { return }
     assistant.send(draft)
     draft = ""
   }
