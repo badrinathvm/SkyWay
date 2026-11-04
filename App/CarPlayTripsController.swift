@@ -12,6 +12,9 @@ final class CarPlayTripsController: NSObject {
   /// When the driver opened the car's card, which a refresh would close.
   private var cardOpenedAt: Date?
   private var refreshTimer: Timer?
+  private var followTimer: Timer?
+  /// Where the car was when the map was made, which is where CarPlay framed it.
+  private var mapCenter: CLLocation?
   private var shownListText: [String] = []
   private var isEnding = false
 
@@ -43,12 +46,20 @@ final class CarPlayTripsController: NSObject {
     refreshTimer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated { self?.refresh() }
     }
+    // CarPlay frames the map only when it's made, so check often whether the car is
+    // nearing the edge.
+    followTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+      MainActor.assumeIsolated { self?.followCar() }
+    }
   }
 
   func didDisconnect() {
     refreshTimer?.invalidate()
     refreshTimer = nil
+    followTimer?.invalidate()
+    followTimer = nil
     mapTemplate = nil
+    mapCenter = nil
   }
 
   private func refresh() {
@@ -160,6 +171,7 @@ final class CarPlayTripsController: NSObject {
     // Back pops the map without telling this controller, so check what's actually showing.
     if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
     let points = carPoints()
+    mapCenter = store.currentLocation
     let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: points, selectedIndex: NSNotFound)
     template.pointOfInterestDelegate = self
     // Always reachable, even before the first location fix puts the car on the map.
@@ -181,7 +193,27 @@ final class CarPlayTripsController: NSObject {
     mapTemplate.setPointsOfInterest(carPoints(), selectedIndex: NSNotFound)
   }
 
+  /// Keeps the location dot on screen while driving.
+  ///
+  /// The Point of Interest template has no way to move its map, which only Navigation apps'
+  /// map template has, and replacing its points doesn't move it either. It frames the map when
+  /// it's made, so once the car is a few blocks from where the map was framed, swap in a new
+  /// map centered on the car. Not while the card is open, so End Trip stays put.
+  private func followCar() {
+    guard let mapTemplate, interfaceController?.topTemplate === mapTemplate, !isEnding,
+          let current = store.currentLocation else { return }
+    if let cardOpenedAt, Date.now.timeIntervalSince(cardOpenedAt) < 30 { return }
+    if let mapCenter, current.distance(from: mapCenter) < 300 { return }
+    interfaceController?.popTemplate(animated: false) { [weak self] _, _ in
+      MainActor.assumeIsolated {
+        self?.mapTemplate = nil
+        self?.showMap(animated: false)
+      }
+    }
+  }
+
   /// Just the car: every point also gets a row in the side panel, and one trip should read as one row.
+  /// Its pin is invisible, because the map's own location dot already shows where the car is.
   private func carPoints() -> [CPPointOfInterest] {
     guard let trip = store.activeTrip, let current = store.currentLocation else { return [] }
     // An emoji keeps its color where CarPlay text can't, standing in for a status light.
@@ -201,7 +233,7 @@ final class CarPlayTripsController: NSObject {
       detailTitle: "\(trip.milesText) · \(trip.estimatedDeductionText) est.",
       detailSubtitle: "Started \(trip.startTimeText) · \(trip.minutesText())",
       detailSummary: "\(status)\nFrom \(trip.startAddress ?? "your start")",
-      pinImage: UIImage(systemName: "car.fill")
+      pinImage: Self.invisiblePin
     )
     point.primaryButton = CPTextButton(title: "End Trip", textStyle: .confirm) { [weak self] _ in
       self?.confirmEnd()
@@ -209,8 +241,13 @@ final class CarPlayTripsController: NSObject {
     return [point]
   }
 
+  /// A clear pin: without a pin image CarPlay draws its own marker over the location dot. It's
+  /// full size, because CarPlay draws a stand-in for one too small to see.
+  private static let invisiblePin = UIGraphicsImageRenderer(size: CGSize(width: 40, height: 40)).image { _ in }
+
   private func leaveMap() {
     mapTemplate = nil
+    mapCenter = nil
     interfaceController?.popToRootTemplate(animated: true, completion: nil)
   }
 
