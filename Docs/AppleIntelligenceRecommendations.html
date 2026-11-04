@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway · Siri, Apple Intelligence &amp; Foundation Models recommendations</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #3a3df0;
+    --accent-soft: #ececfe;
+    --green: #1f8a3b;
+    --green-soft: #e3f5e8;
+    --orange: #b25000;
+    --orange-soft: #fdf0e3;
+    --purple: #8e3bd1;
+    --purple-soft: #f3e8fc;
+    --code-bg: #f0f0f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #98989d;
+      --border: #3a3a3c;
+      --accent: #8a8cff;
+      --accent-soft: #24244a;
+      --green: #30d158;
+      --green-soft: #12301b;
+      --orange: #ff9f0a;
+      --orange-soft: #3a2608;
+      --purple: #bf5af2;
+      --purple-soft: #2e1840;
+      --code-bg: #2c2c2e;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 48px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 48px 0 12px; }
+  h3 { font-size: 17px; margin: 0 0 6px; }
+  .subtitle { color: var(--secondary); font-size: 17px; margin: 0 0 28px; }
+  p { margin: 0 0 12px; }
+  a { color: var(--accent); }
+  code {
+    font: 13px/1.4 ui-monospace, "SF Mono", Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  nav {
+    display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 28px;
+  }
+  nav a {
+    text-decoration: none; padding: 6px 12px; border-radius: 999px;
+    background: var(--card); border: 1px solid var(--border); font-size: 13px;
+  }
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 20px 22px;
+    margin-bottom: 14px;
+  }
+  .callout { border-left: 4px solid var(--accent); }
+  .callout.warn { border-left-color: var(--orange); }
+  table {
+    width: 100%; border-collapse: collapse; background: var(--card);
+    border: 1px solid var(--border); border-radius: 16px; overflow: hidden;
+    font-size: 14px;
+  }
+  th, td { text-align: left; padding: 10px 12px; vertical-align: top; border-bottom: 1px solid var(--border); }
+  th { font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--secondary); }
+  tr:last-child td { border-bottom: none; }
+  td.id { font-weight: 600; color: var(--secondary); white-space: nowrap; }
+  .pill {
+    display: inline-block; padding: 1px 8px; border-radius: 999px;
+    font-size: 12px; font-weight: 600; white-space: nowrap;
+  }
+  .high { background: var(--green-soft); color: var(--green); }
+  .med { background: var(--accent-soft); color: var(--accent); }
+  .low { background: var(--code-bg); color: var(--secondary); }
+  .s { background: var(--green-soft); color: var(--green); }
+  .m { background: var(--orange-soft); color: var(--orange); }
+  .ios { background: var(--purple-soft); color: var(--purple); }
+  .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 14px; }
+  .phase .num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 50%;
+    background: var(--accent); color: #fff; font-weight: 700; font-size: 14px; margin-bottom: 10px;
+  }
+  ul { margin: 0 0 12px; padding-left: 20px; }
+  li { margin-bottom: 4px; }
+  .muted { color: var(--secondary); font-size: 13px; }
+  footer { margin-top: 48px; color: var(--secondary); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Siri, Apple Intelligence &amp; Foundation Models for Skyway</h1>
+  <p class="subtitle">Recommendations from the iOS 26/27 App Intents and Foundation Models docs and the WWDC26 sample code</p>
+
+  <nav>
+    <a href="#today">What Skyway has today</a>
+    <a href="#siri">Siri &amp; App Intents</a>
+    <a href="#fm">Foundation Models</a>
+    <a href="#automations">Automations</a>
+    <a href="#roadmap">Roadmap</a>
+    <a href="#sources">Sources</a>
+  </nav>
+
+  <h2 id="today">What Skyway has today</h2>
+  <div class="grid">
+    <div class="card">
+      <h3>Siri phrases</h3>
+      <p><code>GetCurrentTripIntent</code>, <code>StartDriveTripIntent</code> and <code>EndDriveTripIntent</code>, with phrases in <code>SkywayShortcuts.swift</code>.</p>
+    </div>
+    <div class="card">
+      <h3>Onscreen awareness</h3>
+      <p><code>TripEntity</code> (indexed in Spotlight) and <code>TravelActionEntity</code>, through <code>.userActivity</code> and <code>.appEntityIdentifier</code>.</p>
+    </div>
+    <div class="card">
+      <h3>In-app assistant</h3>
+      <p><code>FlightAssistant</code> with the context lens. Its answers come from <strong>hard-coded keyword matching</strong>. It doesn't use a model yet.</p>
+    </div>
+  </div>
+
+  <div class="card callout warn">
+    <h3>Constraint: there's no travel schema domain</h3>
+    <p>The Apple Intelligence schema domains are audio, calendar, camera, clock, files, mail, maps, messages, notes, phone, photos, reminders and system/search. None of them covers travel or mileage, so Siri reaches Skyway through plain App Intents, App Shortcuts, entities and onscreen annotations. Forcing a schema that doesn't fit makes Siri worse.</p>
+  </div>
+
+  <h2 id="siri">A. Siri &amp; App Intents</h2>
+  <table>
+    <tr><th>#</th><th>Recommendation</th><th>API</th><th>Value</th><th>Effort</th></tr>
+    <tr><td class="id">A1</td><td><strong>Interactive Siri cards.</strong> “Start a trip” returns a live card showing miles, with End Business / End Personal buttons. “Where's my trip” returns a mini boarding pass.</td><td><code>SnippetIntent</code>, <code>Button(intent:)</code> <span class="pill ios">iOS 26</span></td><td><span class="pill high">High</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">A2</td><td><strong>Purpose buttons</strong> (Business / Personal) when ending a trip, instead of a spoken prompt.</td><td><code>requestChoice(between:dialog:)</code> <span class="pill ios">iOS 26</span></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">A3</td><td><strong>Undo</strong> after Siri ends a trip under the wrong purpose.</td><td><code>UndoableIntent</code> <span class="pill ios">iOS 26</span></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">A4</td><td><strong><code>DriveTripEntity</code></strong> with miles, purpose, date, route and a computed deduction. Enables “Find drive trips where purpose is Business” in Shortcuts, plus Spotlight search.</td><td><code>IndexedEntity</code>, <code>EntityPropertyQuery</code>, <code>@ComputedProperty</code></td><td><span class="pill high">High</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">A5</td><td><strong>New Siri questions:</strong> “How many business miles this month?”, “When should I leave for the airport?” (from <code>Trip.leaveByTime</code>), “What's my flight status?”, “Show my boarding pass”.</td><td><code>AppIntent</code>, <code>AppShortcut</code>, <code>supportedModes</code></td><td><span class="pill high">High</span></td><td><span class="pill s">S–M</span></td></tr>
+    <tr><td class="id">A6</td><td><strong>More onscreen awareness:</strong> tag drive trip rows, the active trip card and Flight status. Make drive trips <code>Transferable</code> so “Send this trip to my accountant” works.</td><td><code>.appEntityIdentifier</code>, <code>Transferable</code></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">A7</td><td><strong>Visual Intelligence:</strong> point the camera at (or screenshot) a boarding pass, gate sign or flight number, and Skyway's matching trip shows up in the results.</td><td><code>IntentValueQuery</code>, <code>SemanticContentDescriptor</code> <span class="pill ios">iOS 26</span></td><td><span class="pill med">Med</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">A8</td><td><strong>Run in the background</strong> from automations; open the app only when needed.</td><td><code>supportedModes</code>, <code>continueInForeground</code></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">A9</td><td><strong>Intent tests</strong> covering Start → End → summary.</td><td><code>AppIntentsTesting</code> <span class="pill ios">iOS 27</span></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">A10</td><td><strong>Spotlight re-index</strong> that the system triggers for trips and drives.</td><td><code>IndexedEntityQuery</code> <span class="pill ios">iOS 27</span></td><td><span class="pill low">Low</span></td><td><span class="pill s">S</span></td></tr>
+  </table>
+
+  <h2 id="fm">B. Foundation Models</h2>
+  <table>
+    <tr><th>#</th><th>Recommendation</th><th>API</th><th>Value</th><th>Effort</th></tr>
+    <tr><td class="id">B1</td><td><strong>Replace keyword answers with a real model.</strong> A session with tools that read <code>TripStore</code> and <code>DriveTripStore</code>. The selected context items go in as instructions. The current keyword answers stay as the fallback when the model isn't available.</td><td><code>LanguageModelSession</code>, <code>Tool</code>, <code>SystemLanguageModel.availability</code></td><td><span class="pill high">Highest</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">B2</td><td><strong>Attach photo</strong> in the composer, from Photos or the camera, shown as a thumbnail in the message bubble.</td><td><code>Attachment</code>, <code>ImageReference</code>, <code>PhotosPicker</code> <span class="pill ios">iOS 27</span></td><td><span class="pill high">High</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">B3</td><td><strong>Import a trip from a photo or screenshot</strong> of a boarding pass or itinerary email: decode the barcode, read the text, return an <code>ExtractedTrip</code>, and confirm before saving.</td><td>Vision <code>BarcodeReaderTool</code>, <code>OCRTool</code>, <code>@Generable</code></td><td><span class="pill high">High</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">B4</td><td><strong>Receipt photos on drive trips:</strong> snap a parking, toll or fuel receipt and get the amount, vendor and category attached to the trip.</td><td><code>Attachment</code> + <code>@Generable</code></td><td><span class="pill med">Med</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">B5</td><td><strong>Suggest Business vs Personal</strong> when a drive ends, from the time, addresses and past trips.</td><td><code>@Generable enum</code>, <code>.greedy</code> sampling</td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">B6</td><td><strong>Structured answers</strong> that stream in, with model-generated follow-up questions.</td><td><code>streamResponse</code>, <code>@Generable</code></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">B7</td><td><strong>Different assistant behavior per screen:</strong> Travel, Mileage, and CarPlay (short answers that work read aloud).</td><td><code>DynamicProfile</code>, <code>DynamicInstructions</code> <span class="pill ios">iOS 27</span></td><td><span class="pill med">Med</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">B8</td><td><strong>Snapshot the selected card as an image</strong> and attach it, so the model sees exactly what the person sees.</td><td><code>ImageRenderer</code> + <code>Attachment</code></td><td><span class="pill med">Med</span></td><td><span class="pill s">S</span></td></tr>
+    <tr><td class="id">B9</td><td><strong>Larger tasks on Private Cloud Compute</strong>, like a yearly mileage log for taxes. Needs the PCC entitlement.</td><td><code>PrivateCloudComputeLanguageModel</code></td><td><span class="pill low">Low–Med</span></td><td><span class="pill m">M</span></td></tr>
+    <tr><td class="id">B10</td><td><strong>Faster replies</strong> by prewarming and keeping the session cached, plus a prompt evaluation suite.</td><td>KV caching, <code>prewarm()</code>, Evaluations</td><td><span class="pill low">Low</span></td><td><span class="pill s">S</span></td></tr>
+  </table>
+
+  <h2 id="automations">C. Shortcuts automations &amp; system features</h2>
+  <div class="grid">
+    <div class="card"><h3>CarPlay connects → Start a Trip</h3><p>…and End Trip when it disconnects. Needs A8, plus A2 or B5 for the purpose.</p></div>
+    <div class="card"><h3>Arrive at office → End as Business</h3><p>A location automation that passes the <code>purpose</code> parameter.</p></div>
+    <div class="card"><h3>Morning of the flight → Leave-by alert</h3><p>A time-of-day automation that uses the new leave-by intent (A5).</p></div>
+    <div class="card"><h3>Control Center &amp; Action Button</h3><p>A <code>ControlWidgetButton</code> to Start or End a trip with the existing intents.</p></div>
+    <div class="card"><h3>Live Activity</h3><p>Shows the drive in progress (miles, End button) and boarding (gate, countdown).</p></div>
+  </div>
+
+  <h2 id="roadmap">Recommended roadmap</h2>
+  <div class="grid">
+    <div class="card phase"><div class="num">1</div><h3>Assistant brain + photos</h3><p>B1, B6, B2, B3</p><p class="muted"><code>FlightAssistant</code>, <code>AssistantComposer</code>, <code>MessageBubble</code>, <code>ChatMessage</code>, plus new tool and extraction types.</p></div>
+    <div class="card phase"><div class="num">2</div><h3>Siri cards + mileage entity</h3><p>A4, A1, A2, A3, A5, A6</p><p class="muted">Add phrases only. Existing phrases and intent names are a public contract, so don't rename them.</p></div>
+    <div class="card phase"><div class="num">3</div><h3>Automations &amp; system features</h3><p>A8, the control, the Live Activity, B5</p></div>
+    <div class="card phase"><div class="num">4</div><h3>Extras</h3><p>A7, B4, B7, B8, B9, A9, A10</p></div>
+  </div>
+
+  <h2 id="sources">Sources</h2>
+  <div class="card">
+    <ul>
+      <li>WWDC26 343: Explore advanced App Intents features for Siri and Apple Intelligence</li>
+      <li>WWDC26 344: Code-along: Make your app available to Siri</li>
+      <li>WWDC26 Foundation Models sessions 242, 243, 339</li>
+      <li>Apple docs: <em>Analyzing images with multimodal prompting</em>, <em>Adding server-side intelligence with Private Cloud Compute</em>, <em>Composing dynamic sessions with instructions and profiles</em>, <em>App schema domains</em></li>
+    </ul>
+    <p class="muted">These recommendations come from the docs and sample code for these sessions. The videos themselves weren't watched.</p>
+  </div>
+
+  <footer>Skyway · November 2026</footer>
+</main>
+</body>
+</html>
