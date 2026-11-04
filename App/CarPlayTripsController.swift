@@ -48,7 +48,7 @@ final class CarPlayTripsController: NSObject {
     }
     // CarPlay frames the map only when it's made, so check often whether the car is
     // nearing the edge.
-    followTimer = Timer.scheduledTimer(withTimeInterval: 2, repeats: true) { [weak self] _ in
+    followTimer = Timer.scheduledTimer(withTimeInterval: 1, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated { self?.followCar() }
     }
   }
@@ -197,13 +197,13 @@ final class CarPlayTripsController: NSObject {
   ///
   /// The Point of Interest template has no way to move its map, which only Navigation apps'
   /// map template has, and replacing its points doesn't move it either. It frames the map when
-  /// it's made, so once the car is a few blocks from where the map was framed, swap in a new
+  /// it's made, so once the car is about a block from where the map was framed, swap in a new
   /// map centered on the car. Not while the card is open, so End Trip stays put.
   private func followCar() {
     guard let mapTemplate, interfaceController?.topTemplate === mapTemplate, !isEnding,
           let current = store.currentLocation else { return }
     if let cardOpenedAt, Date.now.timeIntervalSince(cardOpenedAt) < 30 { return }
-    if let mapCenter, current.distance(from: mapCenter) < 300 { return }
+    if let mapCenter, current.distance(from: mapCenter) < 120 { return }
     interfaceController?.popTemplate(animated: false) { [weak self] _, _ in
       MainActor.assumeIsolated {
         self?.mapTemplate = nil
