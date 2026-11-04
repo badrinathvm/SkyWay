@@ -25,7 +25,7 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     let airportTemplate = makeAirportTemplate()
     let tripsController = CarPlayTripsController(
       interfaceController: interfaceController,
-      carScreenHeight: templateApplicationScene.carWindow.bounds.height
+      carScreenHeight: Self.carScreenHeight()
     )
     let tabBar = CPTabBarTemplate(templates: [tripsController.rootTemplate, tripTemplate, airportTemplate, makeChecklistTemplate()])
     self.tripTemplate = tripTemplate
@@ -39,6 +39,15 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     refreshTimer = Timer.scheduledTimer(withTimeInterval: 30, repeats: true) { [weak self] _ in
       MainActor.assumeIsolated { self?.refreshTripItems() }
     }
+  }
+
+  /// The car display's height. Only navigation apps get a `carWindow`, which is nil here, so
+  /// find the car's screen by its CarPlay idiom instead, falling back to the common 480 points.
+  /// `UIScreen.screens` is deprecated in favor of scenes' screens, but a template scene isn't a
+  /// window scene and has no screen, so it's still the only way to reach the car display.
+  private static func carScreenHeight() -> CGFloat {
+    let carScreen = UIScreen.screens.first { $0.traitCollection.userInterfaceIdiom == .carPlay }
+    return carScreen?.bounds.height ?? 480
   }
 
   func templateApplicationScene(
