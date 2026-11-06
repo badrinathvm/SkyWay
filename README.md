@@ -20,6 +20,7 @@ An iOS sample project for exploring SwiftUI tab bar placements in the Liquid Gla
 | Boarding pass sheet with a generated QR code | `CIFilter.qrCodeGenerator()` | `App/BoardingPassView.swift` |
 | Siri onscreen awareness for the trip and search rows | `.userActivity` / `.appEntityIdentifier` + `AppEntity` | `App/TripEntity.swift`, `App/TravelActionEntity.swift` |
 | "Where is my trip in Skyway?" Siri phrase | `AppIntent` + `AppShortcutsProvider` | `App/GetCurrentTripIntent.swift`, `App/SkywayShortcuts.swift` |
+| Skyway Plus mock subscription with an App Store Retention Messaging demo (Confirm Cancellation preview, mock real-time endpoint, `offerType` 5 handling); see [Docs/RetentionMessagingGuide.html](Docs/RetentionMessagingGuide.html) and [Docs/RetentionMessaging.md](Docs/RetentionMessaging.md) | StoreKit 2, `manageSubscriptionsSheet`, Retention Messaging API | `App/SubscriptionView.swift`, `App/SubscriptionStore.swift`, `App/RetentionDecisionEngine.swift` |
 
 For how onscreen awareness works and when to use `.userActivity` vs `.appEntityIdentifier`, see [Docs/OnscreenAwareness.md](Docs/OnscreenAwareness.md).
 

@@ -78,7 +78,8 @@
           "-showAllTips": false,
           "-simulateDrive": false,
           "-failTripSync": false
-        }
+        },
+        "storeKitConfiguration": "StoreKit/SkywayPlus.storekit"
       }
     }
   }
