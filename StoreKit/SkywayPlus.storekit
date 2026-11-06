@@ -1,0 +1,105 @@
+{
+  "appPolicies" : {
+    "eula" : "",
+    "policies" : [
+      {
+        "locale" : "en_US",
+        "policyText" : "",
+        "policyURL" : ""
+      }
+    ]
+  },
+  "identifier" : "6F1C2A4B",
+  "nonRenewingSubscriptions" : [
+
+  ],
+  "products" : [
+
+  ],
+  "settings" : {
+    "_failTransactionsEnabled" : false,
+    "_locale" : "en_US",
+    "_storefront" : "USA",
+    "_storeKitErrors" : [
+
+    ]
+  },
+  "subscriptionGroups" : [
+    {
+      "id" : "21540001",
+      "localizations" : [
+
+      ],
+      "name" : "Skyway Plus",
+      "subscriptions" : [
+        {
+          "adHocOffers" : [
+            {
+              "internalID" : "6754000101",
+              "numberOfPeriods" : 3,
+              "offerID" : "skyway.plus.retention.3mfree",
+              "paymentMode" : "free",
+              "referenceName" : "Retention – 3 months free",
+              "subscriptionPeriod" : "P1M"
+            }
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "4.99",
+          "familyShareable" : false,
+          "groupNumber" : 2,
+          "internalID" : "6754000001",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "CarPlay mileage, the trip assistant, and unlimited sync.",
+              "displayName" : "Skyway Plus Monthly",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "skyway.plus.monthly",
+          "recurringSubscriptionPeriod" : "P1M",
+          "referenceName" : "Skyway Plus Monthly",
+          "subscriptionGroupID" : "21540001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        },
+        {
+          "adHocOffers" : [
+
+          ],
+          "codeOffers" : [
+
+          ],
+          "displayPrice" : "39.99",
+          "familyShareable" : false,
+          "groupNumber" : 1,
+          "internalID" : "6754000002",
+          "introductoryOffer" : null,
+          "localizations" : [
+            {
+              "description" : "Everything in Skyway Plus, billed once a year.",
+              "displayName" : "Skyway Plus Annual",
+              "locale" : "en_US"
+            }
+          ],
+          "productID" : "skyway.plus.annual",
+          "recurringSubscriptionPeriod" : "P1Y",
+          "referenceName" : "Skyway Plus Annual",
+          "subscriptionGroupID" : "21540001",
+          "type" : "RecurringSubscription",
+          "winbackOffers" : [
+
+          ]
+        }
+      ]
+    }
+  ],
+  "version" : {
+    "major" : 4,
+    "minor" : 0
+  }
+}
