@@ -5,6 +5,7 @@ import Observation
 @MainActor
 @Observable
 final class FlightAssistant {
+  /// Updated when the seat changes from Siri, so answers use the latest details.
   var trip: Trip
   var draft = ""
   var isComposing = false

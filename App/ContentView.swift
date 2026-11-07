@@ -3,8 +3,17 @@ import SwiftUI
 struct ContentView: View {
   @State private var selectedTab: AppTab = .travel
   @State private var isShowingBoardingPass = false
-  @State private var assistant = FlightAssistant(trip: .sample)
-  private let trip = Trip.sample
+  @State private var assistant = FlightAssistant(trip: Trip.sample.withSavedSeat)
+  /// Saved by the Change Seat intent, so a change made from Siri shows up right away.
+  @AppStorage(SeatAssignments.storageKey(for: Trip.sample.confirmationCode)) private var savedSeat: String?
+
+  private var trip: Trip {
+    var trip = Trip.sample
+    if let savedSeat {
+      trip.seat = savedSeat
+    }
+    return trip
+  }
 
   var body: some View {
     TabView(selection: $selectedTab) {
@@ -46,6 +55,9 @@ struct ContentView: View {
     }
     .sheet(isPresented: $isShowingBoardingPass) {
       BoardingPassView(trip: trip)
+    }
+    .onChange(of: trip.seat) {
+      assistant.trip = trip
     }
   }
 
