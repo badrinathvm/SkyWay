@@ -44,3 +44,4 @@ App/Info.plist
 
 # Generated concurrency audit reports
 .concurrency-audit/
+Widget Extension/Info.plist

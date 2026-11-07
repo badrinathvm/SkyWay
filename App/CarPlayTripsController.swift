@@ -32,12 +32,15 @@ final class CarPlayTripsController: NSObject {
   /// When the driver last panned or zoomed the map, which following waits out.
   private var driverMovedMapAt: Date?
   private var shownListText: [String] = []
+  /// Opens a URL on the car's screen, such as Apple Maps or Google Maps, then reports whether it could.
+  private let openURL: (URL, @escaping @MainActor (Bool) -> Void) -> Void
   private var isEnding = false
 
   /// `carScreenHeight` is the car display's height in points. Car screens range from short, wide
   /// strips to tall portrait displays, so it decides how many recent trips to fetch.
-  init(interfaceController: CPInterfaceController, carScreenHeight: CGFloat) {
+  init(interfaceController: CPInterfaceController, carScreenHeight: CGFloat, openURL: @escaping (URL, @escaping @MainActor (Bool) -> Void) -> Void) {
     self.interfaceController = interfaceController
+    self.openURL = openURL
     store.recentTripLimit = Self.recentTripLimit(forScreenHeight: carScreenHeight)
     rootTemplate = CPListTemplate(title: "Trips", sections: [])
     rootTemplate.tabTitle = "Trips"
@@ -197,6 +200,11 @@ final class CarPlayTripsController: NSObject {
     // Always reachable, even before the first location fix puts the car on the map.
     template.trailingNavigationBarButtons = [
       CPBarButton(title: "End Trip") { [weak self] _ in self?.confirmEnd() },
+    ]
+    // Maps apps turn the map with the car, which this template can't. The trip keeps counting
+    // in the background, and its Live Activity keeps the miles in view on the CarPlay screen.
+    template.leadingNavigationBarButtons = [
+      CPBarButton(image: UIImage(systemName: "map.fill") ?? UIImage()) { [weak self] _ in self?.chooseMapsApp() },
     ]
     mapTemplate = template
     interfaceController?.pushTemplate(template, animated: animated, completion: nil)
@@ -385,6 +393,37 @@ final class CarPlayTripsController: NSObject {
     interfaceController?.popToRootTemplate(animated: true, completion: nil)
   }
 
+  // MARK: - Maps
+
+  /// Offers Apple Maps and Google Maps. Whether Google Maps is installed can't be checked up front
+  /// on iOS 27, so choosing it opens Apple Maps instead when it isn't.
+  private func chooseMapsApp() {
+    let location = store.currentLocation?.coordinate
+    let actions = MapsApp.allCases.map { app in
+      CPAlertAction(title: app.title, style: .default) { [weak self] _ in
+        self?.interfaceController?.dismissTemplate(animated: true, completion: nil)
+        self?.openMaps(app, at: location)
+      }
+    }
+    let cancel = CPAlertAction(title: "Cancel", style: .cancel) { [weak self] _ in
+      self?.interfaceController?.dismissTemplate(animated: true, completion: nil)
+    }
+    let sheet = CPActionSheetTemplate(
+      title: "Open Map",
+      message: "Skyway keeps counting miles while you drive.",
+      actions: actions + [cancel]
+    )
+    interfaceController?.presentTemplate(sheet, animated: true, completion: nil)
+  }
+
+  private func openMaps(_ app: MapsApp, at location: CLLocationCoordinate2D?) {
+    openURL(app.url(centeredOn: location)) { [weak self] opened in
+      if !opened, app != .apple {
+        self?.openMaps(.apple, at: location)
+      }
+    }
+  }
+
   // MARK: - Ending
 
   private func confirmEnd() {
@@ -481,5 +520,37 @@ extension CarPlayTripsController: CPPointOfInterestTemplateDelegate {
     Task { @MainActor [weak self] in
       self?.cardOpenedAt = openedAt
     }
+  }
+}
+
+/// The maps apps a driver can switch to for a map that turns with the car.
+private enum MapsApp: CaseIterable {
+  case apple
+  case google
+
+  var title: String {
+    switch self {
+    case .apple: "Apple Maps"
+    case .google: "Google Maps"
+    }
+  }
+
+  func url(centeredOn location: CLLocationCoordinate2D?) -> URL {
+    var components = URLComponents()
+    switch self {
+    case .apple:
+      components.scheme = "maps"
+      components.host = ""
+      if let location {
+        components.queryItems = [URLQueryItem(name: "ll", value: "\(location.latitude),\(location.longitude)")]
+      }
+    case .google:
+      components.scheme = "comgooglemaps"
+      components.host = ""
+      if let location {
+        components.queryItems = [URLQueryItem(name: "center", value: "\(location.latitude),\(location.longitude)")]
+      }
+    }
+    return components.url!
   }
 }

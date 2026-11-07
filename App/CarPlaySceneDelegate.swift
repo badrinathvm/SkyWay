@@ -25,7 +25,12 @@ final class CarPlaySceneDelegate: UIResponder, CPTemplateApplicationSceneDelegat
     let airportTemplate = makeAirportTemplate()
     let tripsController = CarPlayTripsController(
       interfaceController: interfaceController,
-      carScreenHeight: Self.carScreenHeight()
+      carScreenHeight: Self.carScreenHeight(),
+      openURL: { [weak templateApplicationScene] url, completion in
+        templateApplicationScene?.open(url, options: nil) { opened in
+          Task { @MainActor in completion(opened) }
+        }
+      }
     )
     let tabBar = CPTabBarTemplate(templates: [tripsController.rootTemplate, tripTemplate, airportTemplate, makeChecklistTemplate()])
     self.tripTemplate = tripTemplate

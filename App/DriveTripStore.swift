@@ -39,6 +39,8 @@ final class DriveTripStore {
   }
 
   private let tracker = DriveTracker()
+  /// The trip in progress on the Lock Screen and CarPlay screen.
+  private let liveActivity = TripLiveActivity()
   private var trackingTask: Task<Void, Never>?
   private var lastFix: CLLocation?
   private var lastSave = Date.distantPast
@@ -109,16 +111,19 @@ final class DriveTripStore {
 
   func startTrip() {
     guard activeTrip == nil else { return }
-    activeTrip = DriveTrip(startDate: .now)
+    let trip = DriveTrip(startDate: .now)
+    activeTrip = trip
     isLocationDenied = false
     save()
     track()
+    liveActivity.start(for: trip)
   }
 
   /// Picks tracking back up when the app relaunches mid-trip.
   func resumeTrackingIfNeeded() {
-    guard activeTrip != nil, trackingTask == nil else { return }
+    guard let activeTrip, trackingTask == nil else { return }
     track()
+    liveActivity.start(for: activeTrip)
   }
 
   /// Looks up where the trip is ending, so it can be shown before the trip is saved.
@@ -145,6 +150,7 @@ final class DriveTripStore {
     }
     trips.insert(trip, at: 0)
     activeTrip = nil
+    liveActivity.end(miles: trip.miles)
     currentLocation = nil
     // Save to disk first, then upload: if the upload fails, or the app is suspended mid-request,
     // the trip is already safe in DriveTrips.json and stays in the queue until it goes through.
@@ -180,6 +186,7 @@ final class DriveTripStore {
           isLocationDenied = true
           stopTracking()
           activeTrip = nil
+          liveActivity.end(miles: nil)
           currentLocation = nil
           save()
           return
@@ -197,6 +204,12 @@ final class DriveTripStore {
   private func record(_ location: CLLocation) {
     guard activeTrip != nil else { return }
     currentLocation = location
+    // Deferred, so a fix ignored as jitter still updates it, which is when the car turns parked.
+    defer {
+      if let activeTrip {
+        liveActivity.update(miles: activeTrip.miles, isParked: isParked)
+      }
+    }
     if activeTrip?.start == nil {
       activeTrip?.start = DriveTrip.Coordinate(location.coordinate)
       Task {
