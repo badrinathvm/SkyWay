@@ -74,7 +74,7 @@ struct InvoiceCreatedSnippetIntent: SnippetIntent {
   }
 
   func perform() async throws -> some IntentResult & ShowsSnippetView {
-    let exists = !InvoiceStore.invoices(with: [invoiceID]).isEmpty
+    let invoice = InvoiceStore.invoices(with: [invoiceID]).first
     return .result(
       view: InvoiceCard(
         number: number,
@@ -82,7 +82,8 @@ struct InvoiceCreatedSnippetIntent: SnippetIntent {
         service: service,
         amount: amount,
         dueDate: dueDate,
-        status: exists ? .created(invoiceID: invoiceID) : .deleted
+        issuedDate: invoice?.createdAt ?? .now,
+        status: invoice.map { .created($0) } ?? .deleted
       )
     )
   }

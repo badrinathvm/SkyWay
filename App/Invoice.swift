@@ -31,6 +31,11 @@ struct Invoice: Identifiable, Hashable, Codable, Sendable {
 
   var amountText: String { Self.format(amount) }
 
+  /// Opens the invoice in Skyway, like skyway://invoice/<id>.
+  var url: URL {
+    URL(string: "skyway://invoice/\(id)")!
+  }
+
   static func format(_ amount: Double) -> String {
     amount.formatted(.currency(code: "USD"))
   }

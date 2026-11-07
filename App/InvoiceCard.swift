@@ -9,11 +9,17 @@ struct InvoiceCard: View {
   var service: String
   var amount: Double
   var dueDate: Date
+  var issuedDate: Date = .now
   var status: Status
 
   enum Status {
+    /// In Siri, waiting for the person to confirm.
     case draft
-    case created(invoiceID: String)
+    /// In Siri, just created, with View Invoice and Undo buttons.
+    case created(Invoice)
+    /// In the app, where there's nothing to confirm or undo.
+    case saved
+    /// Undone from Siri.
     case deleted
   }
 
@@ -28,7 +34,7 @@ struct InvoiceCard: View {
       VStack(alignment: .leading, spacing: 14) {
         billTo
         lineItem
-        DueTimeline(issued: .now, due: dueDate, color: color)
+        DueTimeline(issued: issuedDate, due: dueDate, color: color)
         footer
       }
       .padding(.horizontal, 16)
@@ -124,19 +130,25 @@ struct InvoiceCard: View {
       Label("Check the details, then create it below", systemImage: "hand.point.down.fill")
         .font(.footnote)
         .foregroundStyle(.secondary)
-    case .created(let invoiceID):
+    case .created(let invoice):
       HStack {
-        Label("Saved in Skyway", systemImage: "checkmark.seal.fill")
-          .font(.footnote.weight(.semibold))
-          .foregroundStyle(.green)
+        // A link rather than an intent button: Siri and Spotlight open the app for links.
+        Link(destination: invoice.url) {
+          Label("View Invoice", systemImage: "arrow.up.forward.app")
+        }
+        .buttonStyle(.borderedProminent)
         Spacer()
-        Button(intent: DeleteInvoiceIntent(invoiceID: invoiceID)) {
+        Button(intent: DeleteInvoiceIntent(invoiceID: invoice.id)) {
           Label("Undo", systemImage: "arrow.uturn.backward")
         }
         .buttonStyle(.bordered)
-        .buttonBorderShape(.capsule)
-        .tint(color)
       }
+      .buttonBorderShape(.capsule)
+      .tint(color)
+    case .saved:
+      Label("Saved in Skyway", systemImage: "checkmark.seal.fill")
+        .font(.footnote.weight(.semibold))
+        .foregroundStyle(.green)
     case .deleted:
       Label("This invoice was voided", systemImage: "xmark.bin.fill")
         .font(.footnote)
@@ -176,7 +188,7 @@ private struct StatusStamp: View {
   private var title: String {
     switch status {
     case .draft: "DRAFT"
-    case .created: "ISSUED"
+    case .created, .saved: "ISSUED"
     case .deleted: "VOID"
     }
   }
@@ -184,7 +196,7 @@ private struct StatusStamp: View {
   private var color: Color {
     switch status {
     case .draft: .orange
-    case .created: .green
+    case .created, .saved: .green
     case .deleted: .red
     }
   }

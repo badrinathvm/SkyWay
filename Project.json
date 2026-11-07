@@ -46,7 +46,15 @@
                 }
               ]
             }
-          }
+          },
+          "CFBundleURLTypes": [
+            {
+              "CFBundleURLName": "com.badarinathvm.skyway",
+              "CFBundleURLSchemes": [
+                "skyway"
+              ]
+            }
+          ]
         }
       },
       "platform": "iOS",
