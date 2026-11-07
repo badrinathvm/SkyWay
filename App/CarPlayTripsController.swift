@@ -20,6 +20,17 @@ final class CarPlayTripsController: NSObject {
   private var mapFocus: CLLocation?
   /// Where the car was when the map before this one was made, for its heading.
   private var previousMapCenter: CLLocation?
+  /// When the current map was made, so the regions CarPlay reports while framing it aren't
+  /// mistaken for the driver panning.
+  private var mapMadeAt: Date?
+  /// The part of the map the driver can see, beside the side panel, as CarPlay reported it.
+  private var visibleRegion: MKCoordinateRegion?
+  /// How far the visible part's center sits from the car's point, in map points, measured from
+  /// the last map. CarPlay centers the point on the whole map, panel included, so this says
+  /// where to put the point to land the car where it should be in the visible part.
+  private var pointToVisibleCenter: (x: Double, y: Double)?
+  /// When the driver last panned or zoomed the map, which following waits out.
+  private var driverMovedMapAt: Date?
   private var shownListText: [String] = []
   private var isEnding = false
 
@@ -178,6 +189,8 @@ final class CarPlayTripsController: NSObject {
     if let mapTemplate, interfaceController?.topTemplate === mapTemplate { return }
     mapFocus = store.currentLocation.map { focus(for: $0) }
     mapCenter = store.currentLocation
+    mapMadeAt = .now
+    visibleRegion = nil
     let points = carPoints()
     let template = CPPointOfInterestTemplate(title: "Trip in Progress", pointsOfInterest: points, selectedIndex: NSNotFound)
     template.pointOfInterestDelegate = self
@@ -202,15 +215,32 @@ final class CarPlayTripsController: NSObject {
 
   /// Keeps the location dot on screen while driving.
   ///
-  /// The Point of Interest template has no way to move its map, which only Navigation apps'
-  /// map template has, and replacing its points doesn't move it either. It frames the map when
-  /// it's made, so once the car is about a block from where the map was framed, swap in a new
-  /// map centered on the car. Not while the card is open, so End Trip stays put.
+  /// The Point of Interest template has no way to move or rotate its map, which only Navigation
+  /// apps' map template has, and replacing its points doesn't move it either. It frames the map
+  /// when it's made, so once the car nears the edge of what the driver can see, swap in a new
+  /// map. Each swap redraws the map, so it waits as long as it can: `focus(for:)` starts the car
+  /// near the trailing edge, so it crosses most of the map first. Not while the card is open,
+  /// so End Trip stays put, and not right after the driver pans or zooms.
   private func followCar() {
     guard let mapTemplate, interfaceController?.topTemplate === mapTemplate, !isEnding,
           let current = store.currentLocation else { return }
     if let cardOpenedAt, Date.now.timeIntervalSince(cardOpenedAt) < 30 { return }
-    if let mapCenter, current.distance(from: mapCenter) < 120 { return }
+    if let driverMovedMapAt, Date.now.timeIntervalSince(driverMovedMapAt) < 15 { return }
+    // A map made before the first location fix has nothing to frame, so CarPlay shows a
+    // wide default view; swap it as soon as there's a car to center on.
+    guard let mapCenter else { return swapMap() }
+    if let visibleRegion, Self.isStreetLevel(visibleRegion) {
+      if Self.contains(visibleRegion, current.coordinate, margin: Self.edgeMargin) { return }
+    } else if current.distance(from: mapCenter) < 120 {
+      // CarPlay hasn't said what's visible, or the driver zoomed out, so fall back to swapping
+      // every block.
+      return
+    }
+    swapMap()
+  }
+
+  private func swapMap() {
+    driverMovedMapAt = nil
     previousMapCenter = mapCenter
     interfaceController?.popTemplate(animated: false) { [weak self] _, _ in
       MainActor.assumeIsolated {
@@ -252,27 +282,73 @@ final class CarPlayTripsController: NSObject {
   /// Where to put the car's invisible point, which CarPlay centers the map on, so the location
   /// dot lands in the open part of the map instead of under the side panel.
   ///
-  /// The panel covers about a third of the map on the driver's side, so the point moves that
-  /// way, which pushes the car toward the middle of what's left. It also moves ahead of the car,
-  /// so the car starts behind the middle and drives into view, the way navigation apps look
-  /// ahead, rather than out of it before the next map. The distances assume CarPlay's zoom for
-  /// a single point, about 0.7 m per screen point.
+  /// The visible part's center goes ahead of the car, so the car starts near the trailing edge
+  /// and drives across most of the map before the next swap, the way navigation apps look ahead.
+  /// The point then goes wherever puts that center there, as measured from the last map. Until
+  /// there's a last map, it assumes the panel is on the left, where it is in left-hand-drive
+  /// cars, and CarPlay's usual zoom for one point, about 0.6 m per screen point.
   private func focus(for car: CLLocation) -> CLLocation {
     let metersPerMapPoint = MKMetersPerMapPointAtLatitude(car.coordinate.latitude)
     var point = MKMapPoint(car.coordinate)
-    // CarPlay doesn't say which side the panel is on, and templates get no window to measure,
-    // so assume the left, where it is in left-hand-drive cars. Map x grows eastward, which is
-    // right on a north-up map, so moving the point west moves the car right.
-    point.x -= Self.panelShift / metersPerMapPoint
     if let course = heading(of: car) {
-      let ahead = Self.lookAhead / metersPerMapPoint
+      // A third of the way in from the center toward the trailing edge, so most of the
+      // visible map lies ahead.
+      let visibleSize = visibleRegion.map(Self.size(of:)) ?? Self.typicalVisibleSize
+      let ahead = 0.33 * min(visibleSize.width, visibleSize.height) / metersPerMapPoint
       let radians = course * .pi / 180
       // Map y grows southward, and course is clockwise from north.
       point.x += ahead * sin(radians)
       point.y -= ahead * cos(radians)
     }
+    if let pointToVisibleCenter {
+      point.x -= pointToVisibleCenter.x
+      point.y -= pointToVisibleCenter.y
+    } else {
+      // Map x grows eastward, which is right on a north-up map, so moving the point west moves
+      // the visible part's center, and the car with it, right of the panel.
+      point.x -= Self.panelShift / metersPerMapPoint
+    }
     let coordinate = point.coordinate
     return CLLocation(latitude: coordinate.latitude, longitude: coordinate.longitude)
+  }
+
+  /// Records the visible part of the map CarPlay reports. While a new map settles, that's where
+  /// CarPlay framed it; after that, it's the driver panning or zooming.
+  fileprivate func mapRegionDidChange(to region: MKCoordinateRegion, in template: CPPointOfInterestTemplate) {
+    guard template === mapTemplate else { return }
+    let isFraming = mapMadeAt.map { Date.now.timeIntervalSince($0) < 3 } ?? false
+    if isFraming, let mapFocus, Self.isStreetLevel(region) {
+      let focusPoint = MKMapPoint(mapFocus.coordinate)
+      let center = MKMapPoint(region.center)
+      pointToVisibleCenter = (center.x - focusPoint.x, center.y - focusPoint.y)
+    } else if !isFraming {
+      driverMovedMapAt = .now
+    }
+    visibleRegion = region
+  }
+
+  /// Whether `region` is zoomed in like CarPlay frames a single point, rather than the wide
+  /// view it shows before there's anything to frame.
+  private static func isStreetLevel(_ region: MKCoordinateRegion) -> Bool {
+    let size = size(of: region)
+    return max(size.width, size.height) < 2000
+  }
+
+  /// Whether `coordinate` is inside `region`, at least `margin` of its size from every edge.
+  private static func contains(_ region: MKCoordinateRegion, _ coordinate: CLLocationCoordinate2D, margin: Double) -> Bool {
+    let latInset = region.span.latitudeDelta * (0.5 - margin)
+    let lonInset = region.span.longitudeDelta * (0.5 - margin)
+    return abs(coordinate.latitude - region.center.latitude) <= latInset
+      && abs(coordinate.longitude - region.center.longitude) <= lonInset
+  }
+
+  private static func size(of region: MKCoordinateRegion) -> (width: CLLocationDistance, height: CLLocationDistance) {
+    let center = region.center
+    let west = CLLocation(latitude: center.latitude, longitude: center.longitude - region.span.longitudeDelta / 2)
+    let east = CLLocation(latitude: center.latitude, longitude: center.longitude + region.span.longitudeDelta / 2)
+    let north = CLLocation(latitude: center.latitude + region.span.latitudeDelta / 2, longitude: center.longitude)
+    let south = CLLocation(latitude: center.latitude - region.span.latitudeDelta / 2, longitude: center.longitude)
+    return (west.distance(from: east), north.distance(from: south))
   }
 
   /// The way the car is going: from Core Location when it knows, otherwise from where the
@@ -286,10 +362,14 @@ final class CarPlayTripsController: NSObject {
     return degrees < 0 ? degrees + 360 : degrees
   }
 
-  /// How far toward the panel to center the map: about 100 points at CarPlay's zoom.
-  private static let panelShift: CLLocationDistance = 70
-  /// How far ahead of the car to center the map: about half of the next 120 m.
-  private static let lookAhead: CLLocationDistance = 50
+  /// How far toward the panel to put the point before the first map is measured: about 100
+  /// points at CarPlay's usual zoom.
+  private static let panelShift: CLLocationDistance = 60
+  /// The visible part of the map at CarPlay's usual zoom for one point, before it's measured.
+  private static let typicalVisibleSize: (width: CLLocationDistance, height: CLLocationDistance) = (270, 275)
+  /// How close to the edge of the visible map, as a share of its size, the car gets before
+  /// the next swap, so the dot never touches the edge.
+  private static let edgeMargin = 0.1
 
   /// A clear pin: without a pin image CarPlay draws its own marker over the location dot. It's
   /// full size, because CarPlay draws a stand-in for one too small to see.
@@ -300,6 +380,8 @@ final class CarPlayTripsController: NSObject {
     mapCenter = nil
     mapFocus = nil
     previousMapCenter = nil
+    visibleRegion = nil
+    driverMovedMapAt = nil
     interfaceController?.popToRootTemplate(animated: true, completion: nil)
   }
 
@@ -387,7 +469,10 @@ final class CarPlayTripsController: NSObject {
 
 extension CarPlayTripsController: CPPointOfInterestTemplateDelegate {
   nonisolated func pointOfInterestTemplate(_ pointOfInterestTemplate: CPPointOfInterestTemplate, didChangeMapRegion region: MKCoordinateRegion) {
-    // The pins follow the trip, not the visible region, so there's nothing to reload.
+    // CarPlay may call this off the main thread, so hop to it rather than assume.
+    Task { @MainActor [weak self] in
+      self?.mapRegionDidChange(to: region, in: pointOfInterestTemplate)
+    }
   }
 
   nonisolated func pointOfInterestTemplate(_ pointOfInterestTemplate: CPPointOfInterestTemplate, didSelectPointOfInterest pointOfInterest: CPPointOfInterest) {
