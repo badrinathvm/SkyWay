@@ -27,6 +27,17 @@ struct SkywayShortcuts: AppShortcutsProvider {
       systemImageName: "carseat.left.fill"
     )
     AppShortcut(
+      intent: CreateInvoiceIntent(),
+      phrases: [
+        "Create an invoice in \(.applicationName)",
+        "Make an invoice in \(.applicationName)",
+        "Bill a client in \(.applicationName)",
+        "New \(.applicationName) invoice",
+      ],
+      shortTitle: "Create Invoice",
+      systemImageName: "doc.text"
+    )
+    AppShortcut(
       intent: StartDriveTripIntent(),
       phrases: [
         "Start a trip in \(.applicationName)",
