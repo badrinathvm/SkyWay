@@ -1,0 +1,785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway · How Create Invoice works, from Shortcuts to the app</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #3a3df0;
+    --accent-soft: #ececfe;
+    --green: #1f8a3b;
+    --green-soft: #e3f5e8;
+    --orange: #b25000;
+    --orange-soft: #fdf0e3;
+    --purple: #8e3bd1;
+    --purple-soft: #f3e8fc;
+    --red: #c4281c;
+    --code-bg: #f0f0f3;
+    --kw: #ad3da4;
+    --type: #3900a0;
+    --str: #c41a16;
+    --com: #5d6c79;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #98989d;
+      --border: #3a3a3c;
+      --accent: #8a8cff;
+      --accent-soft: #24244a;
+      --green: #30d158;
+      --green-soft: #12301b;
+      --orange: #ff9f0a;
+      --orange-soft: #3a2608;
+      --purple: #bf5af2;
+      --purple-soft: #2e1840;
+      --red: #ff6961;
+      --code-bg: #2c2c2e;
+      --kw: #ff7ab2;
+      --type: #dabaff;
+      --str: #ff8170;
+      --com: #7f8c98;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 48px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  main { max-width: 900px; margin: 0 auto; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 64px 0 8px; padding-top: 8px; }
+  h2 .chapter { color: var(--accent); font-size: 14px; font-weight: 600; display: block; letter-spacing: 0.02em; text-transform: uppercase; }
+  h3 { font-size: 18px; margin: 32px 0 8px; }
+  .lede { color: var(--secondary); margin: 0 0 32px; font-size: 17px; }
+  .intro { color: var(--secondary); margin: 0 0 20px; }
+  a { color: var(--accent); text-decoration: none; }
+  a:hover { text-decoration: underline; }
+  code {
+    font: 13px "SF Mono", ui-monospace, Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font: 12.5px/1.55 "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .file { display: block; color: var(--secondary); font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kw { color: var(--kw); font-weight: 600; }
+  .ty { color: var(--type); }
+  .st { color: var(--str); }
+  .cm { color: var(--com); font-style: italic; }
+  .hl { background: rgba(255, 214, 10, 0.28); border-radius: 3px; }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    columns: 2;
+    column-gap: 32px;
+  }
+  nav.toc ol { margin: 0; padding-left: 18px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--orange);
+    background: var(--orange-soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+  }
+  .callout.tip { border-color: var(--green); background: var(--green-soft); }
+  .callout.info { border-color: var(--accent); background: var(--accent-soft); }
+  .callout b:first-child { display: block; margin-bottom: 2px; }
+
+  /* Journey strip */
+  .journey { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 14px; margin: 18px 0; }
+  .journey figure { margin: 0; text-align: center; }
+  .journey img { width: 100%; border-radius: 18px; border: 1px solid var(--border); display: block; }
+  .journey figcaption { font-size: 12.5px; color: var(--secondary); margin-top: 6px; }
+  .journey figcaption b { color: var(--text); display: block; font-size: 13px; }
+
+  /* Step with screenshot */
+  .split { display: grid; grid-template-columns: 1fr 220px; gap: 24px; align-items: start; }
+  .split img { width: 100%; border-radius: 22px; border: 1px solid var(--border); }
+  .split .shot { position: sticky; top: 16px; }
+  .split .shot figcaption { font-size: 12.5px; color: var(--secondary); text-align: center; margin-top: 6px; }
+  .split figure { margin: 0; }
+
+  /* Flow */
+  .flow { display: flex; flex-direction: column; align-items: stretch; }
+  .step {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 12px 18px;
+  }
+  .step.app { border: 2px solid var(--accent); background: var(--accent-soft); }
+  .step.system { border: 2px dashed var(--border); }
+  .step.person { border: 2px solid var(--green); background: var(--green-soft); }
+  .step header { display: flex; align-items: baseline; gap: 10px; margin-bottom: 2px; }
+  .num {
+    flex: none;
+    width: 26px; height: 26px;
+    border-radius: 50%;
+    background: var(--text);
+    color: var(--bg);
+    font-weight: 600; font-size: 13px;
+    display: inline-flex; align-items: center; justify-content: center;
+    transform: translateY(-2px);
+  }
+  .app .num { background: var(--accent); color: #fff; }
+  .person .num { background: var(--green); color: #fff; }
+  .step h4 { margin: 0; font-size: 15.5px; }
+  .step p { margin: 2px 0 0 36px; color: var(--secondary); font-size: 14px; }
+  .tag { margin-left: auto; font-size: 12px; font-weight: 600; color: var(--secondary); white-space: nowrap; }
+  .app .tag { color: var(--accent); }
+  .person .tag { color: var(--green); }
+  .arrow {
+    display: flex; flex-direction: column; align-items: center;
+    color: var(--secondary); font-size: 13px;
+    padding: 2px 0;
+  }
+  .arrow::before { content: ""; width: 2px; height: 12px; background: var(--border); }
+  .arrow::after { content: ""; border: 6px solid transparent; border-top-color: var(--border); border-bottom: 0; }
+
+  /* Architecture */
+  .arch { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .layer-label { grid-column: 1 / -1; color: var(--secondary); font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 6px; }
+  .box {
+    border-radius: 12px;
+    padding: 12px;
+    text-align: center;
+    border: 2px solid var(--border);
+    background: var(--card);
+    font-size: 14px;
+  }
+  .box strong { display: block; font-size: 14px; }
+  .box small { color: var(--secondary); display: block; margin-top: 2px; font-size: 12px; }
+  .box.system { border-style: dashed; }
+  .box.intent { border-color: var(--purple); background: var(--purple-soft); }
+  .box.ui { border-color: var(--accent); background: var(--accent-soft); }
+  .box.model { border-color: var(--green); background: var(--green-soft); }
+  .span2 { grid-column: span 2; }
+  .span3 { grid-column: 1 / -1; }
+  .down { grid-column: 1 / -1; text-align: center; color: var(--secondary); font-size: 13px; }
+
+  /* States */
+  .states { display: grid; grid-template-columns: 1fr auto 1fr auto 1fr; gap: 8px; align-items: center; margin: 14px 0; }
+  .state { border-radius: 14px; padding: 10px 14px; text-align: center; border: 2px solid var(--border); background: var(--card); font-weight: 600; font-size: 14px; }
+  .state small { display: block; font-weight: 400; color: var(--secondary); font-size: 12px; }
+  .state.draft { border-color: var(--orange); background: var(--orange-soft); }
+  .state.issued { border-color: var(--green); background: var(--green-soft); }
+  .state.void { border-color: var(--red); }
+  .tr { color: var(--secondary); font-size: 12px; text-align: center; }
+  .tr::after { content: "→"; display: block; font-size: 20px; color: var(--text); }
+
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: 0; }
+  td:first-child { white-space: nowrap; }
+
+  footer { margin-top: 64px; color: var(--secondary); font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+  @media (max-width: 700px) {
+    nav.toc { columns: 1; }
+    .arch { grid-template-columns: 1fr; }
+    .span2 { grid-column: auto; }
+    .split { grid-template-columns: 1fr; }
+    .split .shot { position: static; max-width: 260px; margin: 0 auto; }
+    .states { grid-template-columns: 1fr; }
+    .tr::after { content: "↓"; }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>How Create Invoice works</h1>
+  <p class="lede">The complete journey of “Create an invoice for John, gardening, $450”: from tapping it in Shortcuts, Spotlight or asking Siri, through the confirmation card, to the invoice opening in Skyway. Each step shows the code that makes it happen.</p>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#journey">The journey at a glance</a></li>
+      <li><a href="#pieces">The pieces and how they fit</a></li>
+      <li><a href="#discover">Step 1 · Showing up in Shortcuts and Siri</a></li>
+      <li><a href="#ask">Step 2 · Asking for client, service and amount</a></li>
+      <li><a href="#check">Step 3 · Checking the values</a></li>
+      <li><a href="#confirm">Step 4 · The confirmation card</a></li>
+      <li><a href="#design">Step 5 · Designing the receipt card</a></li>
+      <li><a href="#save">Step 6 · Saving the invoice</a></li>
+      <li><a href="#result">Step 7 · The result card</a></li>
+      <li><a href="#undo">Step 8 · Undo, right in the card</a></li>
+      <li><a href="#view">Step 9 · View Invoice opens the app</a></li>
+      <li><a href="#siri">Step 10 · Apple Intelligence Siri</a></li>
+      <li><a href="#lessons">Lessons learned</a></li>
+      <li><a href="#files">File map</a></li>
+    </ol>
+  </nav>
+
+  <!-- ───────────────────────── Journey ───────────────────────── -->
+  <h2 id="journey"><span class="chapter">Overview</span>The journey at a glance</h2>
+  <p class="intro">These are real screenshots from the iPhone simulator. The person never opens Skyway until they choose to view the invoice.</p>
+
+  <div class="journey">
+    <figure><img src="CreateInvoice/1-spotlight.png" alt="Spotlight showing the Create Invoice action from Skyway"><figcaption><b>1 · Find it</b>Shortcuts, Spotlight or Siri</figcaption></figure>
+    <figure><img src="CreateInvoice/2-ask-client.png" alt="Prompt asking Who's the invoice for?"><figcaption><b>2 · Answer</b>Client, service, amount</figcaption></figure>
+    <figure><img src="CreateInvoice/4-draft.png" alt="Draft invoice card with Create Invoice and Cancel buttons"><figcaption><b>3 · Confirm</b>Draft card</figcaption></figure>
+    <figure><img src="CreateInvoice/5-issued.png" alt="Issued invoice card with View Invoice and Undo buttons"><figcaption><b>4 · Done</b>Issued card</figcaption></figure>
+    <figure><img src="CreateInvoice/7-detail.png" alt="Invoice detail screen in Skyway"><figcaption><b>5 · Open</b>Invoice in Skyway</figcaption></figure>
+  </div>
+
+  <div class="flow">
+    <div class="step person"><header><span class="num">1</span><h4>Runs “Create Invoice”</h4><span class="tag">Person</span></header><p>Taps it in the Shortcuts app or Spotlight, or says “Create an invoice in Skyway”.</p></div>
+    <div class="arrow"></div>
+    <div class="step system"><header><span class="num">2</span><h4>The system asks for each missing value</h4><span class="tag">iOS</span></header><p>“Who's the invoice for?” → “What's the invoice for?” → “How much should I bill?”, using each parameter's <code>requestValueDialog</code>.</p></div>
+    <div class="arrow"></div>
+    <div class="step app"><header><span class="num">3</span><h4><code>CreateInvoiceIntent.perform()</code> checks the values</h4><span class="tag">Skyway</span></header><p>Empty client or service, or an amount of $0, throws a clear error that Siri reads out.</p></div>
+    <div class="arrow"></div>
+    <div class="step app"><header><span class="num">4</span><h4><code>requestConfirmation</code> shows the draft card</h4><span class="tag">Skyway</span></header><p><code>perform()</code> pauses here. The system draws <code>InvoiceDraftSnippetIntent</code>'s view with Create Invoice and Cancel.</p></div>
+    <div class="arrow"></div>
+    <div class="step person"><header><span class="num">5</span><h4>Taps Create Invoice</h4><span class="tag">Person</span></header><p>Cancel throws, so <code>perform()</code> stops and nothing is saved.</p></div>
+    <div class="arrow"></div>
+    <div class="step app"><header><span class="num">6</span><h4><code>InvoiceStore.createInvoice</code> saves it</h4><span class="tag">Skyway</span></header><p>It gets the next number, like INV-0004, and a due date 14 days out.</p></div>
+    <div class="arrow"></div>
+    <div class="step app"><header><span class="num">7</span><h4><code>.result(value:dialog:snippetIntent:)</code></h4><span class="tag">Skyway</span></header><p>Siri says “Created invoice INV-0004 for John…” and shows <code>InvoiceCreatedSnippetIntent</code>'s card.</p></div>
+    <div class="arrow"></div>
+    <div class="step person"><header><span class="num">8</span><h4>Taps Undo or View Invoice</h4><span class="tag">Person</span></header><p>Undo runs <code>DeleteInvoiceIntent</code> and the card redraws as VOID. View Invoice follows <code>skyway://invoice/&lt;id&gt;</code> into the app.</p></div>
+  </div>
+
+  <!-- ───────────────────────── Pieces ───────────────────────── -->
+  <h2 id="pieces"><span class="chapter">Architecture</span>The pieces and how they fit</h2>
+  <p class="intro">Three kinds of intents do the work. The model layer is shared by the intents and the app, so an invoice created from Siri is the same one the app shows.</p>
+
+  <div class="card">
+    <div class="arch">
+      <div class="layer-label">System</div>
+      <div class="box system span3"><strong>Shortcuts · Spotlight · Siri</strong><small>Find the action through <code>SkywayShortcuts</code>, ask for values, draw the cards, run button intents</small></div>
+      <div class="down">↓ runs</div>
+
+      <div class="layer-label">Action intents (they change things)</div>
+      <div class="box intent"><strong>CreateInvoiceIntent</strong><small>Asks, checks, confirms, saves</small></div>
+      <div class="box intent"><strong>DeleteInvoiceIntent</strong><small>Behind the Undo button</small></div>
+      <div class="box intent"><strong>OpenInvoiceIntent</strong><small>“Open Invoice” in Shortcuts</small></div>
+
+      <div class="layer-label">Snippet intents (they only draw)</div>
+      <div class="box intent"><strong>InvoiceDraftSnippetIntent</strong><small>The card to confirm</small></div>
+      <div class="box intent"><strong>InvoiceCreatedSnippetIntent</strong><small>The card after saving, or VOID after Undo</small></div>
+      <div class="box ui"><strong>InvoiceCard + InvoiceTheme</strong><small>The SwiftUI receipt, shared by both cards and the app</small></div>
+      <div class="down">↓ read and write</div>
+
+      <div class="layer-label">Model</div>
+      <div class="box model"><strong>Invoice</strong><small>The value: number, client, service, amount, dates</small></div>
+      <div class="box model"><strong>InvoiceStore</strong><small>Saves invoices as JSON in UserDefaults</small></div>
+      <div class="box model"><strong>InvoiceEntity</strong><small>How Siri and Shortcuts see an invoice</small></div>
+      <div class="down">↓ skyway://invoice/&lt;id&gt;</div>
+
+      <div class="layer-label">App</div>
+      <div class="box ui"><strong>ContentView.onOpenURL</strong><small>Receives the link</small></div>
+      <div class="box ui"><strong>AppNavigator</strong><small>Holds which invoice to show</small></div>
+      <div class="box ui"><strong>InvoiceDetailView</strong><small>Card, details, Share, Delete</small></div>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <b>Why two kinds of intents?</b>
+    An <em>action</em> intent changes data. A <em>snippet</em> intent only draws a card from current data. The system may run a snippet intent many times, for example to redraw the card after a button tap, so it must never save or delete anything.
+  </div>
+
+  <!-- ───────────────────────── Step 1 ───────────────────────── -->
+  <h2 id="discover"><span class="chapter">Step 1</span>Showing up in Shortcuts and Siri</h2>
+  <div class="split">
+    <div>
+      <p>An <b>App Shortcut</b> makes the intent available the moment the app is installed, with no setup by the person. It appears in the Shortcuts app under Skyway, in Spotlight when you search “Create Invoice”, and it lets Siri understand the phrases.</p>
+      <pre><code><span class="file">App/SkywayShortcuts.swift</span><span class="kw">struct</span> <span class="ty">SkywayShortcuts</span>: <span class="ty">AppShortcutsProvider</span> {
+  <span class="kw">static var</span> appShortcuts: [<span class="ty">AppShortcut</span>] {
+    <span class="cm">// …Upcoming Trip and Change Seat…</span>
+    <span class="ty">AppShortcut</span>(
+      intent: <span class="ty">CreateInvoiceIntent</span>(),
+      phrases: [
+        <span class="st">"Create an invoice in \(.applicationName)"</span>,
+        <span class="st">"Make an invoice in \(.applicationName)"</span>,
+        <span class="st">"Bill a client in \(.applicationName)"</span>,
+        <span class="st">"New \(.applicationName) invoice"</span>,
+      ],
+      shortTitle: <span class="st">"Create Invoice"</span>,
+      systemImageName: <span class="st">"doc.text"</span>
+    )
+  }
+}</code></pre>
+      <div class="callout">
+        <b>Why the phrase can't say “for John, 450”</b>
+        App Shortcut phrases can only contain the app's name and values from a fixed list (an <code>AppEnum</code> or known entities). A client name or an amount can be anything, so the phrase starts the action and the system then asks for each value. The newer Siri on iOS 27.3 can fill them in one sentence; see <a href="#siri">Step 10</a>.
+      </div>
+      <p>Every phrase must include <code>\(.applicationName)</code> so Siri knows which app is meant. Siri learns the phrases the first time the app is launched after installing.</p>
+    </div>
+    <figure class="shot"><img src="CreateInvoice/1-spotlight.png" alt="Spotlight result for Create Invoice"><figcaption>Spotlight lists the action under Skyway</figcaption></figure>
+  </div>
+
+  <!-- ───────────────────────── Step 2 ───────────────────────── -->
+  <h2 id="ask"><span class="chapter">Step 2</span>Asking for client, service and amount</h2>
+  <div class="split">
+    <div>
+      <p>The intent declares three <code>@Parameter</code>s. Because none has a default value, the system asks for each one before <code>perform()</code> runs, using its <code>requestValueDialog</code>. The type picks the keyboard: <code>String</code> gets letters, <code>Double</code> gets the number pad.</p>
+      <pre><code><span class="file">App/CreateInvoiceIntent.swift</span><span class="kw">struct</span> <span class="ty">CreateInvoiceIntent</span>: <span class="ty">AppIntent</span> {
+  <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Create Invoice"</span>
+  <span class="kw">static let</span> description = <span class="ty">IntentDescription</span>(
+    <span class="st">"Creates an invoice in US dollars that bills a client for a service, after you confirm. It's due in 14 days."</span>,
+    searchKeywords: [<span class="st">"invoice"</span>, <span class="st">"bill"</span>, <span class="st">"charge"</span>, <span class="st">"billing"</span>, <span class="st">"client"</span>, <span class="st">"payment request"</span>]
+  )
+
+  <span class="kw">@Parameter</span>(
+    title: <span class="st">"Client"</span>,
+    description: <span class="st">"The name of the person or business being billed, like John"</span>,
+    <span class="hl">requestValueDialog: <span class="st">"Who's the invoice for?"</span></span>
+  )
+  <span class="kw">var</span> clientName: <span class="ty">String</span>
+
+  <span class="kw">@Parameter</span>(
+    title: <span class="st">"Service"</span>,
+    description: <span class="st">"The work being billed, like gardening"</span>,
+    requestValueDialog: <span class="st">"What's the invoice for?"</span>
+  )
+  <span class="kw">var</span> service: <span class="ty">String</span>
+
+  <span class="kw">@Parameter</span>(
+    title: <span class="st">"Amount"</span>,
+    description: <span class="st">"The total to bill, in US dollars, like 450"</span>,
+    requestValueDialog: <span class="st">"How much should I bill?"</span>
+  )
+  <span class="kw">var</span> amount: <span class="ty">Double</span>
+
+  <span class="kw">init</span>() {}   <span class="cm">// required by AppIntent</span>
+}</code></pre>
+      <p>The <code>description</code> text matters too: the Shortcuts editor shows it, and Siri's model reads it to decide what to put in each value.</p>
+    </div>
+    <figure class="shot"><img src="CreateInvoice/3-ask-amount.png" alt="Prompt asking How much should I bill? with a number pad"><figcaption>A <code>Double</code> parameter gets the number pad</figcaption></figure>
+  </div>
+
+  <!-- ───────────────────────── Step 3 ───────────────────────── -->
+  <h2 id="check"><span class="chapter">Step 3</span>Checking the values</h2>
+  <p class="intro">Once all three values are in, <code>perform()</code> starts. It tidies them up and stops early if something is wrong.</p>
+  <pre><code><span class="file">App/CreateInvoiceIntent.swift · perform()</span><span class="kw">let</span> client = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+<span class="kw">let</span> work = service.trimmingCharacters(in: .whitespacesAndNewlines)
+<span class="kw">guard</span> !client.isEmpty <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.missingClient }
+<span class="kw">guard</span> !work.isEmpty <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.missingService }
+<span class="kw">guard</span> amount &gt; <span class="ty">0</span> <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.invalidAmount }</code></pre>
+  <p>The error type conforms to <code>CustomLocalizedStringResourceConvertible</code>. Without it, Siri would only say a generic “there was a problem”. With it, Siri says exactly what's wrong and what would fix it:</p>
+  <pre><code><span class="file">App/CreateInvoiceIntent.swift</span><span class="kw">enum</span> <span class="ty">InvoiceError</span>: <span class="ty">Error</span>, <span class="ty">CustomLocalizedStringResourceConvertible</span> {
+  <span class="kw">case</span> missingClient, missingService, invalidAmount, notFound
+
+  <span class="kw">var</span> localizedStringResource: <span class="ty">LocalizedStringResource</span> {
+    <span class="kw">switch self</span> {
+    <span class="kw">case</span> .missingClient: <span class="st">"An invoice needs a client name, like John."</span>
+    <span class="kw">case</span> .missingService: <span class="st">"An invoice needs a service to bill for, like gardening."</span>
+    <span class="kw">case</span> .invalidAmount: <span class="st">"The amount needs to be more than $0, like 450."</span>
+    <span class="kw">case</span> .notFound: <span class="st">"That invoice isn't in Skyway anymore."</span>
+    }
+  }
+}</code></pre>
+
+  <!-- ───────────────────────── Step 4 ───────────────────────── -->
+  <h2 id="confirm"><span class="chapter">Step 4</span>The confirmation card</h2>
+  <div class="split">
+    <div>
+      <p>Before saving, the intent shows the draft and waits. <code>requestConfirmation(actionName:dialog:snippetIntent:)</code> (iOS 26) does three things:</p>
+      <ul>
+        <li>shows or speaks the <code>dialog</code> question,</li>
+        <li>draws the card that the <code>snippetIntent</code> returns,</li>
+        <li><b>suspends <code>perform()</code></b> until the person answers. Confirm returns normally; Cancel <b>throws</b>, so the code after it never runs.</li>
+      </ul>
+      <pre><code><span class="file">App/CreateInvoiceIntent.swift · perform()</span><span class="kw">try await</span> requestConfirmation(
+  actionName: .custom(
+    acceptLabel: <span class="st">"Create Invoice"</span>,
+    acceptAlternatives: [<span class="st">"Yes"</span>, <span class="st">"Create it"</span>, <span class="st">"Send it"</span>],
+    denyLabel: <span class="st">"Cancel"</span>,
+    denyAlternatives: [<span class="st">"No"</span>, <span class="st">"Don't create it"</span>],
+    destructive: <span class="kw">false</span>
+  ),
+  dialog: <span class="st">"Create an invoice for \(client) for \(Invoice.format(amount)) for \(work.lowercased())?"</span>,
+  snippetIntent: <span class="ty">InvoiceDraftSnippetIntent</span>(clientName: client, service: work, amount: amount)
+)
+<span class="cm">// Only reached after “Create Invoice”.</span></code></pre>
+      <p><code>.custom(…)</code> sets the button titles. The <code>Alternatives</code> are other words a person can <em>say</em> to Siri to answer.</p>
+    </div>
+    <figure class="shot"><img src="CreateInvoice/4-draft.png" alt="Draft invoice card"><figcaption>The DRAFT card with the system's buttons</figcaption></figure>
+  </div>
+
+  <h3>The snippet intent that draws the draft</h3>
+  <p>A <code>SnippetIntent</code> is a small intent whose only job is to return a view. It takes the values it needs as <code>@Parameter</code>s, and needs a custom <code>init</code> so the main intent can create it with those values.</p>
+  <pre><code><span class="file">App/InvoiceSnippetIntents.swift</span><span class="kw">struct</span> <span class="ty">InvoiceDraftSnippetIntent</span>: <span class="ty">SnippetIntent</span> {
+  <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Invoice Draft"</span>
+  <span class="kw">static let</span> isDiscoverable = <span class="kw">false</span>   <span class="cm">// keep it out of the Shortcuts action list</span>
+
+  <span class="kw">@Parameter</span>(title: <span class="st">"Client"</span>) <span class="kw">var</span> clientName: <span class="ty">String</span>
+  <span class="kw">@Parameter</span>(title: <span class="st">"Service"</span>) <span class="kw">var</span> service: <span class="ty">String</span>
+  <span class="kw">@Parameter</span>(title: <span class="st">"Amount"</span>) <span class="kw">var</span> amount: <span class="ty">Double</span>
+
+  <span class="kw">init</span>() {}
+  <span class="kw">init</span>(clientName: <span class="ty">String</span>, service: <span class="ty">String</span>, amount: <span class="ty">Double</span>) {
+    <span class="kw">self</span>.clientName = clientName
+    <span class="kw">self</span>.service = service
+    <span class="kw">self</span>.amount = amount
+  }
+
+  <span class="kw">func</span> perform() <span class="kw">async throws</span> -&gt; <span class="kw">some</span> <span class="ty">IntentResult</span> &amp; <span class="ty">ShowsSnippetView</span> {
+    <span class="cm">// Only reads: the next number isn't used up until the invoice is saved.</span>
+    .result(view: <span class="ty">InvoiceCard</span>(
+      number: <span class="ty">InvoiceStore</span>.nextNumber,
+      clientName: clientName, service: service, amount: amount,
+      dueDate: <span class="ty">Invoice</span>.dueDate(from: .now),
+      status: .draft
+    ))
+  }
+}</code></pre>
+
+  <!-- ───────────────────────── Step 5 ───────────────────────── -->
+  <h2 id="design"><span class="chapter">Step 5</span>Designing the receipt card</h2>
+  <p class="intro">One SwiftUI view, <code>InvoiceCard</code>, draws every state: the draft in Siri, the issued card, the voided card, and the card at the top of the in-app detail screen.</p>
+
+  <div class="states">
+    <div class="state draft">DRAFT<small>waiting to confirm<br>footer: “Check the details…”</small></div>
+    <div class="tr">Create Invoice</div>
+    <div class="state issued">ISSUED<small>saved<br>footer: View Invoice · Undo</small></div>
+    <div class="tr">Undo</div>
+    <div class="state void">VOID<small>deleted<br>card turns gray</small></div>
+  </div>
+
+  <pre><code><span class="file">App/InvoiceCard.swift</span><span class="kw">enum</span> <span class="ty">Status</span> {
+  <span class="kw">case</span> draft               <span class="cm">// In Siri, waiting for the person to confirm.</span>
+  <span class="kw">case</span> created(<span class="ty">Invoice</span>)    <span class="cm">// In Siri, just created, with View Invoice and Undo.</span>
+  <span class="kw">case</span> saved               <span class="cm">// In the app, where there's nothing to confirm or undo.</span>
+  <span class="kw">case</span> deleted             <span class="cm">// Undone from Siri.</span>
+}</code></pre>
+
+  <h3>What makes it feel like a receipt</h3>
+  <table>
+    <tr><th>Detail</th><th>How it's built</th></tr>
+    <tr><td>Color and icon from the service</td><td><code>InvoiceTheme(service:)</code> looks for keywords: “garden”, “lawn” → green <code>leaf.fill</code>; “clean” → cyan <code>sparkles</code>; “dog”, “pet” → mint <code>pawprint.fill</code>; “design”, “logo” → pink <code>paintbrush.pointed.fill</code>; and about ten more. Anything else gets an indigo briefcase.</td></tr>
+    <tr><td>Header band</td><td>A <code>LinearGradient</code> in the theme color, the number in a monospaced font, the total in large rounded figures, and the icon as a big faint watermark rotated −15°.</td></tr>
+    <tr><td>Client initials</td><td>The first letter of up to two words (“Maria Lopez” → ML) in a circle filled with <code>color.gradient</code>.</td></tr>
+    <tr><td>Dotted leader</td><td>A one-line <code>Shape</code> stroked with <code>dash: [0.1, 5]</code> and round caps, which draws dots between the service and its price.</td></tr>
+    <tr><td>Due-date timeline</td><td>A dot, a gradient capsule and a checkered flag, labeled “Issued Nov 7 · Net 14 · Due Nov 21”.</td></tr>
+    <tr><td>Rubber stamp</td><td>Heavy rounded text in a dashed rounded rectangle, rotated −12°, placed as an <code>overlay</code> so it sits on top of the card.</td></tr>
+    <tr><td>Torn edge</td><td>A custom <code>TornEdge</code> shape with rounded top corners and a zigzag bottom, used for both the background and the clip.</td></tr>
+  </table>
+
+  <pre><code><span class="file">App/InvoiceTheme.swift</span><span class="kw">struct</span> <span class="ty">InvoiceTheme</span> {
+  <span class="kw">var</span> symbol: <span class="ty">String</span>
+  <span class="kw">var</span> color: <span class="ty">Color</span>
+
+  <span class="kw">init</span>(service: <span class="ty">String</span>) {
+    <span class="kw">let</span> text = service.lowercased()
+    <span class="kw">let</span> match = <span class="ty">Self</span>.themes.first { keywords, _ <span class="kw">in</span> keywords.contains { text.contains($0) } }
+    (symbol, color) = match?.<span class="ty">1</span> ?? (<span class="st">"briefcase.fill"</span>, .indigo)
+  }
+
+  <span class="kw">private static let</span> themes: [([<span class="ty">String</span>], (<span class="ty">String</span>, <span class="ty">Color</span>))] = [
+    ([<span class="st">"garden"</span>, <span class="st">"lawn"</span>, <span class="st">"landscap"</span>, <span class="st">"plant"</span>, <span class="st">"tree"</span>, <span class="st">"yard"</span>, <span class="st">"mow"</span>], (<span class="st">"leaf.fill"</span>, .green)),
+    ([<span class="st">"clean"</span>, <span class="st">"wash"</span>, <span class="st">"maid"</span>, <span class="st">"tidy"</span>], (<span class="st">"sparkles"</span>, .cyan)),
+    ([<span class="st">"dog"</span>, <span class="st">"pet"</span>, <span class="st">"walk"</span>, <span class="st">"groom"</span>], (<span class="st">"pawprint.fill"</span>, .mint)),
+    <span class="cm">// …repairs, building, design, photography, tutoring, catering, software, driving</span>
+  ]
+}</code></pre>
+
+  <pre><code><span class="file">App/InvoiceCard.swift · TornEdge</span><span class="cm">// …rounded top corners, then down the right side…</span>
+<span class="kw">let</span> teeth = max(<span class="ty">1</span>, <span class="ty">Int</span>(rect.width / toothWidth))
+<span class="kw">let</span> step = rect.width / <span class="ty">CGFloat</span>(teeth)
+<span class="kw">for</span> tooth <span class="kw">in</span> <span class="ty">0</span>..&lt;teeth {
+  <span class="kw">let</span> x = rect.maxX - <span class="ty">CGFloat</span>(tooth) * step
+  path.addLine(to: <span class="ty">CGPoint</span>(x: x - step / <span class="ty">2</span>, y: rect.maxY))   <span class="cm">// down to a point</span>
+  path.addLine(to: <span class="ty">CGPoint</span>(x: x - step, y: bottom))         <span class="cm">// back up</span>
+}
+path.closeSubpath()</code></pre>
+
+  <div class="callout">
+    <b>Siri doesn't draw every SwiftUI effect</b>
+    The first version grayed out a voided card with <code>.saturation(0)</code>. It worked in SwiftUI previews but Siri ignored it, so the VOID card stayed colorful. The fix is to change the color itself: <code>private var color: Color { isDeleted ? .gray : theme.color }</code>. Keep snippet views to plain shapes, colors, text and images.
+  </div>
+
+  <!-- ───────────────────────── Step 6 ───────────────────────── -->
+  <h2 id="save"><span class="chapter">Step 6</span>Saving the invoice</h2>
+  <p class="intro">After confirmation, <code>perform()</code> hands off to the model layer. The intent stays thin; the store owns numbering and saving.</p>
+
+  <pre><code><span class="file">App/Invoice.swift</span><span class="kw">struct</span> <span class="ty">Invoice</span>: <span class="ty">Identifiable</span>, <span class="ty">Hashable</span>, <span class="ty">Codable</span>, <span class="ty">Sendable</span> {
+  <span class="cm">/// Created once and saved, so Siri and Shortcuts can find the invoice again.</span>
+  <span class="kw">var</span> id: <span class="ty">String</span>
+  <span class="kw">var</span> number: <span class="ty">String</span>        <span class="cm">// INV-0004</span>
+  <span class="kw">var</span> clientName: <span class="ty">String</span>
+  <span class="kw">var</span> service: <span class="ty">String</span>
+  <span class="kw">var</span> amount: <span class="ty">Double</span>        <span class="cm">// US dollars</span>
+  <span class="kw">var</span> createdAt: <span class="ty">Date</span>
+  <span class="kw">var</span> dueDate: <span class="ty">Date</span>         <span class="cm">// createdAt + 14 days</span>
+
+  <span class="kw">var</span> url: <span class="ty">URL</span> { <span class="ty">URL</span>(string: <span class="st">"skyway://invoice/\(id)"</span>)! }
+}</code></pre>
+
+  <pre><code><span class="file">App/InvoiceStore.swift</span><span class="kw">enum</span> <span class="ty">InvoiceStore</span> {
+  <span class="cm">/// Every invoice, newest first, decoded from UserDefaults.</span>
+  <span class="kw">static var</span> invoices: [<span class="ty">Invoice</span>] { <span class="cm">/* … */</span> }
+
+  <span class="cm">/// The number the next invoice gets. Numbers keep counting up after an undo.</span>
+  <span class="kw">static var</span> nextNumber: <span class="ty">String</span> {
+    <span class="ty">String</span>(format: <span class="st">"INV-%04d"</span>, <span class="ty">UserDefaults</span>.standard.integer(forKey: lastNumberKey) + <span class="ty">1</span>)
+  }
+
+  <span class="kw">static func</span> createInvoice(clientName: <span class="ty">String</span>, service: <span class="ty">String</span>, amount: <span class="ty">Double</span>) -&gt; <span class="ty">Invoice</span> {
+    <span class="kw">let</span> invoice = <span class="ty">Invoice</span>(number: nextNumber, clientName: clientName, service: service, amount: amount)
+    <span class="ty">UserDefaults</span>.standard.set(<span class="ty">UserDefaults</span>.standard.integer(forKey: lastNumberKey) + <span class="ty">1</span>, forKey: lastNumberKey)
+    save([invoice] + invoices)
+    <span class="kw">return</span> invoice
+  }
+
+  <span class="kw">static func</span> deleteInvoice(id: <span class="ty">Invoice</span>.<span class="ty">ID</span>) { save(invoices.filter { $0.id != id }) }
+}</code></pre>
+
+  <div class="callout info">
+    <b>Why it must be saved, not just kept in memory</b>
+    Siri can run the intent while Skyway isn't on screen, and iOS may end the app's process afterward. Anything kept only in memory would be lost. Writing to <code>UserDefaults</code> means the invoice is still there when the app opens.
+  </div>
+
+  <p>For Siri and Shortcuts, an invoice is described by <code>InvoiceEntity</code>, an <code>AppEntity</code>. Returning it as the intent's value lets a person chain it into another shortcut step, for example to send the amount in a message.</p>
+  <pre><code><span class="file">App/InvoiceEntity.swift</span><span class="kw">struct</span> <span class="ty">InvoiceEntity</span>: <span class="ty">AppEntity</span> {
+  <span class="kw">static let</span> typeDisplayRepresentation: <span class="ty">TypeDisplayRepresentation</span> = <span class="st">"Invoice"</span>
+  <span class="kw">static let</span> defaultQuery = <span class="ty">InvoiceEntityQuery</span>()
+
+  <span class="kw">var</span> id: <span class="ty">String</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Number"</span>) <span class="kw">var</span> number: <span class="ty">String</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Client"</span>) <span class="kw">var</span> clientName: <span class="ty">String</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Amount"</span>) <span class="kw">var</span> amount: <span class="ty">Double</span>
+  <span class="cm">// …service, due date</span>
+
+  <span class="kw">var</span> displayRepresentation: <span class="ty">DisplayRepresentation</span> {
+    <span class="ty">DisplayRepresentation</span>(
+      title: <span class="st">"\(number) · \(clientName)"</span>,
+      subtitle: <span class="st">"\(service) · \(Invoice.format(amount)) · Due …"</span>,
+      image: .init(systemName: <span class="st">"doc.text"</span>)
+    )
+  }
+}</code></pre>
+
+  <!-- ───────────────────────── Step 7 ───────────────────────── -->
+  <h2 id="result"><span class="chapter">Step 7</span>The result card</h2>
+  <div class="split">
+    <div>
+      <p>The last line of <code>perform()</code> returns three things at once. The return type lists each capability:</p>
+      <pre><code><span class="file">App/CreateInvoiceIntent.swift · perform()</span><span class="kw">func</span> perform() <span class="kw">async throws</span>
+  -&gt; <span class="kw">some</span> <span class="ty">IntentResult</span> &amp; <span class="ty">ReturnsValue</span>&lt;<span class="ty">InvoiceEntity</span>&gt;
+     &amp; <span class="ty">ProvidesDialog</span> &amp; <span class="ty">ShowsSnippetIntent</span> {
+  <span class="cm">// …check, confirm…</span>
+  <span class="kw">let</span> invoice = <span class="ty">InvoiceStore</span>.createInvoice(
+    clientName: client, service: work, amount: amount)
+  <span class="kw">let</span> due = invoice.dueDate.formatted(date: .abbreviated, time: .omitted)
+  <span class="kw">return</span> .result(
+    value: invoice.entity,                       <span class="cm">// for the next shortcut step</span>
+    dialog: <span class="st">"Created invoice \(invoice.number) for \(client): \(invoice.amountText) for \(work.lowercased()), due \(due)."</span>,
+    snippetIntent: <span class="ty">InvoiceCreatedSnippetIntent</span>(invoice: invoice)
+  )
+}</code></pre>
+      <p>The <code>dialog</code> is what Siri <em>says</em>, which matters with AirPods or CarPlay where there's no screen. The <code>snippetIntent</code> is what it <em>shows</em>.</p>
+    </div>
+    <figure class="shot"><img src="CreateInvoice/5-issued.png" alt="Issued invoice card"><figcaption>ISSUED, with View Invoice and Undo</figcaption></figure>
+  </div>
+
+  <h3>Why the result card takes plain values, not the entity</h3>
+  <pre><code><span class="file">App/InvoiceSnippetIntents.swift</span><span class="cm">/// Takes plain values rather than an InvoiceEntity,
+/// so it can still draw after Undo deletes the invoice.</span>
+<span class="kw">struct</span> <span class="ty">InvoiceCreatedSnippetIntent</span>: <span class="ty">SnippetIntent</span> {
+  <span class="kw">@Parameter</span>(title: <span class="st">"Invoice ID"</span>) <span class="kw">var</span> invoiceID: <span class="ty">String</span>
+  <span class="kw">@Parameter</span>(title: <span class="st">"Number"</span>) <span class="kw">var</span> number: <span class="ty">String</span>
+  <span class="cm">// …client, service, amount, due date</span>
+
+  <span class="kw">func</span> perform() <span class="kw">async throws</span> -&gt; <span class="kw">some</span> <span class="ty">IntentResult</span> &amp; <span class="ty">ShowsSnippetView</span> {
+    <span class="cm">// Read the current state each time the card is drawn.</span>
+    <span class="kw">let</span> invoice = <span class="ty">InvoiceStore</span>.invoices(with: [invoiceID]).first
+    <span class="kw">return</span> .result(view: <span class="ty">InvoiceCard</span>(
+      number: number, clientName: clientName, service: service,
+      amount: amount, dueDate: dueDate,
+      issuedDate: invoice?.createdAt ?? .now,
+      <span class="hl">status: invoice.map { .created($0) } ?? .deleted</span>
+    ))
+  }
+}</code></pre>
+  <p>If it took an <code>InvoiceEntity</code>, the system would look the invoice up again every time it redraws the card. After Undo the invoice is gone, the lookup would fail, and the card would turn into an error. With plain values the card can always draw, and switches to VOID when the invoice no longer exists.</p>
+
+  <!-- ───────────────────────── Step 8 ───────────────────────── -->
+  <h2 id="undo"><span class="chapter">Step 8</span>Undo, right in the card</h2>
+  <div class="split">
+    <div>
+      <p>Buttons inside a snippet must use <code>Button(intent:)</code>. A normal <code>Button { … }</code> closure doesn't run in Siri, because the card is drawn by the system, not by the app.</p>
+      <pre><code><span class="file">App/InvoiceCard.swift · footer</span><span class="ty">Button</span>(intent: <span class="ty">DeleteInvoiceIntent</span>(invoiceID: invoice.id)) {
+  <span class="ty">Label</span>(<span class="st">"Undo"</span>, systemImage: <span class="st">"arrow.uturn.backward"</span>)
+}
+.buttonStyle(.bordered)</code></pre>
+      <pre><code><span class="file">App/InvoiceSnippetIntents.swift</span><span class="kw">struct</span> <span class="ty">DeleteInvoiceIntent</span>: <span class="ty">AppIntent</span> {
+  <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Delete Invoice"</span>
+  <span class="kw">static let</span> isDiscoverable = <span class="kw">false</span>
+
+  <span class="kw">@Parameter</span>(title: <span class="st">"Invoice ID"</span>) <span class="kw">var</span> invoiceID: <span class="ty">String</span>
+
+  <span class="kw">func</span> perform() <span class="kw">async throws</span> -&gt; <span class="kw">some</span> <span class="ty">IntentResult</span> {
+    <span class="kw">guard</span> !<span class="ty">InvoiceStore</span>.invoices(with: [invoiceID]).isEmpty <span class="kw">else</span> {
+      <span class="kw">throw</span> <span class="ty">InvoiceError</span>.notFound
+    }
+    <span class="ty">InvoiceStore</span>.deleteInvoice(id: invoiceID)
+    <span class="kw">return</span> .result()   <span class="cm">// no need to redraw by hand</span>
+  }
+}</code></pre>
+    </div>
+    <figure class="shot"><img src="CreateInvoice/6-void.png" alt="Voided invoice card"><figcaption>After Undo: gray, with a VOID stamp</figcaption></figure>
+  </div>
+
+  <div class="flow">
+    <div class="step person"><header><span class="num">1</span><h4>Tap Undo</h4></header></div>
+    <div class="arrow"></div>
+    <div class="step app"><header><span class="num">2</span><h4><code>DeleteInvoiceIntent.perform()</code> deletes the invoice</h4><span class="tag">changes data</span></header></div>
+    <div class="arrow"></div>
+    <div class="step system"><header><span class="num">3</span><h4>The system runs <code>InvoiceCreatedSnippetIntent.perform()</code> again</h4><span class="tag">automatic</span></header><p>It finds no invoice with that ID, so it draws the card as <code>.deleted</code>.</p></div>
+  </div>
+
+  <!-- ───────────────────────── Step 9 ───────────────────────── -->
+  <h2 id="view"><span class="chapter">Step 9</span>View Invoice opens the app</h2>
+  <div class="split">
+    <div>
+      <p>View Invoice is a SwiftUI <code>Link</code> to a <code>skyway://</code> URL. Four small pieces make it work:</p>
+      <h3 style="margin-top:8px">1 · Register the URL scheme</h3>
+      <pre><code><span class="file">Project.json → Info.plist</span><span class="st">"CFBundleURLTypes"</span>: [{
+  <span class="st">"CFBundleURLName"</span>: <span class="st">"com.badarinathvm.skyway"</span>,
+  <span class="st">"CFBundleURLSchemes"</span>: [<span class="st">"skyway"</span>]
+}]</code></pre>
+      <h3>2 · Link to it from the card</h3>
+      <pre><code><span class="file">App/InvoiceCard.swift · footer</span><span class="cm">// A link rather than an intent button: Siri and Spotlight open the app for links.</span>
+<span class="ty">Link</span>(destination: invoice.url) {            <span class="cm">// skyway://invoice/&lt;id&gt;</span>
+  <span class="ty">Label</span>(<span class="st">"View Invoice"</span>, systemImage: <span class="st">"arrow.up.forward.app"</span>)
+}
+.buttonStyle(.borderedProminent)</code></pre>
+    </div>
+    <figure class="shot"><img src="CreateInvoice/7-detail.png" alt="Invoice detail screen"><figcaption>InvoiceDetailView in Skyway</figcaption></figure>
+  </div>
+
+  <h3>3 · Receive the link and remember which invoice to show</h3>
+  <pre><code><span class="file">App/ContentView.swift</span><span class="kw">@Bindable private var</span> navigator = <span class="ty">AppNavigator</span>.shared
+<span class="cm">// …</span>
+.sheet(item: $navigator.presentedInvoice) { invoice <span class="kw">in</span>
+  <span class="ty">InvoiceDetailView</span>(invoice: invoice)
+}
+.onOpenURL { url <span class="kw">in</span>
+  navigator.open(url)
+}</code></pre>
+  <pre><code><span class="file">App/AppNavigator.swift</span><span class="kw">@MainActor</span>
+<span class="kw">@Observable</span>
+<span class="kw">final class</span> <span class="ty">AppNavigator</span> {
+  <span class="kw">static let</span> shared = <span class="ty">AppNavigator</span>()
+
+  <span class="cm">/// The invoice shown in a sheet, or nil when none is open.</span>
+  <span class="kw">var</span> presentedInvoice: <span class="ty">Invoice</span>?
+
+  <span class="cm">/// Shows the screen a skyway:// link points to, like skyway://invoice/&lt;id&gt;.</span>
+  <span class="kw">func</span> open(_ url: <span class="ty">URL</span>) {
+    <span class="kw">guard</span> url.scheme == <span class="st">"skyway"</span>, url.host() == <span class="st">"invoice"</span>,
+      <span class="kw">let</span> id = url.pathComponents.dropFirst().first,
+      <span class="kw">let</span> invoice = <span class="ty">InvoiceStore</span>.invoices(with: [id]).first
+    <span class="kw">else</span> { <span class="kw">return</span> }
+    presentedInvoice = invoice
+  }
+}</code></pre>
+  <p><code>AppNavigator</code> is shared, so <code>OpenInvoiceIntent</code> (the “Open Invoice” action in Shortcuts) sets the same <code>presentedInvoice</code> and gets the same screen.</p>
+
+  <h3>4 · The detail screen</h3>
+  <p><code>InvoiceDetailView</code> is a <code>List</code>: the same <code>InvoiceCard</code> with <code>status: .saved</code>, a Details section built from <code>LabeledContent</code> rows, a <b>Share</b> button (<code>ShareLink</code> with a plain-text copy) and <b>Delete Invoice</b> behind a <code>confirmationDialog</code>.</p>
+
+  <div class="callout">
+    <b>Why a link, and not an “Open Invoice” intent button?</b>
+    The first version used <code>Button(intent: OpenInvoiceIntent(…))</code>. <code>OpenIntent</code> is meant to bring the app forward, and the app did start (the log showed a new scene), but when the card came from Spotlight it stayed on top and Skyway never appeared. Even adding <code>continueInForeground</code> didn't help. A <code>Link</code> is handed to the system as a URL to open, which reliably switches to the app. <code>OpenInvoiceIntent</code> is kept for use in Shortcuts.
+  </div>
+
+  <!-- ───────────────────────── Step 10 ───────────────────────── -->
+  <h2 id="siri"><span class="chapter">Step 10</span>Apple Intelligence Siri: one sentence</h2>
+  <p class="intro">On iOS 27.3, Siri's model can call an app's intents as <em>tools</em> and fill in their values from what the person said. One line opts the intent in:</p>
+  <pre><code><span class="file">App/CreateInvoiceIntent.swift</span><span class="kw">@available</span>(iOS <span class="ty">27.3</span>, *)
+<span class="kw">extension</span> <span class="ty">CreateInvoiceIntent</span>: <span class="ty">ToolIntent</span> {}</code></pre>
+  <p>The app supports iOS 27.0, so the conformance is in a separate extension that only exists on 27.3 and later. On earlier versions everything else keeps working through Shortcuts, Spotlight and the App Shortcut phrases.</p>
+  <p>With it, “<b>Create an invoice for John for gardening, 450 dollars in Skyway</b>” can go straight to the confirmation card. The model fills the values using the metadata from Step 2: the intent's <code>description</code> and <code>searchKeywords</code>, and each parameter's <code>description</code> (“The total to bill, in US dollars, like 450”). Clear descriptions make the difference between Siri filling the values and Siri asking for them.</p>
+  <div class="callout">
+    <b>The confirmation still happens</b>
+    Being a tool doesn't skip <code>requestConfirmation</code>. Creating an invoice has a real effect, so the person always sees the draft first.
+  </div>
+
+  <!-- ───────────────────────── Lessons ───────────────────────── -->
+  <h2 id="lessons"><span class="chapter">Takeaways</span>Lessons learned</h2>
+  <div class="card">
+    <table>
+      <tr><th>Rule</th><th>Why</th></tr>
+      <tr><td>Snippet intents only read</td><td>The system re-runs <code>SnippetIntent.perform()</code> whenever it redraws, so saving or deleting there would happen more than once.</td></tr>
+      <tr><td>Buttons use <code>Button(intent:)</code></td><td>Closures don't run in a card drawn by the system. The action intent just returns <code>.result()</code>; the card redraws by itself.</td></tr>
+      <tr><td>Use <code>Link</code> to open the app</td><td>An <code>OpenIntent</code> behind a card button didn't bring Skyway forward from Spotlight.</td></tr>
+      <tr><td>Pass plain values to the result card</td><td>An entity parameter is looked up again on every redraw and fails once Undo deletes it.</td></tr>
+      <tr><td>Change colors, not effects</td><td>Siri ignored <code>.saturation</code>. Plain colors, shapes, text and SF Symbols render reliably.</td></tr>
+      <tr><td>Errors explain the fix</td><td><code>CustomLocalizedStringResourceConvertible</code> lets Siri say “An invoice needs a client name, like John.”</td></tr>
+      <tr><td>Save, don't just remember</td><td>Siri may run the intent with the app in the background and iOS may end it afterward.</td></tr>
+      <tr><td>Custom <code>init</code>s on intents you build</td><td>Snippet and button intents are created in code with values, so each needs <code>init()</code> plus an <code>init</code> that sets its <code>@Parameter</code>s.</td></tr>
+    </table>
+  </div>
+
+  <!-- ───────────────────────── Files ───────────────────────── -->
+  <h2 id="files"><span class="chapter">Reference</span>File map</h2>
+  <div class="card">
+    <table>
+      <tr><th>File</th><th>What it does</th></tr>
+      <tr><td><code>SkywayShortcuts.swift</code></td><td>The “Create Invoice” App Shortcut and its phrases</td></tr>
+      <tr><td><code>CreateInvoiceIntent.swift</code></td><td>The main intent: ask, check, confirm, save, return. Also <code>InvoiceError</code> and the <code>ToolIntent</code> extension</td></tr>
+      <tr><td><code>InvoiceSnippetIntents.swift</code></td><td><code>InvoiceDraftSnippetIntent</code>, <code>InvoiceCreatedSnippetIntent</code> and <code>DeleteInvoiceIntent</code> (Undo)</td></tr>
+      <tr><td><code>InvoiceCard.swift</code></td><td>The receipt view for every state, plus the stamp, timeline, dotted leader and torn edge</td></tr>
+      <tr><td><code>InvoiceTheme.swift</code></td><td>Picks the color and SF Symbol from the service</td></tr>
+      <tr><td><code>Invoice.swift</code></td><td>The invoice value, due date, currency formatting and <code>skyway://</code> URL</td></tr>
+      <tr><td><code>InvoiceStore.swift</code></td><td>Saves invoices in UserDefaults and hands out invoice numbers</td></tr>
+      <tr><td><code>InvoiceEntity.swift</code></td><td>How Siri and Shortcuts see an invoice, and its query</td></tr>
+      <tr><td><code>OpenInvoiceIntent.swift</code></td><td>“Open Invoice” for Shortcuts</td></tr>
+      <tr><td><code>AppNavigator.swift</code></td><td>Which invoice the app should show; parses <code>skyway://invoice/&lt;id&gt;</code></td></tr>
+      <tr><td><code>InvoiceDetailView.swift</code></td><td>The in-app invoice screen with Share and Delete</td></tr>
+      <tr><td><code>ContentView.swift</code></td><td>Presents the detail sheet and receives links with <code>onOpenURL</code></td></tr>
+      <tr><td><code>Project.json</code></td><td>Registers the <code>skyway</code> URL scheme</td></tr>
+    </table>
+  </div>
+
+  <h3>Try it yourself</h3>
+  <ol>
+    <li>Run Skyway once so iOS learns its shortcuts.</li>
+    <li>Open the <b>Shortcuts</b> app, scroll to Skyway, tap <b>Create Invoice</b>. Or search “Create Invoice” in Spotlight, or say “Create an invoice in Skyway”.</li>
+    <li>Answer John, gardening, 450. Check the green DRAFT card and tap <b>Create Invoice</b>.</li>
+    <li>Tap <b>Undo</b> to see VOID, or run it again and tap <b>View Invoice</b> to open it in Skyway.</li>
+    <li>Try “dog walking”, “house cleaning” or “logo design” to see other themes.</li>
+  </ol>
+
+  <footer>Skyway · Create Invoice with App Intents · iOS 27 SDK · Interactive snippets need iOS 26; the Siri tool needs iOS 27.3.</footer>
+</main>
+</body>
+</html>
