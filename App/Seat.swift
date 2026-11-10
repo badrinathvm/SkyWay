@@ -33,7 +33,7 @@ struct Seat: Hashable, Sendable, CustomStringConvertible {
     }
   }
 
-  enum Position: String, Sendable {
+  enum Position: String, Sendable, CaseIterable {
     case window, middle, aisle
 
     var title: String { rawValue.capitalized }

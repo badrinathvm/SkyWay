@@ -76,7 +76,16 @@
       },
       "sources": [
         {
-          "path": "App"
+          "path": "App",
+          "excludes": [
+            "Skills.skillsbundle",
+            "Skills.skillsbundle/**"
+          ]
+        },
+        {
+          "path": "App/Skills.skillsbundle",
+          "type": "file",
+          "buildPhase": "resources"
         }
       ],
       "type": "application",
