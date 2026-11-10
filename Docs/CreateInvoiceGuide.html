@@ -319,7 +319,7 @@
   <div class="split">
     <div>
       <p>An <b>App Shortcut</b> makes the intent available the moment the app is installed, with no setup by the person. It appears in the Shortcuts app under Skyway, in Spotlight when you search “Create Invoice”, and it lets Siri understand the phrases.</p>
-      <pre><code><span class="file">App/SkywayShortcuts.swift</span><span class="kw">struct</span> <span class="ty">SkywayShortcuts</span>: <span class="ty">AppShortcutsProvider</span> {
+      <pre><code><span class="file">App/Siri/Tools/SkywayShortcuts.swift</span><span class="kw">struct</span> <span class="ty">SkywayShortcuts</span>: <span class="ty">AppShortcutsProvider</span> {
   <span class="kw">static var</span> appShortcuts: [<span class="ty">AppShortcut</span>] {
     <span class="cm">// …Upcoming Trip and Change Seat…</span>
     <span class="ty">AppShortcut</span>(
@@ -349,7 +349,7 @@
   <div class="split">
     <div>
       <p>The intent declares three <code>@Parameter</code>s. Because none has a default value, the system asks for each one before <code>perform()</code> runs, using its <code>requestValueDialog</code>. The type picks the keyboard: <code>String</code> gets letters, <code>Double</code> gets the number pad.</p>
-      <pre><code><span class="file">App/CreateInvoiceIntent.swift</span><span class="kw">struct</span> <span class="ty">CreateInvoiceIntent</span>: <span class="ty">AppIntent</span> {
+      <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift</span><span class="kw">struct</span> <span class="ty">CreateInvoiceIntent</span>: <span class="ty">AppIntent</span> {
   <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Create Invoice"</span>
   <span class="kw">static let</span> description = <span class="ty">IntentDescription</span>(
     <span class="st">"Creates an invoice in US dollars that bills a client for a service, after you confirm. It's due in 14 days."</span>,
@@ -387,13 +387,13 @@
   <!-- ───────────────────────── Step 3 ───────────────────────── -->
   <h2 id="check"><span class="chapter">Step 3</span>Checking the values</h2>
   <p class="intro">Once all three values are in, <code>perform()</code> starts. It tidies them up and stops early if something is wrong.</p>
-  <pre><code><span class="file">App/CreateInvoiceIntent.swift · perform()</span><span class="kw">let</span> client = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+  <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift · perform()</span><span class="kw">let</span> client = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
 <span class="kw">let</span> work = service.trimmingCharacters(in: .whitespacesAndNewlines)
 <span class="kw">guard</span> !client.isEmpty <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.missingClient }
 <span class="kw">guard</span> !work.isEmpty <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.missingService }
 <span class="kw">guard</span> amount &gt; <span class="ty">0</span> <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.invalidAmount }</code></pre>
   <p>The error type conforms to <code>CustomLocalizedStringResourceConvertible</code>. Without it, Siri would only say a generic “there was a problem”. With it, Siri says exactly what's wrong and what would fix it:</p>
-  <pre><code><span class="file">App/CreateInvoiceIntent.swift</span><span class="kw">enum</span> <span class="ty">InvoiceError</span>: <span class="ty">Error</span>, <span class="ty">CustomLocalizedStringResourceConvertible</span> {
+  <pre><code><span class="file">App/Siri/Support/InvoiceError.swift</span><span class="kw">enum</span> <span class="ty">InvoiceError</span>: <span class="ty">Error</span>, <span class="ty">CustomLocalizedStringResourceConvertible</span> {
   <span class="kw">case</span> missingClient, missingService, invalidAmount, notFound
 
   <span class="kw">var</span> localizedStringResource: <span class="ty">LocalizedStringResource</span> {
@@ -416,7 +416,7 @@
         <li>draws the card that the <code>snippetIntent</code> returns,</li>
         <li><b>suspends <code>perform()</code></b> until the person answers. Confirm returns normally; Cancel <b>throws</b>, so the code after it never runs.</li>
       </ul>
-      <pre><code><span class="file">App/CreateInvoiceIntent.swift · perform()</span><span class="kw">try await</span> requestConfirmation(
+      <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift · perform()</span><span class="kw">try await</span> requestConfirmation(
   actionName: .custom(
     acceptLabel: <span class="st">"Create Invoice"</span>,
     acceptAlternatives: [<span class="st">"Yes"</span>, <span class="st">"Create it"</span>, <span class="st">"Send it"</span>],
@@ -435,7 +435,7 @@
 
   <h3>The snippet intent that draws the draft</h3>
   <p>A <code>SnippetIntent</code> is a small intent whose only job is to return a view. It takes the values it needs as <code>@Parameter</code>s, and needs a custom <code>init</code> so the main intent can create it with those values.</p>
-  <pre><code><span class="file">App/InvoiceSnippetIntents.swift</span><span class="kw">struct</span> <span class="ty">InvoiceDraftSnippetIntent</span>: <span class="ty">SnippetIntent</span> {
+  <pre><code><span class="file">App/Siri/Snippets/InvoiceSnippetIntents.swift</span><span class="kw">struct</span> <span class="ty">InvoiceDraftSnippetIntent</span>: <span class="ty">SnippetIntent</span> {
   <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Invoice Draft"</span>
   <span class="kw">static let</span> isDiscoverable = <span class="kw">false</span>   <span class="cm">// keep it out of the Shortcuts action list</span>
 
@@ -473,7 +473,7 @@
     <div class="state void">VOID<small>deleted<br>card turns gray</small></div>
   </div>
 
-  <pre><code><span class="file">App/InvoiceCard.swift</span><span class="kw">enum</span> <span class="ty">Status</span> {
+  <pre><code><span class="file">App/Siri/Snippets/InvoiceCard.swift</span><span class="kw">enum</span> <span class="ty">Status</span> {
   <span class="kw">case</span> draft               <span class="cm">// In Siri, waiting for the person to confirm.</span>
   <span class="kw">case</span> created(<span class="ty">Invoice</span>)    <span class="cm">// In Siri, just created, with View Invoice and Undo.</span>
   <span class="kw">case</span> saved               <span class="cm">// In the app, where there's nothing to confirm or undo.</span>
@@ -492,7 +492,7 @@
     <tr><td>Torn edge</td><td>A custom <code>TornEdge</code> shape with rounded top corners and a zigzag bottom, used for both the background and the clip.</td></tr>
   </table>
 
-  <pre><code><span class="file">App/InvoiceTheme.swift</span><span class="kw">struct</span> <span class="ty">InvoiceTheme</span> {
+  <pre><code><span class="file">App/Siri/Snippets/InvoiceTheme.swift</span><span class="kw">struct</span> <span class="ty">InvoiceTheme</span> {
   <span class="kw">var</span> symbol: <span class="ty">String</span>
   <span class="kw">var</span> color: <span class="ty">Color</span>
 
@@ -510,7 +510,7 @@
   ]
 }</code></pre>
 
-  <pre><code><span class="file">App/InvoiceCard.swift · TornEdge</span><span class="cm">// …rounded top corners, then down the right side…</span>
+  <pre><code><span class="file">App/Siri/Snippets/InvoiceCard.swift · TornEdge</span><span class="cm">// …rounded top corners, then down the right side…</span>
 <span class="kw">let</span> teeth = max(<span class="ty">1</span>, <span class="ty">Int</span>(rect.width / toothWidth))
 <span class="kw">let</span> step = rect.width / <span class="ty">CGFloat</span>(teeth)
 <span class="kw">for</span> tooth <span class="kw">in</span> <span class="ty">0</span>..&lt;teeth {
@@ -567,7 +567,7 @@ path.closeSubpath()</code></pre>
   </div>
 
   <p>For Siri and Shortcuts, an invoice is described by <code>InvoiceEntity</code>, an <code>AppEntity</code>. Returning it as the intent's value lets a person chain it into another shortcut step, for example to send the amount in a message.</p>
-  <pre><code><span class="file">App/InvoiceEntity.swift</span><span class="kw">struct</span> <span class="ty">InvoiceEntity</span>: <span class="ty">AppEntity</span> {
+  <pre><code><span class="file">App/Siri/Entities/InvoiceEntity.swift</span><span class="kw">struct</span> <span class="ty">InvoiceEntity</span>: <span class="ty">AppEntity</span> {
   <span class="kw">static let</span> typeDisplayRepresentation: <span class="ty">TypeDisplayRepresentation</span> = <span class="st">"Invoice"</span>
   <span class="kw">static let</span> defaultQuery = <span class="ty">InvoiceEntityQuery</span>()
 
@@ -591,7 +591,7 @@ path.closeSubpath()</code></pre>
   <div class="split">
     <div>
       <p>The last line of <code>perform()</code> returns three things at once. The return type lists each capability:</p>
-      <pre><code><span class="file">App/CreateInvoiceIntent.swift · perform()</span><span class="kw">func</span> perform() <span class="kw">async throws</span>
+      <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift · perform()</span><span class="kw">func</span> perform() <span class="kw">async throws</span>
   -&gt; <span class="kw">some</span> <span class="ty">IntentResult</span> &amp; <span class="ty">ReturnsValue</span>&lt;<span class="ty">InvoiceEntity</span>&gt;
      &amp; <span class="ty">ProvidesDialog</span> &amp; <span class="ty">ShowsSnippetIntent</span> {
   <span class="cm">// …check, confirm…</span>
@@ -610,7 +610,7 @@ path.closeSubpath()</code></pre>
   </div>
 
   <h3>Why the result card takes plain values, not the entity</h3>
-  <pre><code><span class="file">App/InvoiceSnippetIntents.swift</span><span class="cm">/// Takes plain values rather than an InvoiceEntity,
+  <pre><code><span class="file">App/Siri/Snippets/InvoiceSnippetIntents.swift</span><span class="cm">/// Takes plain values rather than an InvoiceEntity,
 /// so it can still draw after Undo deletes the invoice.</span>
 <span class="kw">struct</span> <span class="ty">InvoiceCreatedSnippetIntent</span>: <span class="ty">SnippetIntent</span> {
   <span class="kw">@Parameter</span>(title: <span class="st">"Invoice ID"</span>) <span class="kw">var</span> invoiceID: <span class="ty">String</span>
@@ -635,11 +635,11 @@ path.closeSubpath()</code></pre>
   <div class="split">
     <div>
       <p>Buttons inside a snippet must use <code>Button(intent:)</code>. A normal <code>Button { … }</code> closure doesn't run in Siri, because the card is drawn by the system, not by the app.</p>
-      <pre><code><span class="file">App/InvoiceCard.swift · footer</span><span class="ty">Button</span>(intent: <span class="ty">DeleteInvoiceIntent</span>(invoiceID: invoice.id)) {
+      <pre><code><span class="file">App/Siri/Snippets/InvoiceCard.swift · footer</span><span class="ty">Button</span>(intent: <span class="ty">DeleteInvoiceIntent</span>(invoiceID: invoice.id)) {
   <span class="ty">Label</span>(<span class="st">"Undo"</span>, systemImage: <span class="st">"arrow.uturn.backward"</span>)
 }
 .buttonStyle(.bordered)</code></pre>
-      <pre><code><span class="file">App/InvoiceSnippetIntents.swift</span><span class="kw">struct</span> <span class="ty">DeleteInvoiceIntent</span>: <span class="ty">AppIntent</span> {
+      <pre><code><span class="file">App/Siri/Tools/DeleteInvoiceIntent.swift</span><span class="kw">struct</span> <span class="ty">DeleteInvoiceIntent</span>: <span class="ty">AppIntent</span> {
   <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Delete Invoice"</span>
   <span class="kw">static let</span> isDiscoverable = <span class="kw">false</span>
 
@@ -676,7 +676,7 @@ path.closeSubpath()</code></pre>
   <span class="st">"CFBundleURLSchemes"</span>: [<span class="st">"skyway"</span>]
 }]</code></pre>
       <h3>2 · Link to it from the card</h3>
-      <pre><code><span class="file">App/InvoiceCard.swift · footer</span><span class="cm">// A link rather than an intent button: Siri and Spotlight open the app for links.</span>
+      <pre><code><span class="file">App/Siri/Snippets/InvoiceCard.swift · footer</span><span class="cm">// A link rather than an intent button: Siri and Spotlight open the app for links.</span>
 <span class="ty">Link</span>(destination: invoice.url) {            <span class="cm">// skyway://invoice/&lt;id&gt;</span>
   <span class="ty">Label</span>(<span class="st">"View Invoice"</span>, systemImage: <span class="st">"arrow.up.forward.app"</span>)
 }
@@ -724,7 +724,7 @@ path.closeSubpath()</code></pre>
   <!-- ───────────────────────── Step 10 ───────────────────────── -->
   <h2 id="siri"><span class="chapter">Step 10</span>Apple Intelligence Siri: one sentence</h2>
   <p class="intro">On iOS 27.3, Siri's model can call an app's intents as <em>tools</em> and fill in their values from what the person said. One line opts the intent in:</p>
-  <pre><code><span class="file">App/CreateInvoiceIntent.swift</span><span class="kw">@available</span>(iOS <span class="ty">27.3</span>, *)
+  <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift</span><span class="kw">@available</span>(iOS <span class="ty">27.3</span>, *)
 <span class="kw">extension</span> <span class="ty">CreateInvoiceIntent</span>: <span class="ty">ToolIntent</span> {}</code></pre>
   <p>The app supports iOS 27.0, so the conformance is in a separate extension that only exists on 27.3 and later. On earlier versions everything else keeps working through Shortcuts, Spotlight and the App Shortcut phrases.</p>
   <p>With it, “<b>Create an invoice for John for gardening, 450 dollars in Skyway</b>” can go straight to the confirmation card. The model fills the values using the metadata from Step 2: the intent's <code>description</code> and <code>searchKeywords</code>, and each parameter's <code>description</code> (“The total to bill, in US dollars, like 450”). Clear descriptions make the difference between Siri filling the values and Siri asking for them.</p>
@@ -754,15 +754,17 @@ path.closeSubpath()</code></pre>
   <div class="card">
     <table>
       <tr><th>File</th><th>What it does</th></tr>
-      <tr><td><code>SkywayShortcuts.swift</code></td><td>The “Create Invoice” App Shortcut and its phrases</td></tr>
-      <tr><td><code>CreateInvoiceIntent.swift</code></td><td>The main intent: ask, check, confirm, save, return. Also <code>InvoiceError</code> and the <code>ToolIntent</code> extension</td></tr>
-      <tr><td><code>InvoiceSnippetIntents.swift</code></td><td><code>InvoiceDraftSnippetIntent</code>, <code>InvoiceCreatedSnippetIntent</code> and <code>DeleteInvoiceIntent</code> (Undo)</td></tr>
-      <tr><td><code>InvoiceCard.swift</code></td><td>The receipt view for every state, plus the stamp, timeline, dotted leader and torn edge</td></tr>
-      <tr><td><code>InvoiceTheme.swift</code></td><td>Picks the color and SF Symbol from the service</td></tr>
+      <tr><td><code>Siri/Tools/SkywayShortcuts.swift</code></td><td>The “Create Invoice” App Shortcut and its phrases</td></tr>
+      <tr><td><code>Siri/Tools/CreateInvoiceIntent.swift</code></td><td>The main intent: ask, check, confirm, save, return. Also the <code>ToolIntent</code> extension</td></tr>
+      <tr><td><code>Siri/Tools/DeleteInvoiceIntent.swift</code></td><td>Behind the Undo button</td></tr>
+      <tr><td><code>Siri/Support/InvoiceError.swift</code></td><td>The errors Siri reads out</td></tr>
+      <tr><td><code>Siri/Snippets/InvoiceSnippetIntents.swift</code></td><td><code>InvoiceDraftSnippetIntent</code> and <code>InvoiceCreatedSnippetIntent</code></td></tr>
+      <tr><td><code>Siri/Snippets/InvoiceCard.swift</code></td><td>The receipt view for every state, plus the stamp, timeline, dotted leader and torn edge</td></tr>
+      <tr><td><code>Siri/Snippets/InvoiceTheme.swift</code></td><td>Picks the color and SF Symbol from the service</td></tr>
       <tr><td><code>Invoice.swift</code></td><td>The invoice value, due date, currency formatting and <code>skyway://</code> URL</td></tr>
       <tr><td><code>InvoiceStore.swift</code></td><td>Saves invoices in UserDefaults and hands out invoice numbers</td></tr>
-      <tr><td><code>InvoiceEntity.swift</code></td><td>How Siri and Shortcuts see an invoice, and its query</td></tr>
-      <tr><td><code>OpenInvoiceIntent.swift</code></td><td>“Open Invoice” for Shortcuts</td></tr>
+      <tr><td><code>Siri/Entities/InvoiceEntity.swift</code></td><td>How Siri and Shortcuts see an invoice, and its query</td></tr>
+      <tr><td><code>Siri/Tools/OpenInvoiceIntent.swift</code></td><td>“Open Invoice” for Shortcuts</td></tr>
       <tr><td><code>AppNavigator.swift</code></td><td>Which invoice the app should show; parses <code>skyway://invoice/&lt;id&gt;</code></td></tr>
       <tr><td><code>InvoiceDetailView.swift</code></td><td>The in-app invoice screen with Share and Delete</td></tr>
       <tr><td><code>ContentView.swift</code></td><td>Presents the detail sheet and receives links with <code>onOpenURL</code></td></tr>
