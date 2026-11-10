@@ -258,6 +258,15 @@
   .chain .sep { align-self: center; color: var(--secondary); font-size: 13px; }
 
   .rules li { margin: 4px 0; }
+
+  /* Bullet icon mock */
+  .icon-card { max-width: 360px; }
+  .icon-card .h { background: var(--code-bg); margin: -18px -20px 12px; padding: 8px 20px; border-radius: 16px 16px 0 0; font-size: 12px; font-weight: 600; color: var(--secondary); }
+  .icon-row { display: flex; align-items: center; gap: 12px; margin: 10px 0; font-size: 14px; }
+  .icon-row .ic { flex: none; width: 34px; height: 34px; border-radius: 9px; display: flex; align-items: center; justify-content: center; font-size: 16px; color: #1d1d1f; }
+  .phone-row.icons { grid-template-columns: 360px 1fr; }
+  @media (max-width: 760px) { .phone-row.icons { grid-template-columns: 1fr; } }
+  .limit { font-size: 30px; font-weight: 700; letter-spacing: -0.02em; color: var(--accent); }
   .rules .bad { color: var(--orange); font-weight: 600; }
   .rules .good { color: var(--green); font-weight: 600; }
 
@@ -279,7 +288,8 @@
   <a href="#realtime">6 · Real-time server</a>
   <a href="#app">7 · In the app</a>
   <a href="#test">8 · Testing</a>
-  <a href="#rules">9 · Content rules</a>
+  <a href="#limits">9 · Limits &amp; languages</a>
+  <a href="#rules">10 · Content rules</a>
 </nav>
 
 <div class="callout key">
@@ -539,7 +549,7 @@
     </ul>
     Up to 10 offers per billing plan type. Apple picks which eligible one to show.
   </li>
-  <li><b>Link it to subscriptions.</b> Each subscription can have one message at a time. One message can cover several subscriptions. Up to 10 messages per app.</li>
+  <li><b>Link it to subscriptions.</b> Each subscription can have one message at a time. One message can cover several subscriptions. Up to 10 messages per app on the website, or 2000 through the API. Without a real-time server, the <b>linked</b> message is the one subscribers see; other approved messages wait until you link them.</li>
   <li><b>Submit for review.</b> Sandbox testers can see drafts before approval.</li>
   <li><b>Changing it later:</b> edit and resubmit. The approved version stays live until the new one is approved. <b>No app update needed.</b></li>
 </ol>
@@ -624,7 +634,70 @@ if !renewalInfo.willAutoRenew  { /* cancelled */ }</code></pre>
 </table>
 
 <!-- 9 -->
-<h2 id="rules">9 · Content rules (or App Review rejects it)</h2>
+<h2 id="limits">9 · Limits, icons, and languages</h2>
+<p class="sub">From Apple's Retention Messaging API reference. Every limit applies to each language separately.</p>
+
+<div class="grid three" style="grid-template-columns: repeat(auto-fit, minmax(160px, 1fr))">
+  <div class="card"><div class="limit">66</div><b>Header</b><br><span class="sub">characters</span></div>
+  <div class="card"><div class="limit">144</div><b>Body</b><br><span class="sub">characters</span></div>
+  <div class="card"><div class="limit">66</div><b>Each bullet</b><br><span class="sub">characters</span></div>
+  <div class="card"><div class="limit">150</div><b>Image alt text</b><br><span class="sub">characters</span></div>
+</div>
+<div class="callout warn">
+  <strong>Leave room for translations</strong>
+  German and French often run 30–40% longer than English. A 60-character English header may not fit in German. Apple doesn't publish a maximum number of bullets (only a "too many bullet points" error), so keep to about five.
+</div>
+
+<h3 style="margin-top:24px">Icons next to each bullet: supported</h3>
+<div class="phone-row icons">
+  <div class="card icon-card" aria-label="Example message with an icon per bullet">
+    <div class="h">From the Developer</div>
+    <h3 style="margin:0">Here's what you'd lose</h3>
+    <div class="sub" style="margin:2px 0 8px">These features end when you cancel.</div>
+    <div class="icon-row"><span class="ic" style="background:#cfe0ff">🚗</span>CarPlay trips: automatic mileage logging</div>
+    <div class="icon-row"><span class="ic" style="background:#d9f99d">✦</span>Trip assistant: instant answers</div>
+    <div class="icon-row"><span class="ic" style="background:#bae6fd">🎫</span>Boarding passes: synced everywhere</div>
+    <div class="icon-row"><span class="ic" style="background:#ddd6fe">📄</span>Mileage reports: ready for tax time</div>
+  </div>
+  <div>
+    <table>
+      <tr><th>Image</th><th>Size</th><th>Use</th></tr>
+      <tr><td><code>BULLET_POINT</code></td><td>1024 × 1024</td><td>Icon beside a bullet</td></tr>
+      <tr><td><code>FULL_SIZE</code></td><td>3840 wide × 160–2160 tall</td><td>Main image. Header can sit above it (<code>ABOVE_IMAGE</code>).</td></tr>
+    </table>
+    <ul>
+      <li><b>PNG, no transparency.</b> Bake the colored rounded square into the image. Check it in light and dark mode.</li>
+      <li>Each image is reviewed separately. The message shows only once the message and all its images are approved.</li>
+      <li>Only text messages get images or bullets. Switch-plan and promotional-offer messages are text only.</li>
+      <li>Per-bullet icons are documented for the <b>API</b> (<code>Upload Image</code>, then <code>Upload Message</code>). The website editor may not offer them.</li>
+      <li><b>Emoji:</b> not mentioned in Apple's docs, and App Review judges content. Use bullet images instead, as above. The icons in this example are drawings only.</li>
+    </ul>
+  </div>
+</div>
+
+<h3 style="margin-top:24px">Languages, not countries</h3>
+<div class="grid two">
+  <div class="card">
+    <h3>How it works</h3>
+    <ul>
+      <li>One message per <b>subscription per language</b>. Countries that share a language share its message.</li>
+      <li>You don't have to translate into every language. Cover the ones your app and App Store page support.</li>
+      <li>Apple doesn't document what an uncovered language sees. Most likely it's the plain sheet with no "From the Developer" card.</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3>With a real-time server</h3>
+    <ul>
+      <li>Apple <b>requires a default message for every subscription in every language</b> you serve in real time.</li>
+      <li>Set them with <code>Configure Default Message</code>, one call per product and locale.</li>
+      <li>API limits: 2000 messages and 2000 images per app.</li>
+      <li>Sandbox approves API uploads automatically, so you can test straight away.</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 10 -->
+<h2 id="rules">10 · Content rules (or App Review rejects it)</h2>
 <div class="grid two rules">
   <div class="card">
     <h3 class="bad">Don't write</h3>

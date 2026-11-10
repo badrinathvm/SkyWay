@@ -18,11 +18,68 @@ Go to Monetization › Subscriptions › Retention Messaging › Get Started. Th
 
 1. Add a reference name, header, and body, with localizations.
 2. Optionally attach an image from the Asset Library and one or more **Retention Offers** (pay as you go, pay up front, or free), with eligibility rules: *Paid Subscription Duration* and *Wait Between Offers*.
-3. Link the message to subscriptions (one message per subscription; up to 10 messages per app) and submit it for review.
+3. Link the message to subscriptions (one message per subscription at a time; up to 10 messages per app on the website, or 2000 through the API) and submit it for review.
 
 Text and image edits don't need an app update. An edit creates a draft, and the approved version stays live until the draft passes review.
 
 **Content rules:** don't mention prices, discounts, or "free" in the header or body. The App Store renders offer terms itself. You may describe the features the subscriber loses if they're accurate. Avoid pressure tactics.
+
+### Limits, images, and localization
+
+These come from Apple's Retention Messaging API reference (`Upload Message`, `Upload Image`, and `Configure Default Message`).
+
+**Character limits** (UTF-8, per language):
+
+| Field | Max characters |
+| --- | --- |
+| `header` | 66 |
+| `body` | 144 |
+| `bulletPointText` (each bullet) | 66 |
+| `altText` (image description) | 150 |
+
+Leave room for translations: German and French often run 30–40% longer than English. Apple doesn't publish a maximum number of bullets, only a `BadRequestTooManyBulletPointsError`, so keep to about five.
+
+**Images:**
+
+| Kind | Size | Used for |
+| --- | --- | --- |
+| Full-size (`imageSize` `FULL_SIZE`) | 3840 px wide, 160–2160 px tall | The main image. Put the header above it with `headerPosition: ABOVE_IMAGE`. |
+| Bullet point (`imageSize` `BULLET_POINT`) | 1024 × 1024 px | An icon next to each bullet, like a "Here's what you'd lose" list with a colored icon per feature |
+
+- PNG only, **no transparency**. Bake any colored rounded-square background into the image, and make sure it looks right in both light and dark mode.
+- Each image is reviewed (`PENDING` → `APPROVED`) separately from its message. The message only shows when the message and all its images are approved.
+- Only text messages can have images or bullets. Switch-plan and promotional-offer messages are text only.
+- Up to 2000 images per app.
+- Per-bullet icons are documented for the API. The App Store Connect website editor may not offer them, so use `Upload Image` and `Upload Message` for that layout.
+- Emoji: the text fields are plain UTF-8 and Apple's docs don't mention emoji, but App Review judges content. Use bullet-point images for icons instead.
+
+An `Upload Message` body with icon bullets looks like this:
+
+```json
+{
+  "header": "Here's what you'd lose",
+  "body": "These features end when you cancel.",
+  "bulletPoints": [
+    { "text": "CarPlay trips: automatic mileage logging", "imageIdentifier": "b7c1…", "altText": "Car icon" },
+    { "text": "Trip assistant: instant answers about your trip", "imageIdentifier": "4e2a…", "altText": "Sparkle icon" }
+  ]
+}
+```
+
+Field names inside `bulletPoints` and `image` are simplified here. Check the `BulletPoint` and `UploadMessageImage` objects in Apple's reference before sending.
+
+**Localization:**
+
+- Messages are set per **language (locale)**, not per country. Countries that share a language share its message.
+- You don't have to translate into every language. Cover the languages your app and App Store page support.
+- With a real-time server, Apple **requires a default message for every subscription in every locale** where you send real-time messages (`Configure Default Message`, one call per product and locale).
+- Apple's docs don't say what a subscriber in an uncovered language sees. Most likely it's the plain cancellation screen with no "From the Developer" card.
+
+**Message counts:**
+
+- The App Store Connect website allows up to 10 messages per app. The API allows up to 2000, enough for one message per subscription per language.
+- Without a real-time server, the message **linked to the subscription** being cancelled is the one shown; each subscription has one at a time. Other approved messages stay unused until you link them. With a real-time server, your server picks any approved message per subscriber.
+- In Sandbox, messages and images uploaded through the API are approved automatically, so you can test straight away.
 
 ## 2. Real-time messages (your server)
 
