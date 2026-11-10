@@ -19,6 +19,9 @@ struct InvoiceEntity: AppEntity {
   @Property(title: "Amount")
   var amount: Double
 
+  @Property(title: "Issued")
+  var createdAt: Date
+
   @Property(title: "Due Date")
   var dueDate: Date
 
@@ -28,6 +31,7 @@ struct InvoiceEntity: AppEntity {
     clientName = invoice.clientName
     service = invoice.service
     amount = invoice.amount
+    createdAt = invoice.createdAt
     dueDate = invoice.dueDate
   }
 
