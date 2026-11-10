@@ -40,21 +40,3 @@ struct EndDriveTripIntent: AppIntent {
     return .result(dialog: "Saved a \(trip.milesText) personal trip.")
   }
 }
-
-extension DriveTrip.Purpose: AppEnum {
-  static let typeDisplayRepresentation: TypeDisplayRepresentation = "Trip Purpose"
-  static let caseDisplayRepresentations: [DriveTrip.Purpose: DisplayRepresentation] = [
-    .business: "Business",
-    .personal: "Personal",
-  ]
-}
-
-enum DriveTripError: Error, CustomLocalizedStringResourceConvertible {
-  case noTripInProgress
-
-  var localizedStringResource: LocalizedStringResource {
-    switch self {
-    case .noTripInProgress: "You don't have a trip in progress in Skyway."
-    }
-  }
-}

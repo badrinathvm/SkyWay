@@ -2,7 +2,8 @@ import Foundation
 
 /// The source of truth for the person's trips, shared by the UI and App Intents.
 enum TripStore {
-  static let trips: [Trip] = [.sample]
+  /// Read each time, so a seat changed from Siri shows up everywhere.
+  static var trips: [Trip] { [Trip.sample.withSavedSeat] }
 
   static func trips(with identifiers: [Trip.ID]) -> [Trip] {
     trips.filter { identifiers.contains($0.id) }

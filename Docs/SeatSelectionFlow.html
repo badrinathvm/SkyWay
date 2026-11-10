@@ -1,0 +1,815 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway · “Get me a window seat with more legroom”, step by step</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #3a3df0;
+    --accent-soft: #ececfe;
+    --green: #1f8a3b;
+    --green-soft: #e3f5e8;
+    --orange: #b25000;
+    --orange-soft: #fdf0e3;
+    --purple: #8e3bd1;
+    --purple-soft: #f3e8fc;
+    --teal: #0a7b8a;
+    --teal-soft: #e0f4f6;
+    --red: #c4281c;
+    --code-bg: #f0f0f3;
+    --kw: #ad3da4;
+    --type: #3900a0;
+    --str: #c41a16;
+    --com: #5d6c79;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #98989d;
+      --border: #3a3a3c;
+      --accent: #8a8cff;
+      --accent-soft: #24244a;
+      --green: #30d158;
+      --green-soft: #12301b;
+      --orange: #ff9f0a;
+      --orange-soft: #3a2608;
+      --purple: #bf5af2;
+      --purple-soft: #2e1840;
+      --teal: #40c8e0;
+      --teal-soft: #0f2d33;
+      --red: #ff6961;
+      --code-bg: #2c2c2e;
+      --kw: #ff7ab2;
+      --type: #dabaff;
+      --str: #ff8170;
+      --com: #7f8c98;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 48px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 64px 0 8px; padding-top: 8px; }
+  h2 .chapter { color: var(--accent); font-size: 14px; font-weight: 600; display: block; letter-spacing: 0.02em; text-transform: uppercase; }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  .lede { color: var(--secondary); margin: 0 0 28px; font-size: 17px; }
+  .intro { color: var(--secondary); margin: 0 0 20px; }
+  a { color: var(--accent); text-decoration: none; }
+  code {
+    font: 13px "SF Mono", ui-monospace, Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font: 12.5px/1.55 "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .file { display: block; color: var(--secondary); font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kw { color: var(--kw); font-weight: 600; }
+  .ty { color: var(--type); }
+  .st { color: var(--str); }
+  .cm { color: var(--com); font-style: italic; }
+  .hl { background: rgba(255, 214, 10, 0.32); border-radius: 3px; padding: 0 1px; }
+  .dim { opacity: 0.45; }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    columns: 2;
+    column-gap: 32px;
+  }
+  nav.toc ol { margin: 0; padding-left: 18px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--orange);
+    background: var(--orange-soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+  }
+  .callout.tip { border-color: var(--green); background: var(--green-soft); }
+  .callout.info { border-color: var(--accent); background: var(--accent-soft); }
+  .callout b:first-child { display: block; margin-bottom: 2px; }
+
+  /* Actor chips */
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1.5px solid; white-space: nowrap; }
+  .chip.person { color: var(--green); border-color: var(--green); background: var(--green-soft); }
+  .chip.siri { color: var(--purple); border-color: var(--purple); background: var(--purple-soft); }
+  .chip.skill { color: var(--orange); border-color: var(--orange); background: var(--orange-soft); }
+  .chip.tool { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .chip.data { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+  /* Phone conversation */
+  .hero { display: grid; grid-template-columns: 330px 1fr; gap: 32px; align-items: start; margin-top: 8px; }
+  .phone {
+    background: linear-gradient(160deg, #2a1f4a, #0e2a3a 60%, #0b0b0f);
+    border-radius: 44px;
+    padding: 18px 14px 22px;
+    border: 6px solid #1c1c1e;
+    color: #f5f5f7;
+    font-size: 13.5px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+  }
+  .phone .island { width: 110px; height: 30px; background: #000; border-radius: 20px; margin: 0 auto 14px; }
+  .bubble { border-radius: 18px; padding: 9px 13px; margin: 8px 0; max-width: 88%; line-height: 1.35; }
+  .bubble.me { background: #3a3df0; margin-left: auto; color: #fff; }
+  .bubble.siri { background: rgba(255,255,255,0.13); backdrop-filter: blur(10px); }
+  .bubble small { display: block; opacity: 0.6; font-size: 11px; margin-bottom: 2px; }
+  .glow { height: 4px; border-radius: 4px; margin: 14px 30px 0; background: linear-gradient(90deg, #ff6ac1, #8a5cff, #3ad1ff, #ffd36a); }
+  .mini-card { background: #fff; color: #1d1d1f; border-radius: 16px; padding: 12px; margin: 8px 0; }
+  .mini-card .row { display: flex; align-items: center; gap: 8px; }
+  .seatchip { flex: 1; text-align: center; background: #f0f0f3; border-radius: 10px; padding: 6px 4px; }
+  .seatchip b { display: block; font-size: 17px; }
+  .seatchip.new b { color: #3a3df0; }
+  .seatchip small { color: #6e6e73; font-size: 11px; }
+  .mini-card .fee { color: #6e6e73; font-size: 12px; margin-top: 8px; }
+  .mini-card .hdr { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+  .mini-card .hdr small { display: block; font-weight: 400; color: #6e6e73; font-size: 11px; }
+  .btns { display: flex; gap: 8px; margin-top: 10px; }
+  .btns span { flex: 1; text-align: center; border-radius: 999px; padding: 7px; font-weight: 600; font-size: 13px; background: rgba(255,255,255,0.15); }
+  .btns span.go { background: #0a84ff; }
+  .phone .stepno { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #000; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 4px; }
+
+  /* Summary pipeline */
+  .pipeline { display: flex; flex-direction: column; gap: 0; }
+  .pipe { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; }
+  .pipe .dot { width: 26px; height: 26px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .pipe .body { padding-bottom: 14px; border-left: 2px solid var(--border); margin-left: -23px; padding-left: 23px; }
+  .pipe:last-child .body { border-left-color: transparent; }
+  .pipe .body b { display: block; }
+  .pipe .body span { color: var(--secondary); font-size: 14px; }
+  .bg-person { background: var(--green); }
+  .bg-siri { background: var(--purple); }
+  .bg-skill { background: var(--orange); }
+  .bg-tool { background: var(--accent); }
+  .bg-data { background: var(--teal); }
+
+  /* Build-time diagram */
+  .build { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr; align-items: center; gap: 6px; }
+  .bbox { border-radius: 12px; border: 2px solid var(--border); background: var(--card); padding: 12px; font-size: 13.5px; }
+  .bbox strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .bbox ul { margin: 0; padding-left: 18px; color: var(--secondary); font-size: 13px; }
+  .bbox.src { border-color: var(--accent); }
+  .bbox.out { border-color: var(--teal); background: var(--teal-soft); }
+  .bbox.dev { border-color: var(--purple); background: var(--purple-soft); }
+  .barrow { text-align: center; font-size: 22px; color: var(--secondary); }
+
+  /* Sequence diagram */
+  .seq-wrap { overflow-x: auto; margin: 16px 0; }
+  .seq {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    min-width: 820px;
+    row-gap: 6px;
+    padding-bottom: 8px;
+    background-image:
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0);
+    background-size: 2px 9px;
+    background-repeat: repeat-y;
+    background-position: 10% 0, 30% 0, 50% 0, 70% 0, 90% 0;
+  }
+  .seq .actor {
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    margin: 0 8px 8px;
+    border: 2px solid;
+    position: relative;
+    z-index: 1;
+  }
+  .seq .actor small { display: block; font-weight: 400; font-size: 11px; opacity: 0.85; }
+  .actor.person { color: var(--green); border-color: var(--green); background: var(--green-soft); }
+  .actor.siri { color: var(--purple); border-color: var(--purple); background: var(--purple-soft); }
+  .actor.skill { color: var(--orange); border-color: var(--orange); background: var(--orange-soft); }
+  .actor.tool { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .actor.data { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+  .s2 { margin-left: 25% !important; margin-right: 25% !important; }
+  .s3 { margin-left: 16.667% !important; margin-right: 16.667% !important; }
+  .s4 { margin-left: 12.5% !important; margin-right: 12.5% !important; }
+  .msg {
+    position: relative;
+    z-index: 1;
+    margin: 0 calc(10% - 0px);
+    padding: 0 0 6px;
+    text-align: center;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .msg .label { background: var(--bg); padding: 0 6px; display: inline-block; }
+  .msg .label b { font-weight: 600; }
+  .msg .label code { font-size: 11.5px; }
+  .msg::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    border-bottom: 2px solid var(--line, var(--text));
+  }
+  .msg::before {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    border: 6px solid transparent;
+  }
+  .msg.r::before { right: -2px; border-left-color: var(--line, var(--text)); border-right: 0; }
+  .msg.l::before { left: -2px; border-right-color: var(--line, var(--text)); border-left: 0; }
+  .msg.ret::after { border-bottom-style: dashed; }
+  .msg .n { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 3px; background: var(--line, var(--text)); vertical-align: 1px; }
+  .self {
+    z-index: 1;
+    margin: 0 8px;
+    border: 2px solid var(--line, var(--border));
+    background: var(--card);
+    border-radius: 10px;
+    padding: 6px 8px;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.35;
+  }
+  .self .n { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 3px; background: var(--line, var(--text)); }
+  .l-person { --line: var(--green); }
+  .l-siri { --line: var(--purple); }
+  .l-skill { --line: var(--orange); }
+  .l-tool { --line: var(--accent); }
+  .l-data { --line: var(--teal); }
+  .phase { grid-column: 1 / -1; z-index: 1; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--secondary); margin: 10px 0 0; }
+  .phase span { background: var(--bg); padding-right: 8px; }
+
+  /* Detail steps */
+  .detail { display: grid; grid-template-columns: 40px 1fr; gap: 14px; margin: 28px 0; }
+  .detail .big { width: 36px; height: 36px; border-radius: 50%; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .detail h3 { margin: 4px 0 6px; }
+  .detail .who { margin-bottom: 6px; }
+
+  /* Mapping table */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: 0; }
+
+  /* Seat map */
+  .seatmap { display: inline-grid; grid-template-columns: 34px repeat(3, 30px) 18px repeat(3, 30px); gap: 4px; font: 12px "SF Mono", ui-monospace, Menlo, monospace; margin: 8px 0; }
+  .seatmap div { height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .seatmap .rn { color: var(--secondary); justify-content: flex-end; padding-right: 4px; }
+  .seatmap .s { background: var(--card); border: 1.5px solid var(--border); }
+  .seatmap .taken { background: var(--code-bg); color: var(--secondary); text-decoration: line-through; border: 1.5px solid transparent; }
+  .seatmap .you { background: var(--green-soft); border: 2px solid var(--green); font-weight: 700; }
+  .seatmap .pick { background: var(--accent); color: #fff; font-weight: 700; }
+  .seatmap .legroom { box-shadow: inset 0 -3px 0 var(--orange); }
+  .seatmap .gap { background: none; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--secondary); }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 4px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  footer { margin-top: 64px; color: var(--secondary); font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+  @media (max-width: 760px) {
+    nav.toc { columns: 1; }
+    .hero, .two { grid-template-columns: 1fr; }
+    .phone { max-width: 340px; margin: 0 auto; }
+    .build { grid-template-columns: 1fr; }
+    .barrow { transform: rotate(90deg); }
+  }
+</style>
+</head>
+<body>
+<main>
+  <h1>“In Skyway, get me a window seat with more legroom”</h1>
+  <p class="lede">What happens, step by step, when someone asks Siri for a <em>kind</em> of seat instead of a seat number: how Siri picks Skyway's <b>seat-selection skill</b>, which <b>tools</b> it calls with which values, what Skyway's code does, and how the seat ends up changed.</p>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#conversation">The conversation</a></li>
+      <li><a href="#cast">Who's involved</a></li>
+      <li><a href="#before">What Siri knows before you speak</a></li>
+      <li><a href="#sequence">The complete flow, as a diagram</a></li>
+      <li><a href="#steps">Each step in detail</a></li>
+      <li><a href="#variations">Other ways the same flow goes</a></li>
+      <li><a href="#ours">What's Skyway's code and what's Siri's</a></li>
+      <li><a href="#files">Files</a></li>
+    </ol>
+  </nav>
+
+  <!-- ───────────────────────── Conversation ───────────────────────── -->
+  <h2 id="conversation"><span class="chapter">The example</span>The conversation</h2>
+  <p class="intro">The person is booked on flight SW 214 in seat <b>14A</b>. This is the expected exchange. Siri's exact wording is its own; the parts in Skyway's control are the tool results, the card, and the final sentence.</p>
+
+  <div class="hero">
+    <div class="phone" aria-label="Mock of the Siri conversation">
+      <div class="island"></div>
+      <div class="bubble me"><small>You</small>In Skyway, get me a window seat with more legroom</div>
+      <div class="bubble siri"><small>Siri</small><span class="stepno">1</span>12F is the only window seat with extra legroom on flight SW 214, and it costs $49. Do you want it?</div>
+      <div class="bubble me"><small>You</small>Yes</div>
+      <div class="bubble siri"><small>Siri</small><span class="stepno">2</span>Move from 14A to 12F, an extra legroom window seat, for $49?
+        <div class="mini-card">
+          <div class="hdr">✈︎ Flight SW 214<small>JFK → SFO</small></div>
+          <div class="row">
+            <div class="seatchip"><small>Current</small><b>14A</b><small>Window</small></div>
+            <span style="color:#6e6e73">→</span>
+            <div class="seatchip new"><small>New</small><b>12F</b><small>Window</small></div>
+          </div>
+          <div class="fee">💳 Extra legroom · $49, charged to your card on file</div>
+        </div>
+        <div class="btns"><span>Keep 14A</span><span class="go">Change Seat</span></div>
+      </div>
+      <div class="bubble siri"><small>Siri</small><span class="stepno">3</span>Done. You're now in 12F on flight SW 214.</div>
+      <div class="glow"></div>
+    </div>
+
+    <div>
+      <h3 style="margin-top:0">In one sentence each</h3>
+      <div class="pipeline">
+        <div class="pipe"><div class="dot bg-person">1</div><div class="body"><b>The person asks</b><span>“In Skyway” tells Siri which app's tools to consider.</span></div></div>
+        <div class="pipe"><div class="dot bg-siri">2</div><div class="body"><b>Siri picks the seat-selection skill</b><span>Its description mentions “window”, “more legroom” and describing a seat instead of a number.</span></div></div>
+        <div class="pipe"><div class="dot bg-skill">3</div><div class="body"><b>The skill says: look before you change</b><span>“More legroom” means extra-legroom only; check Get Available Seats first.</span></div></div>
+        <div class="pipe"><div class="dot bg-tool">4</div><div class="body"><b>Siri calls Get Available Seats</b><span>Position = Window, Extra Legroom Only = on. Skyway returns one seat: 12F, $49.</span></div></div>
+        <div class="pipe"><div class="dot bg-skill">5</div><div class="body"><b>The skill says: mention the fee and wait</b><span>So Siri asks “It costs $49. Do you want it?”</span></div></div>
+        <div class="pipe"><div class="dot bg-tool">6</div><div class="body"><b>Siri calls Change Seat with 12F</b><span>Skyway checks the seat and shows its own confirmation card.</span></div></div>
+        <div class="pipe"><div class="dot bg-data">7</div><div class="body"><b>Skyway saves 12F</b><span>Siri says “Done. You're now in 12F” and the app's boarding pass updates.</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Cast ───────────────────────── -->
+  <h2 id="cast"><span class="chapter">The cast</span>Who's involved</h2>
+  <div class="card">
+    <table>
+      <tr><th>Actor</th><th>What it is</th><th>Where it lives</th></tr>
+      <tr><td><span class="chip person">Person</span></td><td>Speaks or types the request and answers Siri's questions.</td><td>—</td></tr>
+      <tr><td><span class="chip siri">Siri's model</span></td><td>Understands the request, picks a skill, decides which tools to call and with what values, and talks to the person.</td><td>Apple Intelligence on the iPhone (iOS 27.3)</td></tr>
+      <tr><td><span class="chip skill">seat-selection skill</span></td><td>Plain-English instructions for this kind of task. No code. Siri reads them; they're never executed.</td><td><code>App/Skills.skillsbundle/Skills/seat-selection/SKILL.md</code></td></tr>
+      <tr><td><span class="chip tool">Skyway's tools</span></td><td>App Intents marked as Siri tools: <b>Get Available Seats</b> (looks) and <b>Change Seat</b> (acts).</td><td><code>App/Siri/Tools/</code></td></tr>
+      <tr><td><span class="chip data">Skyway's data</span></td><td>The seat map (which seats exist, which are taken, which cost extra) and the saved seat.</td><td><code>SeatMap.swift</code>, <code>SeatAssignments.swift</code></td></tr>
+    </table>
+  </div>
+
+  <!-- ───────────────────────── Before ───────────────────────── -->
+  <h2 id="before"><span class="chapter">Build time</span>What Siri knows before you speak</h2>
+  <p class="intro">Siri never reads Skyway's Swift code. When Xcode builds the app, it extracts a description of every tool and compiles the skill. That's what's installed on the phone and what Siri works from.</p>
+
+  <div class="build">
+    <div class="bbox src"><strong>Skyway's source</strong>
+      <ul>
+        <li><code>GetAvailableSeatsIntent</code> + <code>ToolIntent</code></li>
+        <li><code>ChangeSeatIntent</code> + <code>ToolIntent</code></li>
+        <li><code>AvailableSeat</code>, <code>Seat.Position</code></li>
+        <li><code>Skills.skillsbundle</code></li>
+      </ul>
+    </div>
+    <div class="barrow">→</div>
+    <div class="bbox out"><strong>Inside Skyway.app</strong>
+      <ul>
+        <li><code>Metadata.appintents/extract.actionsdata</code>: titles, descriptions, parameters</li>
+        <li><code>Metadata.appintents/Skills.skillsc</code>: the compiled skill</li>
+      </ul>
+    </div>
+    <div class="barrow">→</div>
+    <div class="bbox dev"><strong>On the iPhone</strong>
+      <ul>
+        <li>Siri sees 3 tools from Skyway</li>
+        <li>and 1 skill: <b>seat-selection</b>, known by its description</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="callout info">
+    <b>Why the metadata matters so much</b>
+    Siri decides what to call from text alone: the tool's <code>title</code> and <code>description</code>, each parameter's <code>description</code>, and the skill's <code>description</code>. That's why those strings are written for a reader who has never seen the app. Apple's <code>sirimetadataanalyzer</code> checks them; Skyway's build reports <b>13 intents, 3 tools, 0 errors, 0 warnings</b>.
+  </div>
+
+  <!-- ───────────────────────── Sequence ───────────────────────── -->
+  <h2 id="sequence"><span class="chapter">The whole picture</span>The complete flow, as a diagram</h2>
+  <p class="intro">Time runs downward. Solid arrows are requests; dashed arrows are answers. Numbers match the detailed steps below.</p>
+
+  <div class="seq-wrap">
+    <div class="seq">
+      <div class="actor person">Person</div>
+      <div class="actor siri">Siri's model<small>Apple Intelligence</small></div>
+      <div class="actor skill">seat-selection<small>SKILL.md</small></div>
+      <div class="actor tool">Skyway tools<small>App Intents</small></div>
+      <div class="actor data">Skyway data<small>SeatMap · saved seat</small></div>
+
+      <div class="phase"><span>Understand the request</span></div>
+
+      <div class="msg r l-person s2" style="grid-column: 1 / 3"><span class="label"><span class="n">1</span>“In Skyway, get me a window seat with more legroom”</span></div>
+
+      <div class="self l-siri" style="grid-column: 2"><span class="n">2</span>Request names Skyway → consider Skyway's 3 tools and its skills</div>
+
+      <div class="msg r l-siri s2" style="grid-column: 2 / 4"><span class="label"><span class="n">3</span>Description matches: <b>window</b>, <b>more legroom</b></span></div>
+      <div class="msg l ret l-skill s2" style="grid-column: 2 / 4"><span class="label"><span class="n">4</span>Instructions: check free seats first; “more legroom” = extra legroom; mention the $49</span></div>
+
+      <div class="phase"><span>Look before changing</span></div>
+
+      <div class="msg r l-siri s3" style="grid-column: 2 / 5"><span class="label"><span class="n">5</span><b>Get Available Seats</b>(Position: Window, Extra Legroom Only: on)</span></div>
+      <div class="msg r l-tool s2" style="grid-column: 4 / 6"><span class="label"><span class="n">6</span>free seats near 14A?</span></div>
+      <div class="msg l ret l-data s2" style="grid-column: 4 / 6"><span class="label">only <b>12F</b> (12A, 15A, 15F taken)</span></div>
+      <div class="msg l ret l-tool s3" style="grid-column: 2 / 5"><span class="label"><span class="n">7</span>[AvailableSeat 12F · Window · $49] + “Free seats nearby: 12F (window, $49).”</span></div>
+
+      <div class="phase"><span>Agree on a seat</span></div>
+
+      <div class="msg l l-siri s2" style="grid-column: 1 / 3"><span class="label"><span class="n">8</span>“12F … costs $49. Do you want it?”</span></div>
+      <div class="msg r l-person s2" style="grid-column: 1 / 3"><span class="label">“Yes”</span></div>
+
+      <div class="phase"><span>Change the seat</span></div>
+
+      <div class="msg r l-siri s3" style="grid-column: 2 / 5"><span class="label"><span class="n">9</span><b>Change Seat</b>(Seat: “12F”)</span></div>
+      <div class="msg r l-tool s2" style="grid-column: 4 / 6"><span class="label"><span class="n">10</span>exists? free? same as now?</span></div>
+      <div class="msg l ret l-data s2" style="grid-column: 4 / 6"><span class="label">valid · free · fee $49</span></div>
+      <div class="msg l l-tool s4" style="grid-column: 1 / 5"><span class="label"><span class="n">11</span><code>requestConfirmation</code>: card 14A → 12F, $49 · [Keep 14A] [Change Seat]</span></div>
+      <div class="msg r l-person s4" style="grid-column: 1 / 5"><span class="label">taps <b>Change Seat</b></span></div>
+      <div class="msg r l-tool s2" style="grid-column: 4 / 6"><span class="label"><span class="n">12</span>save 12F</span></div>
+      <div class="msg l ret l-tool s3" style="grid-column: 2 / 5"><span class="label"><span class="n">13</span>TripEntity + “Done. You're now in 12F on flight SW 214.” + result card</span></div>
+      <div class="msg l l-siri s2" style="grid-column: 1 / 3"><span class="label"><span class="n">14</span>“Done. You're now in 12F.”</span></div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Steps ───────────────────────── -->
+  <h2 id="steps"><span class="chapter">Step by step</span>Each step in detail</h2>
+
+  <!-- 1–2 -->
+  <div class="detail">
+    <div class="big bg-person">1</div>
+    <div>
+      <div class="who"><span class="chip person">Person</span> → <span class="chip siri">Siri</span></div>
+      <h3>“In Skyway, get me a window seat with more legroom”</h3>
+      <p>Saying <b>“In Skyway”</b> matters. Apple's rule is that Siri can call an app's tools when the request names the app, when the app is on screen, when it has a Live Activity running, or when one of its entities came up in search. Here the name does it.</p>
+      <p>There's no seat number in the request, so no single tool can do the job directly. Change Seat needs an exact seat like “12F”. This is the situation the skill was written for.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-siri">2</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span></div>
+      <h3>Siri looks at what Skyway offers</h3>
+      <p>It has Skyway's three tools, each described by its metadata, and one skill, known only by its <code>description</code> at this point:</p>
+      <table>
+        <tr><th>Tool</th><th>From its description</th></tr>
+        <tr><td><b>Get Available Seats</b></td><td>“Lists free seats … closest to your current seat first, with each seat's position and any extra-legroom fee. It doesn't change your seat.”</td></tr>
+        <tr><td><b>Change Seat</b></td><td>“Moves you to a different seat on your upcoming Skyway flight after you confirm. Extra legroom seats in rows 12 and 15 cost $49.”</td></tr>
+        <tr><td class="dim"><b>Create Invoice</b></td><td class="dim">Not relevant to this request.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <!-- 3–4 -->
+  <div class="detail">
+    <div class="big bg-skill">3</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip skill">seat-selection skill</span></div>
+      <h3>The skill is chosen by its description alone</h3>
+      <p>Apple's rule: <em>the system reads only the <code>description</code> to decide whether a skill applies.</em> So it's written in the words a person would use, and says what it's <em>not</em> for:</p>
+      <pre><code><span class="file">App/Skills.skillsbundle/Skills/seat-selection/SKILL.md · frontmatter</span>---
+name: seat-selection
+description: Choose a new seat on the user's upcoming Skyway flight when they
+  <span class="hl">describe the kind of seat they want instead of a seat number</span>, such as a
+  <span class="hl">window</span> or aisle seat, <span class="hl">more legroom</span>, an exit row, or a seat near the
+  front. Also for asking which seats are free. Not for questions about the
+  gate, boarding time, or trip details.
+---</code></pre>
+      <p>Three phrases line up with the request, so this skill is picked. The <code>name</code> has to match the folder name, <code>seat-selection</code>, or the build fails.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-skill">4</div>
+    <div>
+      <div class="who"><span class="chip skill">seat-selection skill</span> → <span class="chip siri">Siri</span></div>
+      <h3>The skill's instructions are handed to Siri along with the tools</h3>
+      <p>Only now does Siri read the body. These are the lines that steer this request (highlighted):</p>
+      <pre><code><span class="file">SKILL.md · body (excerpt)</span><span class="dim">If the user named an exact seat, like 17B, use the Change Seat tool with it.</span>
+
+Otherwise, <span class="hl">use the Get Available Seats tool before changing anything</span>, with
+filters that match what the user asked for:
+
+- <span class="hl">"Window" or "aisle" sets the position.</span> Never offer a middle seat …
+- <span class="hl">"More legroom", "extra legroom", "exit row", or "bulkhead" means
+  extra-legroom seats only.</span>
+<span class="dim">- "Near the front" or "closer to the front" means up to row 10.</span>
+
+<span class="hl">If one seat clearly fits best, suggest it.</span> If several fit equally well,
+offer up to three and let the user choose.
+
+<span class="hl">Extra-legroom seats cost $49. Before choosing one, tell the user the price
+and wait for them to agree</span>, unless they already said they're happy to pay.
+
+When the user has agreed on a seat, use the Change Seat tool with it.
+<span class="hl">Change Seat shows its own confirmation, so don't ask … a second time.</span></code></pre>
+      <div class="callout tip">
+        <b>The skill only refers to tools by their titles</b>
+        It says “the Get Available Seats tool”, never <code>GetAvailableSeatsIntent</code>. Apple's guidance: Swift type names aren't part of what Siri sees, and titles are what keep working.
+      </div>
+    </div>
+  </div>
+
+  <!-- 5 -->
+  <div class="detail">
+    <div class="big bg-tool">5</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip tool">Get Available Seats</span></div>
+      <h3>Siri fills the tool's values from the request</h3>
+      <p>Siri's model turns words into parameter values, guided by the skill and each parameter's description:</p>
+      <table>
+        <tr><th>The person said</th><th>Parameter</th><th>Value</th><th>Why</th></tr>
+        <tr><td>“window seat”</td><td>Position</td><td><b>Window</b></td><td>An <code>AppEnum</code> with three choices; the skill says “window” sets the position</td></tr>
+        <tr><td>“more legroom”</td><td>Extra Legroom Only</td><td><b>on</b></td><td>The skill maps “more legroom” to extra-legroom seats only</td></tr>
+        <tr><td>(nothing about rows)</td><td>Up to Row</td><td>empty</td><td>Optional; only for “near the front”</td></tr>
+        <tr><td>(no trip named)</td><td>Trip</td><td>empty</td><td>Defaults to the upcoming trip</td></tr>
+      </table>
+      <pre><code><span class="file">App/Siri/Tools/GetAvailableSeatsIntent.swift</span><span class="kw">struct</span> <span class="ty">GetAvailableSeatsIntent</span>: <span class="ty">AppIntent</span> {
+  <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Get Available Seats"</span>
+
+  <span class="kw">@Parameter</span>(title: <span class="st">"Position"</span>, description: <span class="st">"Only window, middle, or aisle seats. Leave empty for any position."</span>)
+  <span class="kw">var</span> position: <span class="ty">Seat</span>.<span class="ty">Position</span>?                 <span class="cm">// ← .window</span>
+
+  <span class="kw">@Parameter</span>(title: <span class="st">"Extra Legroom Only"</span>,
+             description: <span class="st">"Only extra-legroom seats, in rows 12 and 15, which cost $49 more."</span>,
+             default: <span class="kw">false</span>)
+  <span class="kw">var</span> extraLegroomOnly: <span class="ty">Bool</span>                      <span class="cm">// ← true</span>
+
+  <span class="kw">@Parameter</span>(title: <span class="st">"Up to Row"</span>, description: <span class="st">"Only seats in row 1 through this row, for seats near the front. …"</span>,
+             inclusiveRange: (<span class="ty">1</span>, <span class="ty">30</span>))
+  <span class="kw">var</span> maximumRow: <span class="ty">Int</span>?                            <span class="cm">// ← nil</span>
+  <span class="cm">// …trip</span>
+}
+
+<span class="kw">@available</span>(iOS <span class="ty">27.3</span>, *)
+<span class="kw">extension</span> <span class="ty">GetAvailableSeatsIntent</span>: <span class="ty">ToolIntent</span> {}   <span class="cm">// makes it a Siri tool</span></code></pre>
+      <pre><code><span class="file">App/Siri/Support/AppEnums.swift</span><span class="kw">extension</span> <span class="ty">Seat</span>.<span class="ty">Position</span>: <span class="ty">AppEnum</span> {
+  <span class="kw">static let</span> caseDisplayRepresentations: [<span class="ty">Seat</span>.<span class="ty">Position</span>: <span class="ty">DisplayRepresentation</span>] = [
+    .window: <span class="ty">DisplayRepresentation</span>(title: <span class="st">"Window"</span>, subtitle: <span class="st">"Seats A and F"</span>),
+    .middle: <span class="ty">DisplayRepresentation</span>(title: <span class="st">"Middle"</span>, subtitle: <span class="st">"Seats B and E"</span>),
+    .aisle: <span class="ty">DisplayRepresentation</span>(title: <span class="st">"Aisle"</span>, subtitle: <span class="st">"Seats C and D"</span>),
+  ]
+}</code></pre>
+    </div>
+  </div>
+
+  <!-- 6 -->
+  <div class="detail">
+    <div class="big bg-data">6</div>
+    <div>
+      <div class="who"><span class="chip tool">Get Available Seats</span> → <span class="chip data">SeatMap</span></div>
+      <h3>Skyway's code finds the matching seats</h3>
+      <p><code>perform()</code> runs inside Skyway's process, often in the background with no screen. It sorts free seats by distance from the current seat, then applies the three filters:</p>
+      <pre><code><span class="file">GetAvailableSeatsIntent.perform()</span><span class="kw">let</span> seatMap = <span class="ty">SeatMap</span>.forTrip(booking)
+<span class="kw">let</span> current = <span class="ty">Seat</span>(booking.seat) ?? <span class="ty">Seat</span>(row: <span class="ty">1</span>, letter: <span class="st">"A"</span>)   <span class="cm">// 14A</span>
+
+<span class="kw">let</span> seats = seatMap.freeSeats(near: current, excluding: current, limit: .max)
+  .filter { position == <span class="kw">nil</span> || $0.position == position }        <span class="cm">// window: A or F</span>
+  .filter { !extraLegroomOnly || seatMap.fee(for: $0) != <span class="kw">nil</span> }  <span class="cm">// rows 12 and 15</span>
+  .filter { $0.row &lt;= (maximumRow ?? .max) }
+  .prefix(<span class="ty">Self</span>.resultLimit)                                     <span class="cm">// at most 8</span>
+  .map { <span class="ty">AvailableSeat</span>(seat: $0, map: seatMap) }</code></pre>
+
+      <div class="two">
+        <div>
+          <p style="margin-bottom:4px"><b>Rows 11–16 of the seat map</b></p>
+          <div class="seatmap" aria-label="Seat map rows 11 to 16">
+            <div class="rn"></div><div>A</div><div>B</div><div>C</div><div class="gap"></div><div>D</div><div>E</div><div>F</div>
+            <div class="rn">11</div><div class="s">A</div><div class="s">B</div><div class="s">C</div><div class="gap"></div><div class="s">D</div><div class="s">E</div><div class="s">F</div>
+            <div class="rn">12</div><div class="taken legroom">A</div><div class="taken legroom">B</div><div class="s legroom">C</div><div class="gap"></div><div class="taken legroom">D</div><div class="taken legroom">E</div><div class="pick legroom">F</div>
+            <div class="rn">13</div><div class="s">A</div><div class="s">B</div><div class="s">C</div><div class="gap"></div><div class="s">D</div><div class="s">E</div><div class="s">F</div>
+            <div class="rn">14</div><div class="you">A</div><div class="taken">B</div><div class="taken">C</div><div class="gap"></div><div class="s">D</div><div class="s">E</div><div class="s">F</div>
+            <div class="rn">15</div><div class="taken legroom">A</div><div class="s legroom">B</div><div class="s legroom">C</div><div class="gap"></div><div class="s legroom">D</div><div class="s legroom">E</div><div class="taken legroom">F</div>
+            <div class="rn">16</div><div class="s">A</div><div class="s">B</div><div class="taken">C</div><div class="gap"></div><div class="taken">D</div><div class="s">E</div><div class="s">F</div>
+          </div>
+          <div class="legend">
+            <span><i style="background:var(--green-soft);border:2px solid var(--green)"></i>You (14A)</span>
+            <span><i style="background:var(--accent)"></i>Match</span>
+            <span><i style="background:var(--code-bg)"></i>Taken</span>
+            <span><i style="box-shadow:inset 0 -3px 0 var(--orange);border:1px solid var(--border)"></i>Extra legroom, $49</span>
+          </div>
+        </div>
+        <div>
+          <p style="margin-bottom:4px"><b>Filtering, one step at a time</b></p>
+          <table>
+            <tr><td>All free seats</td><td>146</td></tr>
+            <tr><td>Window (A or F)</td><td>45</td></tr>
+            <tr><td>Extra legroom (rows 12, 15)</td><td><b>1 → 12F</b></td></tr>
+          </table>
+          <p style="color:var(--secondary);font-size:14px">12A, 15A and 15F are taken, so 12F is the only window seat with extra legroom.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 7 -->
+  <div class="detail">
+    <div class="big bg-tool">7</div>
+    <div>
+      <div class="who"><span class="chip tool">Get Available Seats</span> → <span class="chip siri">Siri</span></div>
+      <h3>The result goes back to Siri, not straight to the person</h3>
+      <p>The tool returns two things. Siri's model reads both and decides what to say next.</p>
+      <pre><code><span class="file">GetAvailableSeatsIntent.perform()</span><span class="kw">return</span> .result(
+  value: seats,      <span class="cm">// [AvailableSeat] — structured, for the model</span>
+  dialog: <span class="st">"You're in \(booking.seat). Free seats nearby on flight \(booking.flightNumber): \(list.formatted(.list(type: .and)))."</span>
+)
+<span class="cm">// → value:  [ AvailableSeat(seat: "12F", row: 12, position: .window, isExtraLegroom: true, fee: 49) ]</span>
+<span class="cm">// → dialog: "You're in 14A. Free seats nearby on flight SW 214: 12F (window, $49)."</span></code></pre>
+      <pre><code><span class="file">App/Siri/Entities/AvailableSeat.swift</span><span class="kw">struct</span> <span class="ty">AvailableSeat</span>: <span class="ty">TransientAppEntity</span> {
+  <span class="kw">@Property</span>(title: <span class="st">"Seat"</span>) <span class="kw">var</span> seat: <span class="ty">String</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Row"</span>) <span class="kw">var</span> row: <span class="ty">Int</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Position"</span>) <span class="kw">var</span> position: <span class="ty">Seat</span>.<span class="ty">Position</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Extra Legroom"</span>) <span class="kw">var</span> isExtraLegroom: <span class="ty">Bool</span>
+  <span class="kw">@Property</span>(title: <span class="st">"Fee"</span>) <span class="kw">var</span> fee: <span class="ty">Int</span>
+}</code></pre>
+      <p><b>Transient</b> means it's a value made up on the spot, not something Siri can look up again later. A free seat is only a snapshot, so that fits.</p>
+    </div>
+  </div>
+
+  <!-- 8 -->
+  <div class="detail">
+    <div class="big bg-skill">8</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip person">Person</span>, following <span class="chip skill">the skill</span></div>
+      <h3>One clear match, but it costs money, so Siri asks</h3>
+      <p>Two skill rules apply: <em>“If one seat clearly fits best, suggest it”</em> and <em>“Before choosing [an extra-legroom seat], tell the user the price and wait for them to agree”</em>. Asking for “more legroom” isn't the same as agreeing to pay, so Siri asks:</p>
+      <div class="card" style="max-width:520px">💬 “12F is the only window seat with extra legroom on flight SW 214, and it costs $49. Do you want it?” → <b>“Yes”</b></div>
+      <p>Without the skill, Siri might have called Change Seat straight away, or chosen a non-legroom window seat. Every tool would still have worked; the skill just makes the choice match what Skyway wants.</p>
+    </div>
+  </div>
+
+  <!-- 9–11 -->
+  <div class="detail">
+    <div class="big bg-tool">9</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip tool">Change Seat</span></div>
+      <h3>Siri calls Change Seat with the agreed seat</h3>
+      <p>The seat came from Get Available Seats' result, as the skill requires (<em>“Don't use the Change Seat tool with a seat that Get Available Seats didn't return”</em>).</p>
+      <pre><code><span class="file">App/Siri/Tools/ChangeSeatIntent.swift</span><span class="kw">@Parameter</span>(title: <span class="st">"Seat"</span>,
+           description: <span class="st">"The new seat, a row number from 1 to 30 followed by a letter from A to F, like 17B"</span>,
+           requestValueDialog: <span class="st">"Which seat would you like?"</span>)
+<span class="kw">var</span> seat: <span class="ty">String</span>     <span class="cm">// ← "12F"</span></code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-data">10</div>
+    <div>
+      <div class="who"><span class="chip tool">Change Seat</span> → <span class="chip data">SeatMap</span></div>
+      <h3>Change Seat checks the seat again</h3>
+      <p>A tool must work on its own, with or without a skill, so Change Seat doesn't trust that the seat is free. It checks it exists, isn't the current seat, and isn't taken. Each failure is an error Siri can read and act on.</p>
+      <pre><code><span class="file">ChangeSeatIntent.perform()</span><span class="kw">guard let</span> newSeat = <span class="ty">Seat</span>(seat), seatMap.contains(newSeat) <span class="kw">else</span> {
+  <span class="kw">throw</span> <span class="ty">SeatChangeError</span>.invalidSeat(seat.uppercased(), flight: booking.flightNumber)
+}
+<span class="kw">guard</span> newSeat != current <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">SeatChangeError</span>.alreadyInSeat(newSeat.description) }
+<span class="kw">guard</span> seatMap.isFree(newSeat) <span class="kw">else</span> {
+  <span class="kw">throw</span> <span class="ty">SeatChangeError</span>.seatTaken(newSeat.description, nearby: seatMap.freeSeats(near: newSeat, excluding: current))
+}</code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">11</div>
+    <div>
+      <div class="who"><span class="chip tool">Change Seat</span> → <span class="chip person">Person</span></div>
+      <h3>Skyway's own confirmation card</h3>
+      <p><code>perform()</code> pauses on <code>requestConfirmation</code>. The card shows 14A Window → 12F Window and the $49 fee. The skill told Siri not to ask a second time, so this is the only confirmation.</p>
+      <pre><code><span class="file">ChangeSeatIntent.perform()</span><span class="kw">try await</span> requestConfirmation(
+  actionName: .custom(acceptLabel: <span class="st">"Change Seat"</span>, acceptAlternatives: [<span class="st">"Yes"</span>, <span class="st">"Confirm"</span>, <span class="st">"Change it"</span>],
+                      denyLabel: <span class="st">"Keep \(booking.seat)"</span>, denyAlternatives: [<span class="st">"No"</span>, <span class="st">"Cancel"</span>],
+                      destructive: <span class="kw">false</span>),
+  dialog: confirmationDialog(from: booking.seat, to: newSeat, fee: seatMap.fee(for: newSeat)),
+  <span class="cm">// "Move from 14A to 12F, an extra legroom window seat, for $49?"</span>
+  snippetIntent: <span class="ty">SeatChangeConfirmationSnippetIntent</span>(trip: booking.entity, newSeat: newSeat.description)
+)</code></pre>
+      <div class="callout">
+        <b>The card may not appear with Siri AI</b>
+        Apple's documentation notes that when the new Siri runs an app's intent, it <em>might not display</em> the app's dialog or card. The confirmation still happens; Siri may ask in its own words instead. From Shortcuts or the classic “Change my seat in Skyway” phrase the card always shows.
+      </div>
+    </div>
+  </div>
+
+  <!-- 12–14 -->
+  <div class="detail">
+    <div class="big bg-data">12</div>
+    <div>
+      <div class="who"><span class="chip tool">Change Seat</span> → <span class="chip data">saved seat</span></div>
+      <h3>The seat is saved</h3>
+      <pre><code><span class="file">ChangeSeatIntent.perform() → App/SeatAssignments.swift</span><span class="kw">let</span> previousSeat = <span class="kw">await</span> <span class="ty">SeatAssignments</span>.changeSeat(of: booking, to: newSeat)
+<span class="cm">// UserDefaults "seat.K7QX2P" = "12F", then the trip is re-indexed in Spotlight</span></code></pre>
+      <p>Because it's saved, the boarding pass, Flight Status, CarPlay and the in-app assistant all show 12F the next time they draw, even if Skyway wasn't open.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">13</div>
+    <div>
+      <div class="who"><span class="chip tool">Change Seat</span> → <span class="chip siri">Siri</span> → <span class="chip person">Person</span></div>
+      <h3>The result, and Siri's last words</h3>
+      <pre><code><span class="file">ChangeSeatIntent.perform()</span><span class="kw">return</span> .result(
+  value: updated.entity,                                                    <span class="cm">// TripEntity, seat 12F</span>
+  dialog: <span class="st">"Done. You're now in \(newSeat.description) on flight \(updated.flightNumber)."</span>,
+  snippetIntent: <span class="ty">SeatChangeResultSnippetIntent</span>(trip: updated.entity, previousSeat: previousSeat)  <span class="cm">// card with Undo</span>
+)</code></pre>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Variations ───────────────────────── -->
+  <h2 id="variations"><span class="chapter">What if…</span>Other ways the same flow goes</h2>
+  <div class="card">
+    <table>
+      <tr><th>The person says</th><th>Tools called</th><th>What happens</th></tr>
+      <tr><td>“Change my seat to 17B in Skyway”</td><td><span class="chip tool">Change Seat</span></td><td>Exact seat named, so the skill says skip the lookup. Straight to the confirmation card.</td></tr>
+      <tr><td>“In Skyway, get me a window seat”</td><td><span class="chip tool">Get Available Seats</span> → <span class="chip tool">Change Seat</span></td><td>Position Window only. Several free window seats (14F, 13A, 13F…), so Siri offers up to three and lets the person pick.</td></tr>
+      <tr><td>“Move me to an aisle seat near the front in Skyway”</td><td><span class="chip tool">Get Available Seats</span> → <span class="chip tool">Change Seat</span></td><td>Position Aisle, Up to Row 10, per the skill's “near the front” rule.</td></tr>
+      <tr><td>“Which seats are free on my Skyway flight?”</td><td><span class="chip tool">Get Available Seats</span></td><td>Lists seats. The skill says don't change anything when the person only asked.</td></tr>
+      <tr><td>“In Skyway, get me a window seat with more legroom, I'm happy to pay”</td><td><span class="chip tool">Get Available Seats</span> → <span class="chip tool">Change Seat</span></td><td>Already agreed to pay, so Siri can skip the price question and go to the card.</td></tr>
+      <tr><td>“In Skyway, an aisle seat with more legroom near the front”</td><td><span class="chip tool">Get Available Seats</span></td><td>No match (extra legroom is rows 12 and 15). The tool says so; the skill says offer the nearest alternative.</td></tr>
+      <tr><td>Someone else takes 12F in between</td><td><span class="chip tool">Change Seat</span> throws</td><td>“12F is taken. … are free nearby.” Siri reads the error and can offer those instead.</td></tr>
+    </table>
+  </div>
+
+  <!-- ───────────────────────── Ours vs Siri ───────────────────────── -->
+  <h2 id="ours"><span class="chapter">Boundaries</span>What's Skyway's code and what's Siri's</h2>
+  <div class="two">
+    <div class="card">
+      <h3 style="margin-top:0"><span class="chip tool">Skyway decides</span></h3>
+      <ul>
+        <li>Which tools exist, and their titles and descriptions</li>
+        <li>What each tool returns and every error message</li>
+        <li>Which seats are free and what they cost</li>
+        <li>The confirmation card, the saved seat, and the final sentence</li>
+        <li>The skill's guidance: look first, ask about the fee, offer choices, don't confirm twice</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0"><span class="chip siri">Siri decides</span></h3>
+      <ul>
+        <li>Whether the request is for Skyway, and whether the skill applies</li>
+        <li>Turning “more legroom” into Extra Legroom Only = on</li>
+        <li>The order of calls and how it phrases its questions</li>
+        <li>Whether to show the app's card or speak instead</li>
+      </ul>
+      <p style="color:var(--secondary);font-size:13px;margin-bottom:0">How Siri matches skills and tools internally isn't public. This guide describes the behavior Apple documents for Xcode 27.3.</p>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <b>Testing it</b>
+    Siri AI and skills need a real iPhone with Apple Intelligence on iOS 27.3. In the simulator, tools still work through Shortcuts and Spotlight, but the skill isn't used. To check the skill shipped, look for <code>Skyway.app/Metadata.appintents/Skills.skillsc</code> in the build.
+  </div>
+
+  <!-- ───────────────────────── Files ───────────────────────── -->
+  <h2 id="files"><span class="chapter">Reference</span>Files</h2>
+  <div class="card">
+    <table>
+      <tr><th>File</th><th>Role in this flow</th></tr>
+      <tr><td><code>Skills.skillsbundle/Skills/seat-selection/SKILL.md</code></td><td>Steps 3, 4, 8: when to use it, look first, fee rule</td></tr>
+      <tr><td><code>Siri/Tools/GetAvailableSeatsIntent.swift</code></td><td>Steps 5–7: the lookup tool</td></tr>
+      <tr><td><code>Siri/Entities/AvailableSeat.swift</code></td><td>Step 7: what each free seat looks like to Siri</td></tr>
+      <tr><td><code>Siri/Support/AppEnums.swift</code></td><td>Step 5: Window, Middle, Aisle as choices</td></tr>
+      <tr><td><code>Siri/Tools/ChangeSeatIntent.swift</code></td><td>Steps 9–13: check, confirm, save, reply</td></tr>
+      <tr><td><code>Siri/Support/SeatChangeError.swift</code></td><td>Step 10: errors Siri reads</td></tr>
+      <tr><td><code>Siri/Snippets/SeatChangeSnippetIntents.swift</code>, <code>SeatChangeCard.swift</code></td><td>Steps 11, 13: the cards</td></tr>
+      <tr><td><code>SeatMap.swift</code>, <code>Seat.swift</code></td><td>Steps 6, 10: which seats exist, are free, and cost extra</td></tr>
+      <tr><td><code>SeatAssignments.swift</code></td><td>Step 12: saving the new seat</td></tr>
+      <tr><td><code>Project.json</code></td><td>Adds the skills bundle to Copy Bundle Resources so it's compiled</td></tr>
+    </table>
+  </div>
+
+  <footer>Skyway · Siri seat selection · App Intents tools and app skills, Xcode 27.3 / iOS 27.3.</footer>
+</main>
+</body>
+</html>

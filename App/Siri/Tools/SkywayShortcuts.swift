@@ -16,6 +16,28 @@ struct SkywayShortcuts: AppShortcutsProvider {
       systemImageName: "airplane.departure"
     )
     AppShortcut(
+      intent: ChangeSeatIntent(),
+      phrases: [
+        "Change my seat in \(.applicationName)",
+        "Change seats in \(.applicationName)",
+        "Pick a new seat in \(.applicationName)",
+        "Move my seat in \(.applicationName)",
+      ],
+      shortTitle: "Change Seat",
+      systemImageName: "carseat.left.fill"
+    )
+    AppShortcut(
+      intent: CreateInvoiceIntent(),
+      phrases: [
+        "Create an invoice in \(.applicationName)",
+        "Make an invoice in \(.applicationName)",
+        "Bill a client in \(.applicationName)",
+        "New \(.applicationName) invoice",
+      ],
+      shortTitle: "Create Invoice",
+      systemImageName: "doc.text"
+    )
+    AppShortcut(
       intent: StartDriveTripIntent(),
       phrases: [
         "Start a trip in \(.applicationName)",
