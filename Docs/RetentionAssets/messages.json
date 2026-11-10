@@ -1,0 +1,20 @@
+[
+  {
+    "locale": "en-US",
+    "header": "Here's what you'd lose",
+    "body": "Snap receipts, Intuit AI, bank syncing, invoices, bill tracking, and trip mileage for tax deductions all stop when you cancel.",
+    "altText": "Six feature icons: a receipt, an AI sparkle, a bank, an invoice, a credit card, and a map pin."
+  },
+  {
+    "locale": "fr-FR",
+    "header": "Voici ce que vous perdriez",
+    "body": "Reçus photographiés, Intuit AI, synchro bancaire, factures, suivi des dépenses et kilométrage déductible : tout s’arrête si vous résiliez.",
+    "altText": "Six icônes de fonctionnalités : un reçu, une étincelle IA, une banque, une facture, une carte bancaire et une épingle de carte."
+  },
+  {
+    "locale": "fr-CA",
+    "header": "Voici ce que vous perdriez",
+    "body": "Reçus photographiés, Intuit AI, synchro bancaire, factures, suivi des dépenses et kilométrage déductible : tout s’arrête si vous annulez.",
+    "altText": "Six icônes de fonctionnalités : un reçu, une étincelle IA, une banque, une facture, une carte bancaire et une épingle de carte."
+  }
+]
