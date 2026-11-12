@@ -47,8 +47,8 @@ struct InvoicingEvaluationTests {
         SiriScenario {
           UserTurn(request) {
             Loads(.required) { SkywayDefinitions.invoicing }
-            // The skill says to name the invoice the amount came from.
-            SiriResponse(.contains("INV-0001"))
+            // Siri's reply here is Create Invoice's confirmation, so it shows the amount it chose.
+            SiriResponse(.contains("$450"))
           }
           UserTurn("Yes")
         } expectation: {
