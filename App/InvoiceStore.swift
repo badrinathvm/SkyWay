@@ -36,6 +36,13 @@ enum InvoiceStore {
     save(invoices.filter { $0.id != id })
   }
 
+  /// Replaces every invoice, and continues numbering after the highest one given.
+  static func replaceAll(with invoices: [Invoice]) {
+    let lastNumber = invoices.compactMap { Int($0.number.dropFirst("INV-".count)) }.max() ?? 0
+    UserDefaults.standard.set(lastNumber, forKey: lastNumberKey)
+    save(invoices.sorted { $0.createdAt > $1.createdAt })
+  }
+
   private static func save(_ invoices: [Invoice]) {
     guard let data = try? JSONEncoder().encode(invoices) else { return }
     UserDefaults.standard.set(data, forKey: storageKey)
