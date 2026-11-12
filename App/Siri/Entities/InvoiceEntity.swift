@@ -7,22 +7,22 @@ struct InvoiceEntity: AppEntity {
 
   var id: String
 
-  @Property(title: "Number")
+  @Property(title: "Number", description: "The invoice number, like INV-0001")
   var number: String
 
-  @Property(title: "Client")
+  @Property(title: "Client", description: "The full name of the person or business billed")
   var clientName: String
 
-  @Property(title: "Service")
+  @Property(title: "Service", description: "The work billed, like gardening")
   var service: String
 
-  @Property(title: "Amount")
+  @Property(title: "Amount", description: "The total billed, in US dollars")
   var amount: Double
 
-  @Property(title: "Issued")
+  @Property(title: "Issued", description: "The date the invoice was created")
   var createdAt: Date
 
-  @Property(title: "Due Date")
+  @Property(title: "Due Date", description: "The date payment is due, 14 days after it was issued")
   var dueDate: Date
 
   init(invoice: Invoice) {
