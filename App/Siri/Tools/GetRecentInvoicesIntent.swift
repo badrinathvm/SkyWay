@@ -8,23 +8,15 @@ struct GetRecentInvoicesIntent: AppIntent {
     searchKeywords: ["invoices", "past invoices", "billing history", "last invoice", "what did I bill", "clients"]
   )
 
-  /// How many invoices to report, so the answer stays short enough to read out.
+  /// How many invoices to return, so the list stays short enough for Siri to read out.
   static let resultLimit = 10
 
   init() {}
 
-  func perform() async throws -> some IntentResult & ReturnsValue<[InvoiceEntity]> & ProvidesDialog {
-    let invoices = Array(InvoiceStore.invoices.prefix(Self.resultLimit))
-    guard !invoices.isEmpty else {
-      return .result(value: [], dialog: "You haven't created any invoices in Skyway yet.")
-    }
-    let list = invoices.map {
-      "\($0.number) for \($0.clientName), \($0.service.lowercased()), \($0.amountText), issued \($0.createdAt.formatted(date: .abbreviated, time: .omitted))"
-    }
-    return .result(
-      value: invoices.map(\.entity),
-      dialog: "Your recent invoices: \(list.formatted(.list(type: .and)))."
-    )
+  /// Returns the invoices without a spoken reply. A reply here becomes Siri's whole answer, which
+  /// stops Siri from going on to use them, like billing "the usual" or asking which John.
+  func perform() async throws -> some IntentResult & ReturnsValue<[InvoiceEntity]> {
+    .result(value: InvoiceStore.invoices.prefix(Self.resultLimit).map(\.entity))
   }
 }
 
