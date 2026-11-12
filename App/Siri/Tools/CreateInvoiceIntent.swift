@@ -38,7 +38,7 @@ struct CreateInvoiceIntent: AppIntent {
   }
 
   func perform() async throws -> some IntentResult & ReturnsValue<InvoiceEntity> & ProvidesDialog & ShowsSnippetIntent {
-    let client = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+    let client = InvoiceStore.fullClientName(for: clientName.trimmingCharacters(in: .whitespacesAndNewlines))
     let work = service.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !client.isEmpty else {
       throw InvoiceError.missingClient

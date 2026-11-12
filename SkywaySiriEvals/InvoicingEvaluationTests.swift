@@ -80,10 +80,11 @@ struct InvoicingEvaluationTests {
         UserTurn("Yes")
       } expectation: {
         Calls {
-          SkywayDefinitions.createInvoice.expect(
-            clientName: .equals("Maria Garcia"),
-            amount: .matches(#Predicate<Double> { $0 == 120 })
-          )
+          // Siri may pass just "Maria". Create Invoice fills in the full name from past invoices,
+          // so check the invoice it creates.
+          SkywayDefinitions.createInvoice
+            .expect(amount: .matches(#Predicate<Double> { $0 == 120 }))
+            .result(SkywayDefinitions.invoice.expect(clientName: .equals("Maria Garcia")))
         }
       }
     }

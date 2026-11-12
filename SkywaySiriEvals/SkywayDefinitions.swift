@@ -12,6 +12,7 @@ enum SkywayDefinitions {
   // Invoicing
   static let createInvoice = app.intents["CreateInvoiceIntent"]
   static let getRecentInvoices = app.intents["GetRecentInvoicesIntent"]
+  static let invoice = app.entities["InvoiceEntity"]
 
   // Test setup, from the app's debug build
   static let resetDemoData = app.intents["ResetDemoDataIntent"]

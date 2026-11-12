@@ -24,6 +24,16 @@ enum InvoiceStore {
     String(format: "INV-%04d", UserDefaults.standard.integer(forKey: lastNumberKey) + 1)
   }
 
+  /// The full name of the one past client whose first name is `name`, like "Maria Garcia" for
+  /// "Maria". Returns `name` unchanged if it's already a full name, or if no client or several match.
+  static func fullClientName(for name: String) -> String {
+    guard !name.contains(" ") else { return name }
+    let matches = Set(invoices.map(\.clientName).filter {
+      $0.split(separator: " ").first?.caseInsensitiveCompare(name) == .orderedSame
+    })
+    return matches.count == 1 ? matches.first! : name
+  }
+
   /// Saves a new invoice with the next number.
   static func createInvoice(clientName: String, service: String, amount: Double) -> Invoice {
     let invoice = Invoice(number: nextNumber, clientName: clientName, service: service, amount: amount)
