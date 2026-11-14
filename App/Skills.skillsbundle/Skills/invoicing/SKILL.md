@@ -1,6 +1,6 @@
 ---
 name: invoicing
-description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, or several jobs at once. Also for asking what was billed recently. Not for changing seats, trips, or mileage.
+description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently. Not for changing seats, trips, or mileage.
 ---
 
 # Invoicing

@@ -96,7 +96,32 @@
           "-simulateDrive": false,
           "-failTripSync": false
         },
-        "storeKitConfiguration": "StoreKit/SkywayPlus.storekit"
+        "storeKitConfiguration": "StoreKit/SkywayPlus.storekit",
+        "testTargets": [
+          "SkywaySiriEvals"
+        ]
+      }
+    },
+    "SkywaySiriEvals": {
+      "type": "bundle.ui-testing",
+      "platform": "iOS",
+      "deploymentTarget": "27.3",
+      "sources": [
+        {
+          "path": "SkywaySiriEvals"
+        }
+      ],
+      "dependencies": [
+        {
+          "target": "Skyway"
+        }
+      ],
+      "settings": {
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.badarinathvm.skyway.SiriEvals",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "SWIFT_VERSION": "6.0",
+        "TARGETED_DEVICE_FAMILY": "1,2",
+        "TEST_TARGET_NAME": "Skyway"
       }
     }
   }

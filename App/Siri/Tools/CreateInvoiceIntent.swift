@@ -4,13 +4,13 @@ import AppIntents
 struct CreateInvoiceIntent: AppIntent {
   static let title: LocalizedStringResource = "Create Invoice"
   static let description = IntentDescription(
-    "Creates an invoice in US dollars that bills a client for a service, after you confirm. It's due in 14 days.",
+    "Creates an invoice in US dollars that bills a client for a service, after you confirm. It's due in 14 days. It can't bill in other currencies, and amounts in other currencies must not be converted.",
     searchKeywords: ["invoice", "bill", "charge", "billing", "client", "payment request"]
   )
 
   @Parameter(
     title: "Client",
-    description: "The name of the person or business being billed, like John",
+    description: "The full name of the person or business being billed, like John Appleseed. For only a first name, use the full name from recent invoices.",
     requestValueDialog: "Who's the invoice for?"
   )
   var clientName: String
@@ -24,7 +24,7 @@ struct CreateInvoiceIntent: AppIntent {
 
   @Parameter(
     title: "Amount",
-    description: "The total to bill, in US dollars, like 450",
+    description: "The total to bill in US dollars, like 450. If the user gave an amount in another currency, like euros, don't convert it. Ask for the amount in dollars instead.",
     requestValueDialog: "How much should I bill?"
   )
   var amount: Double
@@ -38,7 +38,7 @@ struct CreateInvoiceIntent: AppIntent {
   }
 
   func perform() async throws -> some IntentResult & ReturnsValue<InvoiceEntity> & ProvidesDialog & ShowsSnippetIntent {
-    let client = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+    let client = InvoiceStore.fullClientName(for: clientName.trimmingCharacters(in: .whitespacesAndNewlines))
     let work = service.trimmingCharacters(in: .whitespacesAndNewlines)
     guard !client.isEmpty else {
       throw InvoiceError.missingClient
