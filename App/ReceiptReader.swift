@@ -4,7 +4,9 @@ import UIKit
 import Vision
 
 /// Reads a receipt's pages: Vision recognizes the text on device, then Apple Intelligence
-/// picks out the supplier, date, total, tax, currency and category. When Apple Intelligence
+/// picks out the supplier, date, total, tax, currency and category. Where the model can see
+/// images, it gets the photos as well as the text: the photo shows the layout (which line is
+/// the total, not the subtotal), and the text keeps the numbers exact. When Apple Intelligence
 /// isn't available, simple text rules fill in what they can.
 struct ReceiptReader {
   /// What was read from one receipt.
@@ -42,15 +44,19 @@ struct ReceiptReader {
 
     let rules = Self.readWithRules(text)
     guard SystemLanguageModel.default.isAvailable,
-      let extraction = try? await extract(from: text)
+      let extraction = await extract(from: text, pages: pages)
     else {
       return rules
     }
+    // The model can do arithmetic it shouldn't, like adding the tax to a total that already
+    // includes it. Only trust an amount that's actually printed on the receipt.
+    let printedAmounts = Set(text.split(whereSeparator: \.isNewline).flatMap { Self.amounts(in: String($0)) })
+    let isPrinted = { (amount: Double) in printedAmounts.contains { abs($0 - amount) < 0.005 } }
     return Reading(
       supplier: extraction.supplier.isEmpty ? rules.supplier : extraction.supplier,
       date: Self.parseISODate(extraction.date) ?? rules.date,
-      total: extraction.total > 0 ? extraction.total : rules.total,
-      tax: extraction.tax,
+      total: extraction.total > 0 && isPrinted(extraction.total) ? extraction.total : rules.total,
+      tax: extraction.tax == 0 || isPrinted(extraction.tax) ? extraction.tax : rules.tax,
       currencyCode: Self.validCurrencyCode(extraction.currencyCode) ?? rules.currencyCode,
       category: extraction.category,
       text: text,
@@ -67,16 +73,44 @@ struct ReceiptReader {
     return observations.compactMap { $0.topCandidates(1).first?.string }
   }
 
-  private func extract(from text: String) async throws -> ReceiptExtraction {
+  /// The most pages sent to the model as images. Later pages of a long receipt still reach it
+  /// as text, so a multi-page scan doesn't overflow the model's context.
+  private static let maxImagePages = 3
+
+  /// Asks the model for the receipt's details, with the photos when it can see images.
+  /// Returns nil if the model couldn't answer, so the text rules are used instead.
+  private func extract(from text: String, pages: [UIImage]) async -> ReceiptExtraction? {
+    let images = SystemLanguageModel.default.capabilities.contains(.vision)
+      ? pages.prefix(Self.maxImagePages).compactMap(\.cgImage)
+      : []
+    if !images.isEmpty, let extraction = try? await extract(from: text, images: images) {
+      return extraction
+    }
+    // Text alone, for models without vision, or when the request with images failed,
+    // such as for exceeding the context size.
+    return try? await extract(from: text, images: [])
+  }
+
+  private func extract(from text: String, images: [CGImage]) async throws -> ReceiptExtraction {
     let session = LanguageModelSession(instructions: """
-      You read the text of purchase receipts that was recognized from a photo. The text may \
-      contain recognition mistakes. Report only what the receipt shows; don't invent details.
+      You read purchase receipts. You may get photos of the receipt and the text recognized \
+      from them. The recognized text may contain mistakes; use the photo to tell which amount \
+      is the total and to correct misread characters. Report only what the receipt shows; \
+      don't invent details.
       """)
     // Receipts are short, but a cap keeps a long multi-page scan inside the model's context.
-    let response = try await session.respond(
-      to: "Receipt text:\n\(text.prefix(3000))",
-      generating: ReceiptExtraction.self
-    )
+    let response = try await session.respond(generating: ReceiptExtraction.self) {
+      if images.isEmpty {
+        "Read this receipt."
+      } else {
+        "Read the receipt in these photos."
+        for image in images {
+          Attachment(image)
+        }
+      }
+      "Text recognized from the receipt:"
+      String(text.prefix(3000))
+    }
     return response.content
   }
 
@@ -148,7 +182,10 @@ struct ReceiptReader {
   }
 
   private static func parseISODate(_ text: String) -> Date? {
-    guard let date = try? Date(text, strategy: .iso8601.year().month().day()) else { return nil }
+    // In the local time zone: "2026-11-12" is the 12th where the purchase was made, not
+    // midnight UTC, which is still the 11th in the Americas.
+    let strategy = Date.ISO8601FormatStyle(timeZone: .current).year().month().day()
+    guard let date = try? Date(text, strategy: strategy) else { return nil }
     return date <= .now.addingTimeInterval(86_400) ? date : nil
   }
 

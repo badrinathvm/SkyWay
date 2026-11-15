@@ -10,10 +10,10 @@ struct ReceiptExtraction {
   @Guide(description: "The purchase date in YYYY-MM-DD format, or an empty string if no date is printed.")
   var date: String
 
-  @Guide(description: "The final amount paid, including tax and tip. Not the subtotal.")
+  @Guide(description: "The amount printed on the receipt's final total line, exactly as printed. It already includes tax and tip, so never add them to it. Not the subtotal.")
   var total: Double
 
-  @Guide(description: "The sales tax, VAT or GST amount, or 0 if none is shown.")
+  @Guide(description: "The sales tax, VAT or GST amount exactly as printed, or 0 if none is shown.")
   var tax: Double
 
   @Guide(description: "The ISO 4217 currency code, like USD, EUR or GBP, judged from symbols and the address.")
