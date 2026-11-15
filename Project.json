@@ -21,6 +21,7 @@
           "CFBundleShortVersionString": "1.0",
           "CFBundleVersion": "1",
           "ITSAppUsesNonExemptEncryption": false,
+          "NSCameraUsageDescription": "Skyway uses the camera to scan receipts for your expenses.",
           "NSUserActivityTypes": [
             "app.skyway.viewTrip"
           ],

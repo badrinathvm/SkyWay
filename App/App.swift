@@ -1,5 +1,6 @@
 // xcode: set sdk=iOS
 
+import SwiftData
 import SwiftUI
 import TipKit
 
@@ -30,6 +31,7 @@ struct AppDefinition: App {
     WindowGroup {
       ContentView()
         .task { await TripStore.indexInSpotlight() }
+        .modelContainer(ExpenseStore.container)
     }
   }
 }

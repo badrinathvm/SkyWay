@@ -8,8 +8,8 @@ struct ContentView: View {
 
   var body: some View {
     TabView(selection: $selectedTab) {
-      Tab(AppTab.home.title, systemImage: AppTab.home.systemImage, value: AppTab.home) {
-        PlaceholderTabView(tab: .home)
+      Tab(AppTab.expenses.title, systemImage: AppTab.expenses.systemImage, value: AppTab.expenses) {
+        ExpenseListView()
       }
 //      Tab(AppTab.bookFlight.title, systemImage: AppTab.bookFlight.systemImage, value: AppTab.bookFlight) {
 //        PlaceholderTabView(tab: .bookFlight)

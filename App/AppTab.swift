@@ -4,6 +4,7 @@ import SwiftUI
 
 enum AppTab: String, CaseIterable, Identifiable {
   case home
+  case expenses
   case bookFlight
   case travel
   case myTrips
@@ -16,6 +17,7 @@ enum AppTab: String, CaseIterable, Identifiable {
   var title: String {
     switch self {
     case .home: "Home"
+    case .expenses: "Expenses"
     case .bookFlight: "Book flight"
     case .travel: "Travel"
     case .myTrips: "My trips"
@@ -28,6 +30,7 @@ enum AppTab: String, CaseIterable, Identifiable {
   var systemImage: String {
     switch self {
     case .home: "house.fill"
+    case .expenses: "receipt.fill"
     case .bookFlight: "airplane"
     case .travel: "suitcase.rolling.fill"
     case .myTrips: "ticket.fill"
