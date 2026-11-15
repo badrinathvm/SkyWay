@@ -88,7 +88,7 @@ struct MonthlyReport: Sendable {
     businessTrips.reduce(0) { $0 + $1.miles }
   }
 
-  /// In US dollars, at `DriveTrip.deductionPerMile`.
+  /// In US dollars, at the IRS rate on each trip's date (`MileageRate`).
   var mileageDeduction: Double {
     businessTrips.reduce(0) { $0 + $1.deduction }
   }

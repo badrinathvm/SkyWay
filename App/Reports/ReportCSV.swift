@@ -17,7 +17,7 @@ enum ReportCSV {
       rows.append([
         "Mileage", day(trip.startDate), trip.routeText, "Business",
         number(trip.deduction), "USD", "", number(trip.miles, digits: 1),
-        "\(DriveTrip.deductionPerMile.formatted(.currency(code: "USD"))) per mile",
+        "\(trip.ratePerMileText) IRS rate",
       ])
     }
     for invoice in report.invoices {

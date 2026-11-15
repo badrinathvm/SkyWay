@@ -26,9 +26,6 @@ struct DriveTrip: Identifiable, Codable, Hashable, Sendable {
     var location: CLLocation { CLLocation(latitude: latitude, longitude: longitude) }
   }
 
-  /// An approximate deduction rate, in dollars per mile driven.
-  static let deductionPerMile = 0.16
-
   var id = UUID()
   var startDate: Date
   var endDate: Date?
@@ -47,7 +44,13 @@ struct DriveTrip: Identifiable, Codable, Hashable, Sendable {
   var isSynced: Bool { syncedAt != nil }
 
   /// What the trip would be worth as a business trip, shown while driving.
-  var estimatedDeduction: Double { miles * Self.deductionPerMile }
+  var estimatedDeduction: Double { miles * ratePerMile }
+
+  /// The IRS business rate on the day the trip started, in dollars per mile.
+  var ratePerMile: Double { MileageRate.perMile(on: startDate) }
+
+  /// "72.5¢/mi".
+  var ratePerMileText: String { MileageRate.text(for: ratePerMile) }
 
   /// Only business trips count toward the deduction.
   var deduction: Double { purpose == .business ? estimatedDeduction : 0 }

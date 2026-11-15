@@ -156,6 +156,19 @@ final class DriveTripStore {
     return trip
   }
 
+  /// Marks an ended trip as business or personal, like one that was set wrong in the car.
+  /// The trip goes back in the upload queue, so the backend gets the change too.
+  func setPurpose(_ purpose: DriveTrip.Purpose, for id: DriveTrip.ID) {
+    guard let index = trips.firstIndex(where: { $0.id == id }), trips[index].purpose != purpose else { return }
+    trips[index].purpose = purpose
+    trips[index].syncedAt = nil
+    save()
+    if let recentIndex = recentTrips.firstIndex(where: { $0.id == id }) {
+      recentTrips[recentIndex] = trips[index]
+    }
+    syncer.syncNow()
+  }
+
   private func markSynced(_ id: DriveTrip.ID, at date: Date) {
     guard let index = trips.firstIndex(where: { $0.id == id }) else { return }
     trips[index].syncedAt = date

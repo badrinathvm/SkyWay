@@ -25,13 +25,19 @@ struct ExpenseListView: View {
       .navigationDestination(for: Expense.self) { expense in
         ExpenseDetailView(expense: expense)
       }
-      .navigationDestination(for: ExpenseListRoute.self) { _ in
-        MonthlyReportView()
+      .navigationDestination(for: ExpenseListRoute.self) { route in
+        switch route {
+        case .monthlyReport: MonthlyReportView()
+        case .mileage: MileageView()
+        }
       }
       .toolbar {
-        ToolbarItem(placement: .topBarLeading) {
+        ToolbarItemGroup(placement: .topBarLeading) {
           NavigationLink(value: ExpenseListRoute.monthlyReport) {
             Label("Monthly Report", systemImage: "chart.bar.doc.horizontal")
+          }
+          NavigationLink(value: ExpenseListRoute.mileage) {
+            Label("Mileage", systemImage: "car")
           }
         }
         ToolbarItem(placement: .primaryAction) {
@@ -87,6 +93,9 @@ struct ExpenseListView: View {
           ExpenseMonthSummary(totals: Expense.monthlyTotals(of: expenses))
         }
         .accessibilityHint("Shows the monthly report.")
+        NavigationLink(value: ExpenseListRoute.mileage) {
+          Label("Mileage", systemImage: "car")
+        }
       }
       Section("All Expenses") {
         ForEach(expenses) { expense in
@@ -166,4 +175,5 @@ struct ExpenseListView: View {
 /// Screens pushed from the expense list, other than an expense itself.
 private enum ExpenseListRoute: Hashable {
   case monthlyReport
+  case mileage
 }

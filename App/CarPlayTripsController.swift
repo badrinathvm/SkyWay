@@ -377,7 +377,7 @@ final class CarPlayTripsController: NSObject {
         CPInformationItem(title: "From", detail: trip.startAddress ?? "Unknown"),
         CPInformationItem(title: "To", detail: trip.endAddress ?? "Unknown"),
         CPInformationItem(title: "Purpose", detail: trip.purpose?.title ?? "Not set"),
-        CPInformationItem(title: "Deduction", detail: trip.purpose == .business ? "\(trip.deductionText) at $0.16/mi" : trip.deductionText),
+        CPInformationItem(title: "Deduction", detail: trip.purpose == .business ? "\(trip.deductionText) at \(trip.ratePerMileText)" : trip.deductionText),
       ],
       actions: []
     )
