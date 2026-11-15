@@ -31,7 +31,8 @@ final class ReceiptImporter {
           total: reading.total,
           tax: reading.tax,
           currencyCode: reading.currencyCode,
-          category: reading.category,
+          // Filed the way the person filed this supplier before, over the model's guess.
+          category: SupplierCategoryRules.category(for: reading.supplier) ?? reading.category,
           receiptFileNames: pages.compactMap(ReceiptImageStore.save),
           recognizedText: reading.text
         )
@@ -46,6 +47,7 @@ final class ReceiptImporter {
       remainingCount -= 1
     }
     try? context.save()
+    ExpenseStore.index(imported)
 
     if receipts.count > 1, failures > 0 {
       errorMessage = failures == 1

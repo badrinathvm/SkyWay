@@ -15,5 +15,26 @@ struct SkywayShortcuts: AppShortcutsProvider {
       shortTitle: "Upcoming Trip",
       systemImageName: "airplane.departure"
     )
+    AppShortcut(
+      intent: LogExpenseIntent(),
+      phrases: [
+        "Log an expense in \(.applicationName)",
+        "Add an expense in \(.applicationName)",
+        "Log a receipt in \(.applicationName)",
+        "New \(.applicationName) expense",
+      ],
+      shortTitle: "Log Expense",
+      systemImageName: "receipt"
+    )
+    AppShortcut(
+      intent: GetRecentExpensesIntent(),
+      phrases: [
+        "Show my expenses in \(.applicationName)",
+        "What did I spend in \(.applicationName)",
+        "My \(.applicationName) expenses",
+      ],
+      shortTitle: "Recent Expenses",
+      systemImageName: "list.bullet.rectangle"
+    )
   }
 }

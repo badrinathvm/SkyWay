@@ -89,10 +89,18 @@ struct ExpenseDetailView: View {
     .sheet(item: $presentedPage) { page in
       ReceiptPageView(fileName: page.fileName)
     }
+    .onChange(of: expense.category) {
+      // The person chose this, so file the supplier's future expenses the same way.
+      SupplierCategoryRules.remember(expense.category, for: expense.supplier)
+    }
     .onDisappear {
-      // A manual entry that was opened and left empty shouldn't stay in the list.
-      if !expense.isDeleted, expense.isBlank {
+      guard !expense.isDeleted else { return }
+      if expense.isBlank {
+        // A manual entry that was opened and left empty shouldn't stay in the list.
         ExpenseStore.delete(expense, from: modelContext)
+      } else {
+        // Keep Spotlight, and so Siri, up to date with any edits.
+        ExpenseStore.index([expense])
       }
     }
   }

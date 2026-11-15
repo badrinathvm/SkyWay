@@ -30,7 +30,10 @@ struct AppDefinition: App {
   var body: some Scene {
     WindowGroup {
       ContentView()
-        .task { await TripStore.indexInSpotlight() }
+        .task {
+          await TripStore.indexInSpotlight()
+          ExpenseStore.indexAllInSpotlight()
+        }
         .modelContainer(ExpenseStore.container)
     }
   }
