@@ -22,6 +22,10 @@
           "CFBundleVersion": "1",
           "ITSAppUsesNonExemptEncryption": false,
           "NSCameraUsageDescription": "Skyway uses the camera to scan receipts for your expenses.",
+          "NSLocationWhenInUseUsageDescription": "Skyway uses your location to measure the miles you drive for mileage deductions.",
+          "UIBackgroundModes": [
+            "location"
+          ],
           "NSUserActivityTypes": [
             "app.skyway.viewTrip"
           ],
@@ -43,7 +47,15 @@
                 }
               ]
             }
-          }
+          },
+          "CFBundleURLTypes": [
+            {
+              "CFBundleURLName": "com.badarinathvm.skyway",
+              "CFBundleURLSchemes": [
+                "skyway"
+              ]
+            }
+          ]
         }
       },
       "platform": "iOS",
@@ -52,23 +64,65 @@
         "ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME": "AccentColor",
         "CURRENT_PROJECT_VERSION": "1",
         "MARKETING_VERSION": "1.0",
-        "PRODUCT_BUNDLE_IDENTIFIER": "app.bitrig.new.71b7b2c8-9dc8-4b74-825d-7b2e755ba4c3",
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.badarinathvm.skyway",
         "PRODUCT_NAME": "$(TARGET_NAME)",
         "SWIFT_VERSION": "5.0",
-        "TARGETED_DEVICE_FAMILY": "1,2",
-        "CODE_SIGN_ENTITLEMENTS[sdk=iphonesimulator*]": "App/App-Simulator.entitlements"
+        "TARGETED_DEVICE_FAMILY": "1,2"
+      },
+      "entitlements": {
+        "path": "App/App.entitlements",
+        "properties": {
+          "com.apple.developer.carplay-driving-task": true
+        }
       },
       "sources": [
         {
-          "path": "App"
+          "path": "App",
+          "excludes": [
+            "Skills.skillsbundle",
+            "Skills.skillsbundle/**"
+          ]
+        },
+        {
+          "path": "App/Skills.skillsbundle",
+          "type": "file",
+          "buildPhase": "resources"
         }
       ],
       "type": "application",
       "scheme": {
         "commandLineArguments": {
           "-resetTips": false,
-          "-showAllTips": false
+          "-showAllTips": false,
+          "-simulateDrive": false,
+          "-failTripSync": false
+        },
+        "storeKitConfiguration": "StoreKit/SkywayPlus.storekit",
+        "testTargets": [
+          "SkywaySiriEvals"
+        ]
+      }
+    },
+    "SkywaySiriEvals": {
+      "type": "bundle.ui-testing",
+      "platform": "iOS",
+      "deploymentTarget": "27.3",
+      "sources": [
+        {
+          "path": "SkywaySiriEvals"
         }
+      ],
+      "dependencies": [
+        {
+          "target": "Skyway"
+        }
+      ],
+      "settings": {
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.badarinathvm.skyway.SiriEvals",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "SWIFT_VERSION": "6.0",
+        "TARGETED_DEVICE_FAMILY": "1,2",
+        "TEST_TARGET_NAME": "Skyway"
       }
     }
   }

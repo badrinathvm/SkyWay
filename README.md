@@ -20,6 +20,7 @@ An iOS sample project for exploring SwiftUI tab bar placements in the Liquid Gla
 | Boarding pass sheet with a generated QR code | `CIFilter.qrCodeGenerator()` | `App/BoardingPassView.swift` |
 | Siri onscreen awareness for the trip and search rows | `.userActivity` / `.appEntityIdentifier` + `AppEntity` | `App/TripEntity.swift`, `App/TravelActionEntity.swift` |
 | "Where is my trip in Skyway?" Siri phrase | `AppIntent` + `AppShortcutsProvider` | `App/GetCurrentTripIntent.swift`, `App/SkywayShortcuts.swift` |
+| Skyway Plus mock subscription with an App Store Retention Messaging demo (Confirm Cancellation preview, mock real-time endpoint, `offerType` 5 handling); see [Docs/RetentionMessagingGuide.html](Docs/RetentionMessagingGuide.html) and [Docs/RetentionMessaging.md](Docs/RetentionMessaging.md) | StoreKit 2, `manageSubscriptionsSheet`, Retention Messaging API | `App/SubscriptionView.swift`, `App/SubscriptionStore.swift`, `App/RetentionDecisionEngine.swift` |
 
 For how onscreen awareness works and when to use `.userActivity` vs `.appEntityIdentifier`, see [Docs/OnscreenAwareness.md](Docs/OnscreenAwareness.md).
 
@@ -59,6 +60,21 @@ If builds fail with `missing DEVELOPER_DIR path`, point the command line tools a
 ```sh
 sudo xcode-select -s /Applications/Xcode.app
 ```
+
+### Testing CarPlay mileage trips
+
+To see miles and the deduction go up without driving, move the simulator's location along a route. Open Skyway on the CarPlay screen, tap **Start a Trip**, then run:
+
+```sh
+Scripts/simulate-drive.sh          # about 7.5 miles through Cupertino at 30 mph
+Scripts/simulate-drive.sh 70       # the same route at 70 mph
+Scripts/simulate-drive.sh freeway  # Apple's Freeway Drive scenario
+Scripts/simulate-drive.sh stop     # stop and clear the simulated location
+```
+
+The script finds the iPhone simulator Bitrig has running. Allow location on the iPhone when it asks.
+
+When running from Xcode, you can instead turn on the `-simulateDrive` launch argument (Product › Scheme › Edit Scheme › Run › Arguments), which drives the same route inside the app.
 
 ## Project Structure
 

@@ -1,0 +1,825 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway · “Bill John the usual”, step by step</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #3a3df0;
+    --accent-soft: #ececfe;
+    --green: #1f8a3b;
+    --green-soft: #e3f5e8;
+    --orange: #b25000;
+    --orange-soft: #fdf0e3;
+    --purple: #8e3bd1;
+    --purple-soft: #f3e8fc;
+    --teal: #0a7b8a;
+    --teal-soft: #e0f4f6;
+    --red: #c4281c;
+    --code-bg: #f0f0f3;
+    --kw: #ad3da4;
+    --type: #3900a0;
+    --str: #c41a16;
+    --com: #5d6c79;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #98989d;
+      --border: #3a3a3c;
+      --accent: #8a8cff;
+      --accent-soft: #24244a;
+      --green: #30d158;
+      --green-soft: #12301b;
+      --orange: #ff9f0a;
+      --orange-soft: #3a2608;
+      --purple: #bf5af2;
+      --purple-soft: #2e1840;
+      --teal: #40c8e0;
+      --teal-soft: #0f2d33;
+      --red: #ff6961;
+      --code-bg: #2c2c2e;
+      --kw: #ff7ab2;
+      --type: #dabaff;
+      --str: #ff8170;
+      --com: #7f8c98;
+    }
+  }
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    padding: 48px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  main { max-width: 960px; margin: 0 auto; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 4px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 64px 0 8px; padding-top: 8px; }
+  h2 .chapter { color: var(--accent); font-size: 14px; font-weight: 600; display: block; letter-spacing: 0.02em; text-transform: uppercase; }
+  h3 { font-size: 18px; margin: 28px 0 8px; }
+  .lede { color: var(--secondary); margin: 0 0 28px; font-size: 17px; }
+  .intro { color: var(--secondary); margin: 0 0 20px; }
+  a { color: var(--accent); text-decoration: none; }
+  code {
+    font: 13px "SF Mono", ui-monospace, Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    margin: 12px 0;
+    font: 12.5px/1.55 "SF Mono", ui-monospace, Menlo, monospace;
+  }
+  pre code { background: none; padding: 0; font-size: inherit; }
+  pre .file { display: block; color: var(--secondary); font-size: 11px; margin-bottom: 8px; text-transform: uppercase; letter-spacing: 0.05em; }
+  .kw { color: var(--kw); font-weight: 600; }
+  .ty { color: var(--type); }
+  .st { color: var(--str); }
+  .cm { color: var(--com); font-style: italic; }
+  .hl { background: rgba(255, 214, 10, 0.32); border-radius: 3px; padding: 0 1px; }
+  .dim { opacity: 0.45; }
+
+  nav.toc {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 24px;
+    columns: 2;
+    column-gap: 32px;
+  }
+  nav.toc ol { margin: 0; padding-left: 18px; }
+  nav.toc li { margin: 3px 0; break-inside: avoid; }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 16px 20px;
+    margin: 12px 0;
+  }
+  .card > :first-child { margin-top: 0; }
+  .card > :last-child { margin-bottom: 0; }
+  .callout {
+    border-left: 4px solid var(--orange);
+    background: var(--orange-soft);
+    border-radius: 10px;
+    padding: 12px 16px;
+    margin: 14px 0;
+  }
+  .callout.tip { border-color: var(--green); background: var(--green-soft); }
+  .callout.info { border-color: var(--accent); background: var(--accent-soft); }
+  .callout b:first-child { display: block; margin-bottom: 2px; }
+
+  /* Actor chips */
+  .chip { display: inline-block; font-size: 12px; font-weight: 600; padding: 1px 8px; border-radius: 999px; border: 1.5px solid; white-space: nowrap; }
+  .chip.person { color: var(--green); border-color: var(--green); background: var(--green-soft); }
+  .chip.siri { color: var(--purple); border-color: var(--purple); background: var(--purple-soft); }
+  .chip.skill { color: var(--orange); border-color: var(--orange); background: var(--orange-soft); }
+  .chip.tool { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .chip.data { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+
+  /* Phone conversation */
+  .hero { display: grid; grid-template-columns: 330px 1fr; gap: 32px; align-items: start; margin-top: 8px; }
+  .phone {
+    background: linear-gradient(160deg, #2a1f4a, #0e2a3a 60%, #0b0b0f);
+    border-radius: 44px;
+    padding: 18px 14px 22px;
+    border: 6px solid #1c1c1e;
+    color: #f5f5f7;
+    font-size: 13.5px;
+    box-shadow: 0 20px 40px rgba(0,0,0,0.18);
+  }
+  .phone .island { width: 110px; height: 30px; background: #000; border-radius: 20px; margin: 0 auto 14px; }
+  .bubble { border-radius: 18px; padding: 9px 13px; margin: 8px 0; max-width: 88%; line-height: 1.35; }
+  .bubble.me { background: #3a3df0; margin-left: auto; color: #fff; }
+  .bubble.siri { background: rgba(255,255,255,0.13); backdrop-filter: blur(10px); }
+  .bubble small { display: block; opacity: 0.6; font-size: 11px; margin-bottom: 2px; }
+  .glow { height: 4px; border-radius: 4px; margin: 14px 30px 0; background: linear-gradient(90deg, #ff6ac1, #8a5cff, #3ad1ff, #ffd36a); }
+  .mini-card { background: #fff; color: #1d1d1f; border-radius: 16px; padding: 12px; margin: 8px 0; }
+  .mini-card .row { display: flex; align-items: center; gap: 8px; }
+  .seatchip { flex: 1; text-align: center; background: #f0f0f3; border-radius: 10px; padding: 6px 4px; }
+  .seatchip b { display: block; font-size: 17px; }
+  .seatchip.new b { color: #3a3df0; }
+  .seatchip small { color: #6e6e73; font-size: 11px; }
+  .mini-card .fee { color: #6e6e73; font-size: 12px; margin-top: 8px; }
+  .mini-card .hdr { font-weight: 600; font-size: 13px; margin-bottom: 8px; }
+  .mini-card .hdr small { display: block; font-weight: 400; color: #6e6e73; font-size: 11px; }
+  .btns { display: flex; gap: 8px; margin-top: 10px; }
+  .btns span { flex: 1; text-align: center; border-radius: 999px; padding: 7px; font-weight: 600; font-size: 13px; background: rgba(255,255,255,0.15); }
+  .btns span.go { background: #0a84ff; }
+  .phone .stepno { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; background: #fff; color: #000; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 4px; }
+
+  /* Summary pipeline */
+  .pipeline { display: flex; flex-direction: column; gap: 0; }
+  .pipe { display: grid; grid-template-columns: 34px 1fr; gap: 10px; align-items: start; }
+  .pipe .dot { width: 26px; height: 26px; border-radius: 50%; color: #fff; font-weight: 700; font-size: 13px; display: flex; align-items: center; justify-content: center; margin-top: 2px; }
+  .pipe .body { padding-bottom: 14px; border-left: 2px solid var(--border); margin-left: -23px; padding-left: 23px; }
+  .pipe:last-child .body { border-left-color: transparent; }
+  .pipe .body b { display: block; }
+  .pipe .body span { color: var(--secondary); font-size: 14px; }
+  .bg-person { background: var(--green); }
+  .bg-siri { background: var(--purple); }
+  .bg-skill { background: var(--orange); }
+  .bg-tool { background: var(--accent); }
+  .bg-data { background: var(--teal); }
+
+  /* Build-time diagram */
+  .build { display: grid; grid-template-columns: 1fr 40px 1fr 40px 1fr; align-items: center; gap: 6px; }
+  .bbox { border-radius: 12px; border: 2px solid var(--border); background: var(--card); padding: 12px; font-size: 13.5px; }
+  .bbox strong { display: block; font-size: 14px; margin-bottom: 4px; }
+  .bbox ul { margin: 0; padding-left: 18px; color: var(--secondary); font-size: 13px; }
+  .bbox.src { border-color: var(--accent); }
+  .bbox.out { border-color: var(--teal); background: var(--teal-soft); }
+  .bbox.dev { border-color: var(--purple); background: var(--purple-soft); }
+  .barrow { text-align: center; font-size: 22px; color: var(--secondary); }
+
+  /* Sequence diagram */
+  .seq-wrap { overflow-x: auto; margin: 16px 0; }
+  .seq {
+    position: relative;
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    min-width: 820px;
+    row-gap: 6px;
+    padding-bottom: 8px;
+    background-image:
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0),
+      linear-gradient(var(--border) 55%, transparent 0);
+    background-size: 2px 9px;
+    background-repeat: repeat-y;
+    background-position: 10% 0, 30% 0, 50% 0, 70% 0, 90% 0;
+  }
+  .seq .actor {
+    text-align: center;
+    font-weight: 700;
+    font-size: 13px;
+    padding: 10px 6px;
+    border-radius: 12px;
+    margin: 0 8px 8px;
+    border: 2px solid;
+    position: relative;
+    z-index: 1;
+  }
+  .seq .actor small { display: block; font-weight: 400; font-size: 11px; opacity: 0.85; }
+  .actor.person { color: var(--green); border-color: var(--green); background: var(--green-soft); }
+  .actor.siri { color: var(--purple); border-color: var(--purple); background: var(--purple-soft); }
+  .actor.skill { color: var(--orange); border-color: var(--orange); background: var(--orange-soft); }
+  .actor.tool { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+  .actor.data { color: var(--teal); border-color: var(--teal); background: var(--teal-soft); }
+  .s2 { margin-left: 25% !important; margin-right: 25% !important; }
+  .s3 { margin-left: 16.667% !important; margin-right: 16.667% !important; }
+  .s4 { margin-left: 12.5% !important; margin-right: 12.5% !important; }
+  .msg {
+    position: relative;
+    z-index: 1;
+    margin: 0 calc(10% - 0px);
+    padding: 0 0 6px;
+    text-align: center;
+    font-size: 12.5px;
+    line-height: 1.35;
+  }
+  .msg .label { background: var(--bg); padding: 0 6px; display: inline-block; }
+  .msg .label b { font-weight: 600; }
+  .msg .label code { font-size: 11.5px; }
+  .msg::after {
+    content: "";
+    position: absolute;
+    left: 0; right: 0; bottom: 0;
+    border-bottom: 2px solid var(--line, var(--text));
+  }
+  .msg::before {
+    content: "";
+    position: absolute;
+    bottom: -5px;
+    border: 6px solid transparent;
+  }
+  .msg.r::before { right: -2px; border-left-color: var(--line, var(--text)); border-right: 0; }
+  .msg.l::before { left: -2px; border-right-color: var(--line, var(--text)); border-left: 0; }
+  .msg.ret::after { border-bottom-style: dashed; }
+  .msg .n { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 3px; background: var(--line, var(--text)); vertical-align: 1px; }
+  .self {
+    z-index: 1;
+    margin: 0 8px;
+    border: 2px solid var(--line, var(--border));
+    background: var(--card);
+    border-radius: 10px;
+    padding: 6px 8px;
+    font-size: 12px;
+    text-align: center;
+    line-height: 1.35;
+  }
+  .self .n { display: inline-flex; width: 18px; height: 18px; border-radius: 50%; color: #fff; font-size: 11px; font-weight: 700; align-items: center; justify-content: center; margin-right: 3px; background: var(--line, var(--text)); }
+  .l-person { --line: var(--green); }
+  .l-siri { --line: var(--purple); }
+  .l-skill { --line: var(--orange); }
+  .l-tool { --line: var(--accent); }
+  .l-data { --line: var(--teal); }
+  .phase { grid-column: 1 / -1; z-index: 1; text-align: left; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--secondary); margin: 10px 0 0; }
+  .phase span { background: var(--bg); padding-right: 8px; }
+
+  /* Detail steps */
+  .detail { display: grid; grid-template-columns: 40px 1fr; gap: 14px; margin: 28px 0; }
+  .detail .big { width: 36px; height: 36px; border-radius: 50%; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 15px; }
+  .detail h3 { margin: 4px 0 6px; }
+  .detail .who { margin-bottom: 6px; }
+
+  /* Mapping table */
+  table { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 14px; }
+  th, td { text-align: left; padding: 8px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--secondary); font-weight: 500; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: 0; }
+
+  /* Seat map */
+  .seatmap { display: inline-grid; grid-template-columns: 34px repeat(3, 30px) 18px repeat(3, 30px); gap: 4px; font: 12px "SF Mono", ui-monospace, Menlo, monospace; margin: 8px 0; }
+  .seatmap div { height: 26px; border-radius: 6px; display: flex; align-items: center; justify-content: center; }
+  .seatmap .rn { color: var(--secondary); justify-content: flex-end; padding-right: 4px; }
+  .seatmap .s { background: var(--card); border: 1.5px solid var(--border); }
+  .seatmap .taken { background: var(--code-bg); color: var(--secondary); text-decoration: line-through; border: 1.5px solid transparent; }
+  .seatmap .you { background: var(--green-soft); border: 2px solid var(--green); font-weight: 700; }
+  .seatmap .pick { background: var(--accent); color: #fff; font-weight: 700; }
+  .seatmap .legroom { box-shadow: inset 0 -3px 0 var(--orange); }
+  .seatmap .gap { background: none; }
+  .legend { display: flex; gap: 14px; flex-wrap: wrap; font-size: 12.5px; color: var(--secondary); }
+  .legend i { display: inline-block; width: 14px; height: 14px; border-radius: 4px; vertical-align: -2px; margin-right: 4px; }
+
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  footer { margin-top: 64px; color: var(--secondary); font-size: 13px; border-top: 1px solid var(--border); padding-top: 16px; }
+
+  @media (max-width: 760px) {
+    nav.toc { columns: 1; }
+    .hero, .two { grid-template-columns: 1fr; }
+    .phone { max-width: 340px; margin: 0 auto; }
+    .build { grid-template-columns: 1fr; }
+    .barrow { transform: rotate(90deg); }
+  }
+
+  /* Invoice mini receipt (phone) */
+  .receipt { background: #fff; color: #1d1d1f; border-radius: 14px; overflow: hidden; margin: 8px 0; }
+  .receipt .band { background: linear-gradient(135deg, #34c759, #34c759aa); color: #fff; padding: 8px 12px; display: flex; justify-content: space-between; align-items: flex-end; }
+  .receipt .band small { display: block; font-size: 9px; letter-spacing: 2px; font-weight: 800; opacity: 0.85; }
+  .receipt .band b { font: 600 12px "SF Mono", ui-monospace, Menlo, monospace; }
+  .receipt .band .amt { font-size: 22px; font-weight: 700; }
+  .receipt .body { padding: 10px 12px 12px; font-size: 12.5px; position: relative; }
+  .receipt .who { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; }
+  .receipt .av { width: 30px; height: 30px; border-radius: 50%; background: #34c759; color: #fff; font-weight: 700; display: flex; align-items: center; justify-content: center; font-size: 12px; }
+  .receipt .who small { display: block; font-size: 9px; color: #6e6e73; letter-spacing: 1px; font-weight: 600; }
+  .receipt .who b { font-size: 14px; }
+  .receipt .line { display: flex; gap: 6px; align-items: baseline; }
+  .receipt .line .dots { flex: 1; border-bottom: 2px dotted #c7c7cc; transform: translateY(-3px); }
+  .receipt .stamp { position: absolute; right: 10px; top: 10px; transform: rotate(-12deg); border: 2px dashed #ff9500; color: #ff9500; font-weight: 900; font-size: 11px; letter-spacing: 2px; padding: 1px 6px; border-radius: 5px; }
+  .receipt .stamp.ok { border-color: #34c759; color: #34c759; }
+  .receipt .due { color: #6e6e73; font-size: 11px; margin-top: 6px; }
+  .receipt .acts { display: flex; justify-content: space-between; margin-top: 8px; }
+  .receipt .acts span { border-radius: 999px; padding: 3px 10px; font-weight: 600; font-size: 11.5px; background: #e3f5e8; color: #1f8a3b; }
+  .receipt .acts span.p { background: #34c759; color: #fff; }
+
+  /* Ledger */
+  .ledger { width: 100%; border-collapse: separate; border-spacing: 0 4px; font-size: 13.5px; }
+  .ledger td { background: var(--card); border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); padding: 8px 10px; }
+  .ledger td:first-child { border-left: 1px solid var(--border); border-radius: 10px 0 0 10px; font-family: "SF Mono", ui-monospace, Menlo, monospace; font-size: 12.5px; }
+  .ledger td:last-child { border-right: 1px solid var(--border); border-radius: 0 10px 10px 0; }
+  .ledger tr.match td { background: var(--accent-soft); border-color: var(--accent); }
+  .ledger tr.fade td { opacity: 0.45; }
+  .ledger th { border: 0; }
+  .reason { display: grid; grid-template-columns: auto 1fr; gap: 6px 10px; font-size: 14px; margin-top: 12px; }
+  .reason .q { font-weight: 600; white-space: nowrap; }
+  .reason .q::after { content: " →"; color: var(--secondary); font-weight: 400; }
+  .skillcmp { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+  .skillcmp .card.pick { border: 2px solid var(--orange); background: var(--orange-soft); }
+  .skillcmp .card.no { opacity: 0.6; }
+  @media (max-width: 760px) { .skillcmp { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+<main>
+  <h1>“In Skyway, bill John the usual”</h1>
+  <p class="lede">What happens, step by step, when someone asks Siri for an invoice without the details: no full name, no amount, no service. How Siri picks Skyway's <b>invoicing skill</b>, why it looks at <b>Get Recent Invoices</b> first, how it works out “John” and “the usual”, and how <b>Create Invoice</b> takes over from there.</p>
+
+  <nav class="toc">
+    <ol>
+      <li><a href="#conversation">The conversation</a></li>
+      <li><a href="#cast">Who's involved</a></li>
+      <li><a href="#before">What Siri knows before you speak</a></li>
+      <li><a href="#sequence">The complete flow, as a diagram</a></li>
+      <li><a href="#steps">Each step in detail</a></li>
+      <li><a href="#variations">Other vague requests</a></li>
+      <li><a href="#ours">What's Skyway's code and what's Siri's</a></li>
+      <li><a href="#files">Files</a></li>
+    </ol>
+  </nav>
+
+  <!-- ───────────────────────── Conversation ───────────────────────── -->
+  <h2 id="conversation"><span class="chapter">The example</span>The conversation</h2>
+  <p class="intro">Suppose these are the person's three most recent invoices. Siri's exact wording is its own; Skyway controls the invoice list, the card, and the final sentence.</p>
+
+  <table class="ledger" aria-label="Example invoice history">
+    <tr><th>Number</th><th>Client</th><th>Service</th><th>Amount</th><th>Issued</th></tr>
+    <tr><td>INV-0007</td><td>Maria Lopez</td><td>Dog walking</td><td>$120.00</td><td>Nov 5</td></tr>
+    <tr><td>INV-0006</td><td>John Carter</td><td>Gardening</td><td>$450.00</td><td>Oct 24</td></tr>
+    <tr><td>INV-0005</td><td>Ana Park</td><td>Logo design</td><td>$800.00</td><td>Oct 20</td></tr>
+  </table>
+
+  <div class="hero" style="margin-top:24px">
+    <div class="phone" aria-label="Mock of the Siri conversation">
+      <div class="island"></div>
+      <div class="bubble me"><small>You</small>In Skyway, bill John the usual</div>
+      <div class="bubble siri"><small>Siri</small><span class="stepno">1</span>John Carter's last invoice, INV-0006 on Oct 24, was $450 for gardening. Create an invoice for John Carter for $450.00 for gardening?
+        <div class="receipt">
+          <div class="band"><div><small>INVOICE</small><b>INV-0008</b></div><div class="amt">$450.00</div></div>
+          <div class="body">
+            <span class="stamp">DRAFT</span>
+            <div class="who"><div class="av">JC</div><div><small>BILL TO</small><b>John Carter</b></div></div>
+            <div class="line">🍃 Gardening <span class="dots"></span> $450.00</div>
+            <div class="due">Issued Nov 9 · Net 14 · Due Nov 23</div>
+          </div>
+        </div>
+        <div class="btns"><span>Cancel</span><span class="go">Create Invoice</span></div>
+      </div>
+      <div class="bubble siri"><small>Siri</small><span class="stepno">2</span>Created invoice INV-0008 for John Carter: $450.00 for gardening, due Nov 23, 2026.
+        <div class="receipt">
+          <div class="band"><div><small>INVOICE</small><b>INV-0008</b></div><div class="amt">$450.00</div></div>
+          <div class="body">
+            <span class="stamp ok">ISSUED</span>
+            <div class="who"><div class="av">JC</div><div><small>BILL TO</small><b>John Carter</b></div></div>
+            <div class="acts"><span class="p">View Invoice</span><span>Undo</span></div>
+          </div>
+        </div>
+      </div>
+      <div class="glow"></div>
+    </div>
+
+    <div>
+      <h3 style="margin-top:0">In one sentence each</h3>
+      <div class="pipeline">
+        <div class="pipe"><div class="dot bg-person">1</div><div class="body"><b>The person asks</b><span>“In Skyway” scopes the request to Skyway's tools and skills.</span></div></div>
+        <div class="pipe"><div class="dot bg-siri">2</div><div class="body"><b>Siri picks the invoicing skill</b><span>Its description covers “bill”, “the usual”, and “only a first name”.</span></div></div>
+        <div class="pipe"><div class="dot bg-skill">3</div><div class="body"><b>The skill says: look at past invoices first</b><span>Details are missing, so check Get Recent Invoices before creating.</span></div></div>
+        <div class="pipe"><div class="dot bg-tool">4</div><div class="body"><b>Siri calls Get Recent Invoices</b><span>Skyway returns the latest invoices, newest first.</span></div></div>
+        <div class="pipe"><div class="dot bg-skill">5</div><div class="body"><b>Siri fills the gaps using the skill's rules</b><span>One John → John Carter. His last invoice → $450 for gardening. Nothing billed today.</span></div></div>
+        <div class="pipe"><div class="dot bg-tool">6</div><div class="body"><b>Siri calls Create Invoice</b><span>Skyway checks the values and shows its DRAFT card.</span></div></div>
+        <div class="pipe"><div class="dot bg-data">7</div><div class="body"><b>Skyway saves INV-0008</b><span>Siri reads the result; the card turns ISSUED with View Invoice and Undo.</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Cast ───────────────────────── -->
+  <h2 id="cast"><span class="chapter">The cast</span>Who's involved</h2>
+  <div class="card">
+    <table>
+      <tr><th>Actor</th><th>What it is</th><th>Where it lives</th></tr>
+      <tr><td><span class="chip person">Person</span></td><td>Makes the request and confirms the draft.</td><td>—</td></tr>
+      <tr><td><span class="chip siri">Siri's model</span></td><td>Understands the request, picks a skill, calls tools, and <b>does the reasoning</b>: matching “John”, finding “the usual”.</td><td>Apple Intelligence on the iPhone (iOS 27.3)</td></tr>
+      <tr><td><span class="chip skill">invoicing skill</span></td><td>Plain-English rules for vague billing requests. Read by Siri, never executed.</td><td><code>App/Skills.skillsbundle/Skills/invoicing/SKILL.md</code></td></tr>
+      <tr><td><span class="chip tool">Skyway's tools</span></td><td><b>Get Recent Invoices</b> (looks) and <b>Create Invoice</b> (acts).</td><td><code>App/Siri/Tools/</code></td></tr>
+      <tr><td><span class="chip data">Skyway's data</span></td><td>Saved invoices and the next invoice number.</td><td><code>InvoiceStore.swift</code> (UserDefaults)</td></tr>
+    </table>
+  </div>
+
+  <!-- ───────────────────────── Before ───────────────────────── -->
+  <h2 id="before"><span class="chapter">Build time</span>What Siri knows before you speak</h2>
+  <p class="intro">At build time Xcode turns the tools into metadata and compiles both skills into one file. That's all Siri reads; it never sees the Swift code.</p>
+
+  <div class="build">
+    <div class="bbox src"><strong>Skyway's source</strong>
+      <ul>
+        <li><code>GetRecentInvoicesIntent</code> + <code>ToolIntent</code></li>
+        <li><code>CreateInvoiceIntent</code> + <code>ToolIntent</code></li>
+        <li><code>InvoiceEntity</code></li>
+        <li><code>Skills/invoicing/SKILL.md</code></li>
+        <li><code>Skills/seat-selection/SKILL.md</code></li>
+      </ul>
+    </div>
+    <div class="barrow">→</div>
+    <div class="bbox out"><strong>Inside Skyway.app</strong>
+      <ul>
+        <li><code>Metadata.appintents/extract.actionsdata</code>: 4 tools with titles, descriptions, parameters</li>
+        <li><code>Metadata.appintents/Skills.skillsc</code>: both skills</li>
+      </ul>
+    </div>
+    <div class="barrow">→</div>
+    <div class="bbox dev"><strong>On the iPhone</strong>
+      <ul>
+        <li>4 tools: Get Recent Invoices, Create Invoice, Get Available Seats, Change Seat</li>
+        <li>2 skills: <b>invoicing</b>, <b>seat-selection</b></li>
+      </ul>
+    </div>
+  </div>
+  <div class="callout info">
+    <b>Checked by Apple's analyzer</b>
+    <code>sirimetadataanalyzer</code> on this build reports <b>14 intents, 4 tools, 0 errors, 0 warnings</b>, and <code>Skills.skillsc</code> is present in the app.
+  </div>
+
+  <!-- ───────────────────────── Sequence ───────────────────────── -->
+  <h2 id="sequence"><span class="chapter">The whole picture</span>The complete flow, as a diagram</h2>
+  <p class="intro">Time runs downward. Solid arrows are requests; dashed arrows are answers. Numbers match the detailed steps below.</p>
+
+  <div class="seq-wrap">
+    <div class="seq">
+      <div class="actor person">Person</div>
+      <div class="actor siri">Siri's model<small>Apple Intelligence</small></div>
+      <div class="actor skill">invoicing<small>SKILL.md</small></div>
+      <div class="actor tool">Skyway tools<small>App Intents</small></div>
+      <div class="actor data">Skyway data<small>InvoiceStore</small></div>
+
+      <div class="phase"><span>Understand the request</span></div>
+      <div class="msg r l-person s2" style="grid-column: 1 / 3"><span class="label"><span class="n">1</span>“In Skyway, bill John the usual”</span></div>
+      <div class="self l-siri" style="grid-column: 2"><span class="n">2</span>Names Skyway → 4 tools, 2 skills. Client? Amount? Service? All vague</div>
+      <div class="msg r l-siri s2" style="grid-column: 2 / 4"><span class="label"><span class="n">3</span>Description matches: <b>bill</b>, <b>the usual</b>, <b>only a first name</b></span></div>
+      <div class="msg l ret l-skill s2" style="grid-column: 2 / 4"><span class="label"><span class="n">4</span>Rules: look at recent invoices first; match the first name; reuse the last amount; never guess</span></div>
+
+      <div class="phase"><span>Look at the history</span></div>
+      <div class="msg r l-siri s3" style="grid-column: 2 / 5"><span class="label"><span class="n">5</span><b>Get Recent Invoices</b>()</span></div>
+      <div class="msg r l-tool s2" style="grid-column: 4 / 6"><span class="label"><span class="n">6</span>newest 10 invoices</span></div>
+      <div class="msg l ret l-data s2" style="grid-column: 4 / 6"><span class="label">INV-0007, INV-0006, INV-0005</span></div>
+      <div class="msg l ret l-tool s3" style="grid-column: 2 / 5"><span class="label"><span class="n">7</span>[InvoiceEntity ×3] + “Your recent invoices: INV-0007 for Maria Lopez …”</span></div>
+
+      <div class="phase"><span>Fill the gaps</span></div>
+      <div class="self l-siri" style="grid-column: 2 / 4"><span class="n">8</span>“John” → only <b>John Carter</b> · “the usual” → INV-0006: <b>$450</b>, <b>Gardening</b> · nothing like it billed today</div>
+
+      <div class="phase"><span>Create the invoice</span></div>
+      <div class="msg r l-siri s3" style="grid-column: 2 / 5"><span class="label"><span class="n">9</span><b>Create Invoice</b>(Client: “John Carter”, Service: “Gardening”, Amount: 450)</span></div>
+      <div class="self l-tool" style="grid-column: 4"><span class="n">10</span>trim · not empty · amount &gt; 0</div>
+      <div class="msg l l-tool s4" style="grid-column: 1 / 5"><span class="label"><span class="n">11</span><code>requestConfirmation</code>: DRAFT card INV-0008 · [Cancel] [Create Invoice]</span></div>
+      <div class="msg r l-person s4" style="grid-column: 1 / 5"><span class="label">taps <b>Create Invoice</b></span></div>
+      <div class="msg r l-tool s2" style="grid-column: 4 / 6"><span class="label"><span class="n">12</span>save INV-0008</span></div>
+      <div class="msg l ret l-tool s3" style="grid-column: 2 / 5"><span class="label"><span class="n">13</span>InvoiceEntity + “Created invoice INV-0008 for John Carter …” + ISSUED card</span></div>
+      <div class="msg l l-siri s2" style="grid-column: 1 / 3"><span class="label"><span class="n">14</span>“Created invoice INV-0008 …”</span></div>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Steps ───────────────────────── -->
+  <h2 id="steps"><span class="chapter">Step by step</span>Each step in detail</h2>
+
+  <div class="detail">
+    <div class="big bg-person">1</div>
+    <div>
+      <div class="who"><span class="chip person">Person</span> → <span class="chip siri">Siri</span></div>
+      <h3>“In Skyway, bill John the usual”</h3>
+      <p>Naming Skyway lets Siri use Skyway's tools. The request has three gaps that Create Invoice can't fill by itself:</p>
+      <table>
+        <tr><th>Create Invoice needs</th><th>The person said</th><th>Gap</th></tr>
+        <tr><td>Client</td><td>“John”</td><td>Only a first name. Which John?</td></tr>
+        <tr><td>Service</td><td>(nothing)</td><td>Missing</td></tr>
+        <tr><td>Amount</td><td>“the usual”</td><td>Means something only the history knows</td></tr>
+      </table>
+      <p>Without help, Siri would ask “What's the invoice for?” and “How much should I bill?”, or worse, guess. The skill exists so it can work these out instead.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-siri">2</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span></div>
+      <h3>Siri looks at what Skyway offers</h3>
+      <table>
+        <tr><th>Tool</th><th>From its description</th></tr>
+        <tr><td><b>Get Recent Invoices</b></td><td>“Lists your most recent Skyway invoices, newest first, with each one's number, client, service, amount, and the date it was issued. It doesn't create or change invoices.”</td></tr>
+        <tr><td><b>Create Invoice</b></td><td>“Creates an invoice in US dollars that bills a client for a service, after you confirm. It's due in 14 days.”</td></tr>
+        <tr><td class="dim"><b>Get Available Seats</b>, <b>Change Seat</b></td><td class="dim">Not about billing.</td></tr>
+      </table>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-skill">3</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip skill">invoicing skill</span></div>
+      <h3>Which skill? Only the descriptions decide</h3>
+      <p>Siri compares the request with each skill's <code>description</code>. The body isn't read at this point.</p>
+      <div class="skillcmp">
+        <div class="card pick">
+          <p style="margin-top:0"><span class="chip skill">invoicing</span> ✓ chosen</p>
+          <pre style="margin-bottom:0"><code><span class="hl">Bill</span> a client in Skyway when the request is
+vague or missing details, such as no amount,
+<span class="hl">the usual amount</span>, the same as last time, a
+rate per hour or per visit instead of a total,
+<span class="hl">only a first name</span>, or several jobs at once.
+Also for asking what was billed recently. Not
+for changing seats, trips, or mileage.</code></pre>
+        </div>
+        <div class="card no">
+          <p style="margin-top:0"><span class="chip skill">seat-selection</span> ✗</p>
+          <pre style="margin-bottom:0"><code>Choose a new seat on the user's upcoming
+Skyway flight when they describe the kind of
+seat they want instead of a seat number, …
+Not for questions about the gate, boarding
+time, or trip details.</code></pre>
+        </div>
+      </div>
+      <p>Each description ends with what it's <em>not</em> for. That's Apple's advice for keeping two skills in one app from being confused.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-skill">4</div>
+    <div>
+      <div class="who"><span class="chip skill">invoicing skill</span> → <span class="chip siri">Siri</span></div>
+      <h3>The skill's rules arrive with the tools</h3>
+      <p>Now Siri reads the body. These lines apply to “bill John the usual” (highlighted):</p>
+      <pre><code><span class="file">App/Skills.skillsbundle/Skills/invoicing/SKILL.md · body (excerpt)</span><span class="dim">When the user gave a client, a service, and a total in dollars, use the Create Invoice tool
+right away.</span>
+
+<span class="hl">When anything is missing or vague, use the Get Recent Invoices tool first</span> and fill in what you
+can from it:
+
+- **Client.** <span class="hl">If the user gave only a first name and exactly one recent client has that first
+  name, use that client's full name</span> as it appears on the invoice. If several do, ask which one.
+- **Amount.** <span class="hl">For "the usual", "same as last time", or no amount at all, use the amount of the
+  most recent invoice for that client and service, and tell the user which invoice it came from</span>,
+  by number and date. If there's no earlier invoice to go on, ask for the amount. Never guess one.
+<span class="dim">- **Rate and quantity.** For a rate and a count, like 3 walks at $40 …</span>
+- **Service.** <span class="hl">If the user didn't say what it's for and every recent invoice for that client is
+  for the same service, use that service and say so.</span> Otherwise ask.
+
+<span class="hl">Before creating, check the recent invoices for one with the same client, service, and amount
+issued today.</span> If there is one, tell the user and ask whether they really want a second one.
+
+<span class="hl">Create Invoice shows its own confirmation, so don't ask the user to confirm a second time.</span></code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">5</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip tool">Get Recent Invoices</span></div>
+      <h3>A lookup with no parameters</h3>
+      <p>Apple's guidance is not to write search tools that take criteria. Siri finds things itself. So this tool simply returns the latest invoices, and Siri does the matching.</p>
+      <pre><code><span class="file">App/Siri/Tools/GetRecentInvoicesIntent.swift</span><span class="kw">struct</span> <span class="ty">GetRecentInvoicesIntent</span>: <span class="ty">AppIntent</span> {
+  <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Get Recent Invoices"</span>
+  <span class="kw">static let</span> description = <span class="ty">IntentDescription</span>(
+    <span class="st">"Lists your most recent Skyway invoices, newest first, with each one's number, client, service, amount, and the date it was issued. It doesn't create or change invoices."</span>,
+    searchKeywords: [<span class="st">"invoices"</span>, <span class="st">"past invoices"</span>, <span class="st">"billing history"</span>, <span class="st">"last invoice"</span>, <span class="st">"what did I bill"</span>, <span class="st">"clients"</span>]
+  )
+
+  <span class="cm">/// How many invoices to report, so the answer stays short enough to read out.</span>
+  <span class="kw">static let</span> resultLimit = <span class="ty">10</span>
+}
+
+<span class="kw">@available</span>(iOS <span class="ty">27.3</span>, *)
+<span class="kw">extension</span> <span class="ty">GetRecentInvoicesIntent</span>: <span class="ty">ToolIntent</span> {}</code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-data">6</div>
+    <div>
+      <div class="who"><span class="chip tool">Get Recent Invoices</span> → <span class="chip data">InvoiceStore</span></div>
+      <h3>Skyway reads its saved invoices</h3>
+      <p><code>perform()</code> runs in Skyway's process, usually in the background, and reads the same store the app and Create Invoice use:</p>
+      <pre><code><span class="file">GetRecentInvoicesIntent.perform()</span><span class="kw">let</span> invoices = <span class="ty">Array</span>(<span class="ty">InvoiceStore</span>.invoices.prefix(<span class="ty">Self</span>.resultLimit))   <span class="cm">// newest first</span>
+<span class="kw">guard</span> !invoices.isEmpty <span class="kw">else</span> {
+  <span class="kw">return</span> .result(value: [], dialog: <span class="st">"You haven't created any invoices in Skyway yet."</span>)
+}</code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">7</div>
+    <div>
+      <div class="who"><span class="chip tool">Get Recent Invoices</span> → <span class="chip siri">Siri</span></div>
+      <h3>Structured invoices go back to Siri</h3>
+      <pre><code><span class="file">GetRecentInvoicesIntent.perform()</span><span class="kw">return</span> .result(
+  value: invoices.map(\.entity),      <span class="cm">// [InvoiceEntity], for the model</span>
+  dialog: <span class="st">"Your recent invoices: \(list.formatted(.list(type: .and)))."</span>
+)</code></pre>
+      <p>Each <code>InvoiceEntity</code> carries the fields the skill's rules need. <b>Issued</b> was added for this skill: without it, Siri couldn't say “on Oct 24” or spot a duplicate from today.</p>
+      <pre><code><span class="file">App/Siri/Entities/InvoiceEntity.swift</span><span class="kw">@Property</span>(title: <span class="st">"Number"</span>) <span class="kw">var</span> number: <span class="ty">String</span>      <span class="cm">// INV-0006</span>
+<span class="kw">@Property</span>(title: <span class="st">"Client"</span>) <span class="kw">var</span> clientName: <span class="ty">String</span>  <span class="cm">// John Carter</span>
+<span class="kw">@Property</span>(title: <span class="st">"Service"</span>) <span class="kw">var</span> service: <span class="ty">String</span>    <span class="cm">// Gardening</span>
+<span class="kw">@Property</span>(title: <span class="st">"Amount"</span>) <span class="kw">var</span> amount: <span class="ty">Double</span>     <span class="cm">// 450</span>
+<span class="hl"><span class="kw">@Property</span>(title: <span class="st">"Issued"</span>) <span class="kw">var</span> createdAt: <span class="ty">Date</span></span>    <span class="cm">// Oct 24 — new</span>
+<span class="kw">@Property</span>(title: <span class="st">"Due Date"</span>) <span class="kw">var</span> dueDate: <span class="ty">Date</span></code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-skill">8</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span>, following <span class="chip skill">the skill</span></div>
+      <h3>Siri fills each gap from the history</h3>
+      <p>This is reasoning, not Skyway code. Siri applies the skill's rules to the list it got back:</p>
+      <table class="ledger">
+        <tr><th>Number</th><th>Client</th><th>Service</th><th>Amount</th><th>Issued</th></tr>
+        <tr class="fade"><td>INV-0007</td><td>Maria Lopez</td><td>Dog walking</td><td>$120.00</td><td>Nov 5</td></tr>
+        <tr class="match"><td>INV-0006</td><td><b>John</b> Carter</td><td><b>Gardening</b></td><td><b>$450.00</b></td><td>Oct 24</td></tr>
+        <tr class="fade"><td>INV-0005</td><td>Ana Park</td><td>Logo design</td><td>$800.00</td><td>Oct 20</td></tr>
+      </table>
+      <div class="reason">
+        <span class="q">“John”</span><span>Exactly one recent client named John → <b>John Carter</b> (rule: <em>use that client's full name</em>)</span>
+        <span class="q">Service?</span><span>Every invoice for John Carter is gardening → <b>Gardening</b>, and say so</span>
+        <span class="q">“the usual”</span><span>Most recent invoice for John Carter and gardening → <b>$450</b>, from <b>INV-0006 on Oct 24</b>, and say which</span>
+        <span class="q">Duplicate?</span><span>Nothing for John Carter issued today (Nov 9) → go ahead</span>
+      </div>
+      <p>So Siri tells the person where the numbers came from: <em>“John Carter's last invoice, INV-0006 on Oct 24, was $450 for gardening.”</em> It doesn't stop to ask, because Create Invoice's card is the confirmation.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">9</div>
+    <div>
+      <div class="who"><span class="chip siri">Siri</span> → <span class="chip tool">Create Invoice</span></div>
+      <h3>Siri calls Create Invoice with the filled-in values</h3>
+      <table>
+        <tr><th>Parameter</th><th>Value</th><th>Came from</th></tr>
+        <tr><td>Client</td><td><b>John Carter</b></td><td>“John” + history</td></tr>
+        <tr><td>Service</td><td><b>Gardening</b></td><td>History</td></tr>
+        <tr><td>Amount</td><td><b>450</b></td><td>“the usual” + INV-0006</td></tr>
+      </table>
+      <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift</span><span class="kw">@Parameter</span>(title: <span class="st">"Client"</span>, description: <span class="st">"The name of the person or business being billed, like John"</span>,
+           requestValueDialog: <span class="st">"Who's the invoice for?"</span>)
+<span class="kw">var</span> clientName: <span class="ty">String</span>    <span class="cm">// ← "John Carter"</span>
+
+<span class="kw">@Parameter</span>(title: <span class="st">"Service"</span>, description: <span class="st">"The work being billed, like gardening"</span>,
+           requestValueDialog: <span class="st">"What's the invoice for?"</span>)
+<span class="kw">var</span> service: <span class="ty">String</span>       <span class="cm">// ← "Gardening"</span>
+
+<span class="kw">@Parameter</span>(title: <span class="st">"Amount"</span>, description: <span class="st">"The total to bill, in US dollars, like 450"</span>,
+           requestValueDialog: <span class="st">"How much should I bill?"</span>)
+<span class="kw">var</span> amount: <span class="ty">Double</span>        <span class="cm">// ← 450</span></code></pre>
+      <p>Because all three are filled, none of the <code>requestValueDialog</code> questions are asked.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">10</div>
+    <div>
+      <div class="who"><span class="chip tool">Create Invoice</span></div>
+      <h3>Create Invoice still checks everything itself</h3>
+      <p>Apple's rule: <em>every tool must work without a skill</em>. Create Invoice doesn't assume Siri got it right:</p>
+      <pre><code><span class="file">CreateInvoiceIntent.perform()</span><span class="kw">let</span> client = clientName.trimmingCharacters(in: .whitespacesAndNewlines)
+<span class="kw">let</span> work = service.trimmingCharacters(in: .whitespacesAndNewlines)
+<span class="kw">guard</span> !client.isEmpty <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.missingClient }    <span class="cm">// "An invoice needs a client name, like John."</span>
+<span class="kw">guard</span> !work.isEmpty <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.missingService }    <span class="cm">// "…a service to bill for, like gardening."</span>
+<span class="kw">guard</span> amount &gt; <span class="ty">0</span> <span class="kw">else</span> { <span class="kw">throw</span> <span class="ty">InvoiceError</span>.invalidAmount }      <span class="cm">// "The amount needs to be more than $0…"</span></code></pre>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">11</div>
+    <div>
+      <div class="who"><span class="chip tool">Create Invoice</span> → <span class="chip person">Person</span></div>
+      <h3>The DRAFT card is the one confirmation</h3>
+      <pre><code><span class="file">CreateInvoiceIntent.perform()</span><span class="kw">try await</span> requestConfirmation(
+  actionName: .custom(acceptLabel: <span class="st">"Create Invoice"</span>, acceptAlternatives: [<span class="st">"Yes"</span>, <span class="st">"Create it"</span>, <span class="st">"Send it"</span>],
+                      denyLabel: <span class="st">"Cancel"</span>, denyAlternatives: [<span class="st">"No"</span>, <span class="st">"Don't create it"</span>], destructive: <span class="kw">false</span>),
+  dialog: <span class="st">"Create an invoice for \(client) for \(Invoice.format(amount)) for \(work.lowercased())?"</span>,
+  snippetIntent: <span class="ty">InvoiceDraftSnippetIntent</span>(clientName: client, service: work, amount: amount)
+)</code></pre>
+      <p>The card shows the next number (<b>INV-0008</b>), “Bill to John Carter” in green with a leaf, because “gardening” picks that theme, and the due date two weeks out.</p>
+      <div class="callout">
+        <b>The card may not appear with Siri AI</b>
+        Apple notes that the new Siri might not display an app's dialog or card. The confirmation still happens; Siri may ask in its own words. From Shortcuts or “Create an invoice in Skyway” the card always shows.
+      </div>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-data">12</div>
+    <div>
+      <div class="who"><span class="chip tool">Create Invoice</span> → <span class="chip data">InvoiceStore</span></div>
+      <h3>INV-0008 is saved</h3>
+      <pre><code><span class="file">CreateInvoiceIntent.perform() → App/InvoiceStore.swift</span><span class="kw">let</span> invoice = <span class="ty">InvoiceStore</span>.createInvoice(clientName: client, service: work, amount: amount)
+<span class="cm">// INV-0008 · John Carter · Gardening · $450 · issued Nov 9 · due Nov 23</span></code></pre>
+      <p>It's now the newest invoice, so the next “bill John the usual” will find it first.</p>
+    </div>
+  </div>
+
+  <div class="detail">
+    <div class="big bg-tool">13</div>
+    <div>
+      <div class="who"><span class="chip tool">Create Invoice</span> → <span class="chip siri">Siri</span> → <span class="chip person">Person</span></div>
+      <h3>The result: ISSUED, with View Invoice and Undo</h3>
+      <pre><code><span class="file">CreateInvoiceIntent.perform()</span><span class="kw">return</span> .result(
+  value: invoice.entity,
+  dialog: <span class="st">"Created invoice \(invoice.number) for \(client): \(invoice.amountText) for \(work.lowercased()), due \(due)."</span>,
+  snippetIntent: <span class="ty">InvoiceCreatedSnippetIntent</span>(invoice: invoice)
+)</code></pre>
+      <p>From here everything works as in the <a href="CreateInvoiceGuide.html#undo">Create Invoice guide</a>: Undo voids it in place, and View Invoice opens it in Skyway.</p>
+    </div>
+  </div>
+
+  <!-- ───────────────────────── Variations ───────────────────────── -->
+  <h2 id="variations"><span class="chapter">What if…</span>Other vague requests</h2>
+  <p class="intro">Using the same three-invoice history.</p>
+  <div class="card">
+    <table>
+      <tr><th>The person says</th><th>Tools called</th><th>What the skill makes Siri do</th></tr>
+      <tr><td>“Create an invoice for John Carter, gardening, $450 in Skyway”</td><td><span class="chip tool">Create Invoice</span></td><td>Nothing's vague, so it goes straight to the DRAFT card.</td></tr>
+      <tr><td>“Invoice Maria for 3 dog walks at $40 each in Skyway”</td><td><span class="chip tool">Get Recent Invoices</span> → <span class="chip tool">Create Invoice</span></td><td>Maria → <b>Maria Lopez</b>. 3 × $40 → <b>$120</b>, and says how it got there.</td></tr>
+      <tr><td>“In Skyway, bill Ana again”</td><td><span class="chip tool">Get Recent Invoices</span> → <span class="chip tool">Create Invoice</span></td><td>Ana Park, logo design, $800, from INV-0005 on Oct 20.</td></tr>
+      <tr><td>“In Skyway, bill Sam for house cleaning”</td><td><span class="chip tool">Get Recent Invoices</span></td><td>No earlier invoice for Sam → <b>asks</b> for the amount. Never guesses.</td></tr>
+      <tr><td>“Bill John the usual” when there's a John Carter and a John Lee</td><td><span class="chip tool">Get Recent Invoices</span></td><td>Two Johns → asks which one.</td></tr>
+      <tr><td>“Bill John the usual” a second time on the same day</td><td><span class="chip tool">Get Recent Invoices</span></td><td>Finds today's INV-0008 → points it out and asks before making another.</td></tr>
+      <tr><td>“In Skyway, bill Maria for a walk and a bath”</td><td><span class="chip tool">Get Recent Invoices</span> → <span class="chip tool">Create Invoice</span> ×2</td><td>Two jobs → two invoices, unless the person asks for one combined invoice.</td></tr>
+      <tr><td>“In Skyway, bill Ana €200”</td><td>—</td><td>Explains invoices are in US dollars and asks for the amount in dollars.</td></tr>
+      <tr><td>“What did I bill recently in Skyway?”</td><td><span class="chip tool">Get Recent Invoices</span></td><td>Lists them. Creates nothing.</td></tr>
+    </table>
+  </div>
+
+  <!-- ───────────────────────── Ours vs Siri ───────────────────────── -->
+  <h2 id="ours"><span class="chapter">Boundaries</span>What's Skyway's code and what's Siri's</h2>
+  <div class="two">
+    <div class="card">
+      <h3 style="margin-top:0"><span class="chip tool">Skyway decides</span></h3>
+      <ul>
+        <li>What the tools are, and their titles and descriptions</li>
+        <li>Which invoices Get Recent Invoices returns, and which fields</li>
+        <li>Checking the values, the DRAFT card, numbering, saving</li>
+        <li>The skill's rules: look first, full names, the last amount, never guess, no duplicates, dollars only</li>
+      </ul>
+    </div>
+    <div class="card">
+      <h3 style="margin-top:0"><span class="chip siri">Siri decides</span></h3>
+      <ul>
+        <li>That the request is for Skyway and the invoicing skill applies</li>
+        <li>Matching “John” to John Carter and “the usual” to $450, by following the skill</li>
+        <li>The arithmetic for rates, like 3 × $40</li>
+        <li>How it phrases things, and whether it shows the card or speaks</li>
+      </ul>
+      <p style="color:var(--secondary);font-size:13px;margin-bottom:0">How Siri matches skills and tools internally isn't public. This describes the behavior Apple documents for Xcode 27.3.</p>
+    </div>
+  </div>
+
+  <div class="callout tip">
+    <b>Testing it</b>
+    Needs a real iPhone with Apple Intelligence on iOS 27.3. Create an invoice or two first so there's history, then try “In Skyway, bill John the usual”. Check that <code>Skyway.app/Metadata.appintents/Skills.skillsc</code> exists in the build.
+  </div>
+
+  <!-- ───────────────────────── Files ───────────────────────── -->
+  <h2 id="files"><span class="chapter">Reference</span>Files</h2>
+  <div class="card">
+    <table>
+      <tr><th>File</th><th>Role in this flow</th></tr>
+      <tr><td><code>Skills.skillsbundle/Skills/invoicing/SKILL.md</code></td><td>Steps 3, 4, 8: when it applies, the rules for filling gaps</td></tr>
+      <tr><td><code>Siri/Tools/GetRecentInvoicesIntent.swift</code></td><td>Steps 5–7: the history lookup</td></tr>
+      <tr><td><code>Siri/Entities/InvoiceEntity.swift</code></td><td>Step 7: what each invoice looks like to Siri, including Issued</td></tr>
+      <tr><td><code>Siri/Tools/CreateInvoiceIntent.swift</code></td><td>Steps 9–13: check, confirm, save, reply</td></tr>
+      <tr><td><code>Siri/Support/InvoiceError.swift</code></td><td>Step 10: errors Siri reads</td></tr>
+      <tr><td><code>Siri/Snippets/InvoiceSnippetIntents.swift</code>, <code>InvoiceCard.swift</code>, <code>InvoiceTheme.swift</code></td><td>Steps 11, 13: the DRAFT and ISSUED cards</td></tr>
+      <tr><td><code>InvoiceStore.swift</code>, <code>Invoice.swift</code></td><td>Steps 6, 12: reading and saving invoices, numbering</td></tr>
+      <tr><td><code>Project.json</code></td><td>Puts the skills bundle in Copy Bundle Resources so it's compiled</td></tr>
+    </table>
+  </div>
+
+  <footer>Skyway · Siri invoicing skill · App Intents tools and app skills, Xcode 27.3 / iOS 27.3. Related: <a href="SeatSelectionFlow.html">Seat selection flow</a> · <a href="CreateInvoiceGuide.html">Create Invoice guide</a>.</footer>
+</main>
+</body>
+</html>

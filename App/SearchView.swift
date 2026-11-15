@@ -35,6 +35,13 @@ struct SearchView: View {
       }
       .navigationTitle("Search")
       .searchable(text: $query, prompt: "Flights, bags, check-in…")
+      .toolbar {
+        NavigationLink {
+          SubscriptionView()
+        } label: {
+          Label("Skyway Plus", systemImage: "crown")
+        }
+      }
     }
   }
 

@@ -1,0 +1,657 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Skyway · App Store Retention Messaging guide</title>
+<style>
+  :root {
+    --bg: #f5f5f7;
+    --card: #ffffff;
+    --text: #1d1d1f;
+    --secondary: #6e6e73;
+    --border: #d2d2d7;
+    --accent: #3a3df0;
+    --accent-soft: #ececfe;
+    --green: #1f8a3b;
+    --green-soft: #e3f5e8;
+    --orange: #b25000;
+    --orange-soft: #fff1e0;
+    --purple: #8e3ccb;
+    --purple-soft: #f3e8fb;
+    --code-bg: #f0f0f3;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #000000;
+      --card: #1c1c1e;
+      --text: #f5f5f7;
+      --secondary: #98989d;
+      --border: #3a3a3c;
+      --accent: #8a8cff;
+      --accent-soft: #24244a;
+      --green: #30d158;
+      --green-soft: #12301b;
+      --orange: #ff9f0a;
+      --orange-soft: #33230a;
+      --purple: #bf5af2;
+      --purple-soft: #2c1838;
+      --code-bg: #2c2c2e;
+    }
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    padding: 48px 20px 64px;
+    background: var(--bg);
+    color: var(--text);
+    font: 15px/1.55 -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", sans-serif;
+  }
+  main { max-width: 880px; margin: 0 auto; }
+  h1 { font-size: 34px; letter-spacing: -0.02em; margin: 0 0 6px; }
+  h2 { font-size: 24px; letter-spacing: -0.01em; margin: 64px 0 8px; }
+  h2 + .sub { color: var(--secondary); margin: 0 0 20px; }
+  h3 { font-size: 17px; margin: 0 0 6px; }
+  .lede { color: var(--secondary); margin: 0 0 28px; font-size: 18px; }
+  code {
+    font: 13px "SF Mono", ui-monospace, Menlo, monospace;
+    background: var(--code-bg);
+    padding: 1px 5px;
+    border-radius: 5px;
+  }
+  pre {
+    background: var(--code-bg);
+    border-radius: 12px;
+    padding: 14px 16px;
+    overflow-x: auto;
+    font: 12.5px/1.5 "SF Mono", ui-monospace, Menlo, monospace;
+    margin: 10px 0 0;
+  }
+  pre code { background: none; padding: 0; }
+  a { color: var(--accent); }
+
+  nav.toc {
+    display: flex; flex-wrap: wrap; gap: 8px;
+    margin-bottom: 8px;
+  }
+  nav.toc a {
+    text-decoration: none;
+    font-size: 13px; font-weight: 600;
+    padding: 6px 12px;
+    border-radius: 999px;
+    background: var(--card);
+    border: 1px solid var(--border);
+  }
+
+  .card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    padding: 18px 20px;
+  }
+  .grid { display: grid; gap: 14px; }
+  .grid.three { grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); }
+  .grid.two { grid-template-columns: repeat(auto-fit, minmax(320px, 1fr)); }
+
+  .callout {
+    border-radius: 14px;
+    padding: 14px 18px;
+    margin: 18px 0;
+    border: 1px solid transparent;
+  }
+  .callout.key { background: var(--accent-soft); border-color: var(--accent); }
+  .callout.warn { background: var(--orange-soft); border-color: var(--orange); }
+  .callout strong:first-child { display: block; margin-bottom: 2px; }
+
+  /* Players */
+  .player .icon {
+    width: 40px; height: 40px; border-radius: 10px;
+    display: inline-flex; align-items: center; justify-content: center;
+    font-size: 20px; margin-bottom: 8px; color: #fff;
+  }
+  .player.asc .icon { background: var(--accent); }
+  .player.server .icon { background: var(--purple); }
+  .player.app .icon { background: var(--green); }
+  .player ul { margin: 6px 0 0; padding-left: 18px; }
+  .player li { margin: 3px 0; }
+  .pill {
+    display: inline-block;
+    font-size: 11px; font-weight: 700; letter-spacing: 0.03em; text-transform: uppercase;
+    padding: 2px 8px; border-radius: 999px;
+    vertical-align: middle;
+  }
+  .pill.req { background: var(--accent-soft); color: var(--accent); }
+  .pill.opt { background: var(--purple-soft); color: var(--purple); }
+  .pill.app { background: var(--green-soft); color: var(--green); }
+
+  /* Sequence diagram */
+  .seq { overflow-x: auto; }
+  .seq svg { display: block; min-width: 760px; width: 100%; height: auto; }
+  .seq text { font-family: -apple-system, BlinkMacSystemFont, sans-serif; fill: var(--text); }
+  .seq .lane-title { font-size: 13px; font-weight: 700; }
+  .seq .lane-line { stroke: var(--border); stroke-width: 2; stroke-dasharray: 4 5; }
+  .seq .msg { font-size: 12.5px; }
+  .seq .muted { fill: var(--secondary); font-size: 11.5px; }
+  .seq .arrow { stroke: var(--text); stroke-width: 1.6; fill: none; }
+  .seq .arrow.rt { stroke: var(--purple); }
+  .seq .arrow.app { stroke: var(--green); }
+  .seq .box { fill: var(--card); stroke: var(--border); }
+  .seq .rt-zone { fill: var(--purple-soft); }
+  .seq .rt-label { fill: var(--purple); font-size: 11px; font-weight: 700; }
+
+  /* Steps */
+  .steps { counter-reset: s; list-style: none; padding: 0; margin: 0; display: grid; gap: 12px; }
+  .steps > li {
+    counter-increment: s;
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 14px 18px 14px 58px;
+    position: relative;
+  }
+  .steps > li::before {
+    content: counter(s);
+    position: absolute; left: 18px; top: 14px;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--text); color: var(--bg);
+    font-weight: 700; font-size: 13px;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .steps.asc > li::before { background: var(--accent); color: #fff; }
+  .steps.rt > li::before { background: var(--purple); color: #fff; }
+  .steps ul { margin: 6px 0 0; padding-left: 18px; }
+
+  .breadcrumb {
+    display: flex; flex-wrap: wrap; align-items: center; gap: 6px;
+    font-size: 14px; font-weight: 600;
+    margin: 8px 0 4px;
+  }
+  .breadcrumb span {
+    background: var(--accent-soft); color: var(--accent);
+    padding: 4px 10px; border-radius: 8px;
+  }
+  .breadcrumb i { color: var(--secondary); font-style: normal; }
+
+  /* Fake App Store Connect window */
+  .asc-window {
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    overflow: hidden;
+    background: var(--card);
+    margin-top: 14px;
+    font-size: 13px;
+  }
+  .asc-window .bar {
+    display: flex; align-items: center; gap: 6px;
+    padding: 9px 12px;
+    border-bottom: 1px solid var(--border);
+    background: var(--code-bg);
+  }
+  .asc-window .dot { width: 11px; height: 11px; border-radius: 50%; background: var(--border); }
+  .asc-window .bar b { margin-left: 10px; font-weight: 600; color: var(--secondary); }
+  .asc-window .tabs {
+    display: flex; gap: 20px; padding: 10px 16px;
+    border-bottom: 1px solid var(--border);
+    font-weight: 600; color: var(--secondary);
+  }
+  .asc-window .tabs .on { color: var(--text); border-bottom: 2px solid var(--accent); padding-bottom: 8px; margin-bottom: -11px; }
+  .asc-window .body { display: grid; grid-template-columns: 210px 1fr; min-height: 260px; }
+  .asc-window .side { border-right: 1px solid var(--border); padding: 12px 0; }
+  .asc-window .side div { padding: 5px 16px; color: var(--secondary); }
+  .asc-window .side .grp { font-size: 11px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; margin-top: 8px; }
+  .asc-window .side .on { color: var(--accent); background: var(--accent-soft); font-weight: 600; }
+  .asc-window .main { padding: 16px 18px; }
+  .asc-window .field { margin-bottom: 10px; }
+  .asc-window .field label { display: block; font-size: 11px; color: var(--secondary); font-weight: 600; margin-bottom: 3px; }
+  .asc-window .field div {
+    border: 1px solid var(--border); border-radius: 7px; padding: 6px 9px;
+  }
+  .asc-window .btn {
+    display: inline-block; background: var(--accent); color: #fff;
+    padding: 6px 14px; border-radius: 8px; font-weight: 600;
+  }
+  .hl { outline: 3px solid var(--orange); outline-offset: 2px; border-radius: 6px; }
+
+  /* Phone mockup */
+  .phone-row { display: grid; grid-template-columns: 250px 1fr; gap: 24px; align-items: start; }
+  @media (max-width: 640px) { .phone-row { grid-template-columns: 1fr; } }
+  .phone {
+    border: 8px solid #1d1d1f;
+    border-radius: 38px;
+    padding: 18px 14px;
+    background: #fff;
+    color: #1d1d1f;
+    font-size: 11px;
+  }
+  .phone .appicon {
+    width: 46px; height: 46px; border-radius: 12px; margin: 4px auto 10px;
+    background: linear-gradient(135deg, #5b5ef7, #2b2ee0);
+    display: flex; align-items: center; justify-content: center; color: #fff; font-size: 22px;
+  }
+  .phone h4 { margin: 0; font-size: 15px; }
+  .phone .gray { color: #8e8e93; font-size: 12px; margin-bottom: 10px; }
+  .phone .dev {
+    border: 1px solid #e5e5ea; border-radius: 12px; overflow: hidden; position: relative;
+  }
+  .phone .dev .h { background: #f2f2f7; padding: 5px 8px; font-weight: 700; font-size: 9.5px; color: #6e6e73; }
+  .phone .dev .img { height: 66px; margin: 8px; border-radius: 8px; background: linear-gradient(135deg, #5856d6, #30b0c7); color: #fff; display: flex; align-items: center; justify-content: center; font-weight: 700; }
+  .phone .dev .t { padding: 0 8px 8px; }
+  .phone .btns div { margin-top: 7px; padding: 8px; text-align: center; border-radius: 999px; background: #f2f2f7; color: #3a3df0; font-weight: 600; }
+  .phone .zone { outline: 3px dashed var(--orange); outline-offset: 3px; }
+  .legend-item { display: flex; gap: 10px; margin-bottom: 10px; }
+  .legend-item .sw { flex: none; width: 14px; height: 14px; border-radius: 4px; margin-top: 4px; }
+
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th, td { text-align: left; padding: 9px 10px; border-bottom: 1px solid var(--border); vertical-align: top; }
+  th { color: var(--secondary); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; }
+  tr:last-child td { border-bottom: 0; }
+  .yes { color: var(--green); font-weight: 700; }
+  .no { color: var(--secondary); }
+
+  /* Fallback chain */
+  .chain { display: flex; flex-wrap: wrap; align-items: stretch; gap: 8px; }
+  .chain .link {
+    flex: 1 1 180px;
+    background: var(--card); border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px;
+  }
+  .chain .link small { color: var(--secondary); display: block; }
+  .chain .sep { align-self: center; color: var(--secondary); font-size: 13px; }
+
+  .rules li { margin: 4px 0; }
+  .rules .bad { color: var(--orange); font-weight: 600; }
+  .rules .good { color: var(--green); font-weight: 600; }
+
+  footer { margin-top: 64px; color: var(--secondary); font-size: 13px; }
+</style>
+</head>
+<body>
+<main>
+
+<h1>App Store Retention Messaging</h1>
+<p class="lede">How the "Confirm Cancellation" message works, who decides what it says, and where to click in App Store Connect. Written for Skyway Plus, the mock subscription in this project.</p>
+
+<nav class="toc">
+  <a href="#picture">1 · Big picture</a>
+  <a href="#sheet">2 · What you control</a>
+  <a href="#flow">3 · The flow</a>
+  <a href="#choose">4 · Which setup?</a>
+  <a href="#asc">5 · App Store Connect steps</a>
+  <a href="#realtime">6 · Real-time server</a>
+  <a href="#app">7 · In the app</a>
+  <a href="#test">8 · Testing</a>
+  <a href="#rules">9 · Content rules</a>
+</nav>
+
+<div class="callout key">
+  <strong>The one thing to remember</strong>
+  The cancellation sheet is Apple's screen. Your words and pictures are <em>uploaded to Apple ahead of time</em> and approved by App Review. At most, a server you run picks <em>which</em> uploaded message to show. Your app never draws this screen.
+</div>
+
+<!-- 1 -->
+<h2 id="picture">1 · The big picture</h2>
+<p class="sub">Three players. Only the first is required.</p>
+<div class="grid three">
+  <div class="card player asc">
+    <div class="icon">✎</div>
+    <h3>App Store Connect <span class="pill req">Required</span></h3>
+    Where messages live.
+    <ul>
+      <li>Header, body, bullet points</li>
+      <li>Optional image (Asset Library)</li>
+      <li>Optional Retention Offers</li>
+      <li>Link to subscriptions</li>
+      <li>Submitted for review</li>
+    </ul>
+  </div>
+  <div class="card player server">
+    <div class="icon">⚙︎</div>
+    <h3>Your server <span class="pill opt">Optional</span></h3>
+    Picks a message per subscriber, in real time.
+    <ul>
+      <li>Apple calls it when someone may cancel</li>
+      <li>Replies with a message ID</li>
+      <li>Can suggest another plan or a promotional offer</li>
+      <li>Must answer within 700 ms</li>
+      <li>Access by request to Apple</li>
+    </ul>
+  </div>
+  <div class="card player app">
+    <div class="icon">✈︎</div>
+    <h3>Skyway app <span class="pill app">Your code</span></h3>
+    Sells the plan and reacts to the result.
+    <ul>
+      <li>Sells Monthly / Annual (StoreKit 2)</li>
+      <li>Opens Apple's manage sheet</li>
+      <li>Reads the resulting transactions</li>
+      <li>Spots offer type <code>5</code> (Retention Offer)</li>
+    </ul>
+  </div>
+</div>
+
+<!-- 2 -->
+<h2 id="sheet">2 · What part of the screen is yours</h2>
+<p class="sub">Everything outside the dashed box is drawn and worded by Apple.</p>
+<div class="phone-row">
+  <div class="phone">
+    <div class="appicon">✈︎</div>
+    <h4>Confirm Cancellation</h4>
+    <div class="gray">If you cancel this subscription, your service will end on December 5, 2026.</div>
+    <div class="dev zone">
+      <div class="h">From the Developer</div>
+      <div class="img">🚗 Mileage Log</div>
+      <div class="t"><b>Keep your mileage log</b><br>If you cancel, Skyway stops logging drives from CarPlay.</div>
+    </div>
+    <div class="btns">
+      <div>Cancel Subscription</div>
+      <div>Keep Subscription</div>
+    </div>
+  </div>
+  <div>
+    <div class="legend-item"><span class="sw" style="background: var(--orange)"></span><div><b>"From the Developer" card: yours.</b> Header, body, bullets, and optional image come from the message you uploaded. A <b>Switch Plan</b> or <b>Accept Offer</b> button appears here when your message has an offer or plan suggestion. Apple writes the price on that button, not you.</div></div>
+    <div class="legend-item"><span class="sw" style="background: var(--border)"></span><div><b>Everything else: Apple's.</b> App icon, title, end date, and the Cancel and Keep buttons.</div></div>
+    <h3 style="margin-top:18px">The four message types</h3>
+    <table>
+      <tr><th>Type</th><th>Configured in</th></tr>
+      <tr><td>Text (with bullets)</td><td>App Store Connect or API</td></tr>
+      <tr><td>Text + image</td><td>App Store Connect or API (image from Asset Library)</td></tr>
+      <tr><td>Text + Retention Offer</td><td>App Store Connect (Apple checks eligibility)</td></tr>
+      <tr><td>Switch plan</td><td>Real-time server only</td></tr>
+      <tr><td>Text + promotional offer</td><td>Real-time server (it signs the offer)</td></tr>
+    </table>
+  </div>
+</div>
+
+<!-- 3 -->
+<h2 id="flow">3 · The flow, step by step</h2>
+<p class="sub">From "I want to cancel" to your app learning what happened. The purple band only happens if you run a real-time server.</p>
+
+<div class="card seq">
+<svg viewBox="0 0 860 640" role="img" aria-label="Sequence diagram of the retention messaging flow">
+  <!-- lanes -->
+  <g>
+    <rect class="box" x="10" y="10" width="140" height="40" rx="10"/>
+    <text class="lane-title" x="80" y="35" text-anchor="middle">Subscriber</text>
+    <rect class="box" x="185" y="10" width="160" height="40" rx="10"/>
+    <text class="lane-title" x="265" y="35" text-anchor="middle">iPhone (Apple's sheet)</text>
+    <rect class="box" x="380" y="10" width="150" height="40" rx="10"/>
+    <text class="lane-title" x="455" y="35" text-anchor="middle">App Store servers</text>
+    <rect class="box" x="565" y="10" width="130" height="40" rx="10"/>
+    <text class="lane-title" x="630" y="35" text-anchor="middle">Your server</text>
+    <rect class="box" x="725" y="10" width="125" height="40" rx="10"/>
+    <text class="lane-title" x="787" y="35" text-anchor="middle">Skyway app</text>
+  </g>
+  <line class="lane-line" x1="80" y1="50" x2="80" y2="630"/>
+  <line class="lane-line" x1="265" y1="50" x2="265" y2="630"/>
+  <line class="lane-line" x1="455" y1="50" x2="455" y2="630"/>
+  <line class="lane-line" x1="630" y1="50" x2="630" y2="630"/>
+  <line class="lane-line" x1="787" y1="50" x2="787" y2="630"/>
+
+  <defs>
+    <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M0,0 L10,5 L0,10 z" fill="currentColor"/>
+    </marker>
+  </defs>
+
+  <!-- 0 setup -->
+  <text class="muted" x="455" y="78" text-anchor="middle">Beforehand: messages uploaded + approved in App Store Connect</text>
+
+  <!-- 1 -->
+  <line class="arrow" x1="787" y1="105" x2="272" y2="105" marker-end="url(#ah)" style="color: var(--green); stroke: var(--green)"/>
+  <text class="msg" x="530" y="98" text-anchor="middle">① App opens Manage Subscription (optional; Settings works too)</text>
+
+  <!-- 2 -->
+  <line class="arrow" x1="80" y1="145" x2="258" y2="145" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="170" y="138" text-anchor="middle">② Views subscription</text>
+
+  <!-- realtime zone -->
+  <rect class="rt-zone" x="275" y="160" width="430" height="150" rx="12"/>
+  <text class="rt-label" x="290" y="178">REAL-TIME ONLY</text>
+
+  <line class="arrow" x1="265" y1="200" x2="448" y2="200" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="360" y="193" text-anchor="middle">③ Which message?</text>
+
+  <line class="arrow rt" x1="455" y1="235" x2="623" y2="235" marker-end="url(#ah)" style="color: var(--purple)"/>
+  <text class="msg" x="542" y="228" text-anchor="middle">④ POST signedPayload</text>
+  <text class="muted" x="542" y="250" text-anchor="middle">productId, locale, originalTransactionId…</text>
+
+  <line class="arrow rt" x1="630" y1="285" x2="462" y2="285" marker-end="url(#ah)" style="color: var(--purple)"/>
+  <text class="msg" x="545" y="278" text-anchor="middle">⑤ 200 + messageIdentifier</text>
+  <text class="muted" x="545" y="300" text-anchor="middle">within 700 ms, or Apple falls back</text>
+
+  <!-- 6 -->
+  <line class="arrow" x1="455" y1="340" x2="272" y2="340" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="362" y="333" text-anchor="middle">⑥ Message (+ image/offer)</text>
+
+  <!-- 7 -->
+  <line class="arrow" x1="80" y1="380" x2="258" y2="380" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="170" y="373" text-anchor="middle">⑦ Taps Cancel Subscription</text>
+
+  <line class="arrow" x1="265" y1="415" x2="88" y2="415" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="172" y="408" text-anchor="middle">⑧ Confirm Cancellation sheet</text>
+  <text class="muted" x="172" y="430" text-anchor="middle">with "From the Developer" card</text>
+
+  <!-- 9 choices -->
+  <line class="arrow" x1="80" y1="470" x2="258" y2="470" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="170" y="463" text-anchor="middle">⑨ Chooses</text>
+  <text class="muted" x="170" y="488" text-anchor="middle">Cancel · Keep · Accept Offer · Switch Plan</text>
+
+  <line class="arrow" x1="265" y1="520" x2="448" y2="520" marker-end="url(#ah)" style="color: var(--text)"/>
+  <text class="msg" x="360" y="513" text-anchor="middle">⑩ Applies the choice</text>
+
+  <!-- 11 -->
+  <line class="arrow app" x1="455" y1="570" x2="780" y2="570" marker-end="url(#ah)" style="color: var(--green)"/>
+  <text class="msg" x="618" y="563" text-anchor="middle">⑪ Transaction.updates / renewal info</text>
+  <text class="muted" x="618" y="590" text-anchor="middle">offerType 5 · new productId · willAutoRenew = false</text>
+
+  <text class="muted" x="787" y="620" text-anchor="middle">⑫ Update UI &amp; access</text>
+</svg>
+</div>
+
+<h3 style="margin-top:22px">If your server doesn't answer in time</h3>
+<div class="chain">
+  <div class="link"><b>1. Your real-time response</b><small>Valid, 200 OK, under 700 ms</small></div>
+  <div class="sep">fails →</div>
+  <div class="link"><b>2. App Store Connect message</b><small>With an eligible Retention Offer</small></div>
+  <div class="sep">none →</div>
+  <div class="link"><b>3. Default message</b><small>Set per product + locale via the API</small></div>
+</div>
+<p class="sub" style="margin-top:10px">Try this in Skyway: choose <b>Server timeout</b> in the Server Response picker.</p>
+
+<!-- 4 -->
+<h2 id="choose">4 · Which setup do you need?</h2>
+<div class="grid two">
+  <div class="card">
+    <h3><span class="pill req">Simple</span> App Store Connect only</h3>
+    <ul>
+      <li>One message per subscription, the same for everyone</li>
+      <li>Text, text + image, or text + Retention Offer</li>
+      <li>Apple decides who is eligible for offers</li>
+      <li>No backend, no access request</li>
+    </ul>
+    <p><b>Good for:</b> most apps. Skyway could start here with "Keep your mileage log".</p>
+  </div>
+  <div class="card">
+    <h3><span class="pill opt">Advanced</span> Real-time server</h3>
+    <ul>
+      <li>A different message per subscriber</li>
+      <li>Switch-plan suggestions (Monthly → Annual)</li>
+      <li>Your own offer eligibility rules + signed promotional offers</li>
+      <li>Needs JWS verification, a 700 ms deadline, a performance test, and Apple's approval</li>
+    </ul>
+    <p><b>Good for:</b> when you already know your subscribers (Skyway knows who logs CarPlay drives).</p>
+  </div>
+</div>
+
+<!-- 5 -->
+<h2 id="asc">5 · Where to go in App Store Connect</h2>
+<p class="sub">This is the part you'd do by hand for text and text + image messages.</p>
+
+<div class="breadcrumb">
+  <span>appstoreconnect.apple.com</span><i>›</i>
+  <span>Apps</span><i>›</i>
+  <span>Skyway</span><i>›</i>
+  <span>Monetization</span><i>›</i>
+  <span>Subscriptions</span><i>›</i>
+  <span>Retention Messaging</span><i>›</i>
+  <span>Get Started</span>
+</div>
+
+<div class="asc-window" aria-label="Illustration of App Store Connect">
+  <div class="bar"><span class="dot"></span><span class="dot"></span><span class="dot"></span><b>App Store Connect: Skyway</b></div>
+  <div class="tabs"><span>Distribution</span><span>TestFlight</span><span class="on">Monetization</span><span>Analytics</span></div>
+  <div class="body">
+    <div class="side">
+      <div class="grp">Monetization</div>
+      <div>In-App Purchases</div>
+      <div>Subscriptions</div>
+      <div style="padding-left:28px">Skyway Plus</div>
+      <div class="on hl" style="padding-left:28px">Retention Messaging</div>
+      <div>Pricing</div>
+    </div>
+    <div class="main">
+      <h3>New Retention Message</h3>
+      <div class="field"><label>REFERENCE NAME (internal)</label><div>Keep mileage log</div></div>
+      <div class="field"><label>HEADER</label><div>Keep your mileage log</div></div>
+      <div class="field"><label>BODY</label><div>If you cancel, Skyway stops logging drives from CarPlay. You'll lose:<br>• Automatic trip detection in CarPlay<br>• Business and personal mileage reports</div></div>
+      <div class="field"><label>IMAGE (optional, from Asset Library)</label><div>mileage-log-hero.png</div></div>
+      <div class="field"><label>SUBSCRIPTIONS</label><div>Skyway Plus Monthly, Skyway Plus Annual</div></div>
+      <span class="btn">Submit for Review</span>
+    </div>
+  </div>
+</div>
+<p class="sub" style="margin-top:8px">Illustration only. Apple's real page may be laid out differently, but the fields and steps are the same.</p>
+
+<ol class="steps asc" style="margin-top:18px">
+  <li><b>Have an auto-renewable subscription.</b> Skyway Plus Monthly and Annual must exist as real products in the "Skyway Plus" group. Today they only exist in the local test file <code>StoreKit/SkywayPlus.storekit</code>.</li>
+  <li><b>Open Retention Messaging</b> using the path above, then choose <b>Get Started</b>.</li>
+  <li><b>Write the message.</b>
+    <ul>
+      <li>Reference name: internal only (e.g. "Keep mileage log").</li>
+      <li>Header and body: what subscribers read. Bullet points are allowed.</li>
+      <li>Add localizations for each language you support.</li>
+    </ul>
+  </li>
+  <li><b>Optionally add an image</b> from the App Store Connect <b>Asset Library</b>. This is what makes it a "text + image" message.</li>
+  <li><b>Optionally add Retention Offers</b>: a discounted price or free period (Pay as you go, Pay up front, or Free). Set eligibility:
+    <ul>
+      <li><b>Paid Subscription Duration</b>: how long someone must have paid before they qualify.</li>
+      <li><b>Wait Between Offers</b>: how long before the same offer can be redeemed again.</li>
+    </ul>
+    Up to 10 offers per billing plan type. Apple picks which eligible one to show.
+  </li>
+  <li><b>Link it to subscriptions.</b> Each subscription can have one message at a time. One message can cover several subscriptions. Up to 10 messages per app.</li>
+  <li><b>Submit for review.</b> Sandbox testers can see drafts before approval.</li>
+  <li><b>Changing it later:</b> edit and resubmit. The approved version stays live until the new one is approved. <b>No app update needed.</b></li>
+</ol>
+
+<div class="callout key">
+  <strong>Prefer scripts over clicking?</strong>
+  The same setup is available from the Retention Messaging API: <code>Upload Image</code>, <code>Upload Message</code> (header, body, bullets, image ID), and <code>Configure Default Message</code> for the fallback.
+</div>
+
+<!-- 6 -->
+<h2 id="realtime">6 · Adding a real-time server</h2>
+<p class="sub">Only if you want per-subscriber choices. All configuration here is done through the API, not the website.</p>
+<ol class="steps rt">
+  <li><b>Request access</b> to the real-time Retention Messaging API from Apple.</li>
+  <li><b>Upload every message you might pick</b> (section 5, or <code>Upload Message</code>), and wait for approval. Your server can only point to approved messages by ID.</li>
+  <li><b>Build the endpoint.</b> Apple sends <code>{"signedPayload": "&lt;JWS&gt;"}</code>. Verify it, decode it, decide, then reply:
+<pre><code>// Show a message (text, or text + image)
+{ "message": { "messageIdentifier": "6a1f3b2e-…" } }
+
+// Suggest another plan in the group
+{ "alternateProduct": { "messageIdentifier": "ed7f25fc-…", "productId": "skyway.plus.annual" } }
+
+// Promotional offer, signed by your server
+{ "promotionalOffer": { "messageIdentifier": "c4d9e1a7-…", "promotionalOfferSignatureV2": "&lt;JWS&gt;" } }</code></pre>
+  </li>
+  <li><b>Point Sandbox at it</b> with <code>Configure Realtime URL</code>.</li>
+  <li><b>Pass the performance test</b> (<code>Initiate Performance Test</code>, then <code>Get Performance Test Results</code>). It proves you answer within 700 ms.</li>
+  <li><b>Configure the production URL</b>, then watch the App Store Retention Messaging analytics report.</li>
+</ol>
+
+<h3 style="margin-top:20px">Skyway's decision rules (in <code>RetentionDecisionEngine.swift</code>)</h3>
+<table class="card" style="padding:0">
+  <tr><th>If the subscriber…</th><th>Server replies</th><th>They see</th></tr>
+  <tr><td>Logged 3+ drives in CarPlay</td><td><code>message</code></td><td>"Keep your mileage log" + image + bullets</td></tr>
+  <tr><td>Is on Monthly</td><td><code>alternateProduct</code></td><td>"Prefer to pay once a year?" + Switch Plan</td></tr>
+  <tr><td>Subscribed 6+ months, no previous offer</td><td><code>promotionalOffer</code></td><td>"Stay for the trips ahead" + Accept Offer</td></tr>
+  <tr><td>Anything else</td><td><code>message</code></td><td>Default text message</td></tr>
+</table>
+
+<!-- 7 -->
+<h2 id="app">7 · What the app does</h2>
+<div class="grid two">
+  <div class="card">
+    <h3>Open Apple's sheet</h3>
+<pre><code>.manageSubscriptionsSheet(
+  isPresented: $isManaging,
+  subscriptionGroupID: SubscriptionStore.groupID
+)</code></pre>
+    <p class="sub" style="margin:8px 0 0">In <code>SubscriptionView.swift</code>. Opening it from Settings › Apple Account › Subscriptions works the same.</p>
+  </div>
+  <div class="card">
+    <h3>Find out what they chose</h3>
+<pre><code>extension Transaction.OfferType {
+  static let retention = Self(rawValue: 5)
+}
+
+if offer?.type == .retention   { /* Retention Offer */ }
+if offer?.type == .promotional { /* real-time offer */ }
+if productID changed           { /* switched plan */ }
+if !renewalInfo.willAutoRenew  { /* cancelled */ }</code></pre>
+    <p class="sub" style="margin:8px 0 0">In <code>SubscriptionStore.swift</code>.</p>
+  </div>
+</div>
+
+<table style="margin-top:16px">
+  <tr><th>Skyway file</th><th>Stands in for</th></tr>
+  <tr><td><code>RetentionMessage.swift</code></td><td>The messages uploaded and approved in App Store Connect</td></tr>
+  <tr><td><code>RetentionRealtimeRequest.swift</code></td><td>What Apple POSTs to your server</td></tr>
+  <tr><td><code>RetentionRealtimeResponse.swift</code></td><td>What your server returns</td></tr>
+  <tr><td><code>RetentionDecisionEngine.swift</code></td><td>Your server's logic, including the 700 ms fallback</td></tr>
+  <tr><td><code>CancellationPreviewSheet.swift</code></td><td>Apple's Confirm Cancellation screen, recreated for the simulator</td></tr>
+  <tr><td><code>StoreKit/SkywayPlus.storekit</code></td><td>The products you'd create in App Store Connect</td></tr>
+</table>
+
+<!-- 8 -->
+<h2 id="test">8 · Testing</h2>
+<table>
+  <tr><th>Where</th><th>Real Apple sheet?</th><th>What you can check</th></tr>
+  <tr><td>Simulator + <code>SkywayPlus.storekit</code></td><td class="no">No</td><td>Buying plans, Switch Plan, and every layout via <b>Preview Cancellation</b></td></tr>
+  <tr><td>Your iPhone via Run on… + Sandbox Apple Account</td><td class="yes">Yes</td><td>Draft or approved messages, real Retention Offer transactions (offer type 5)</td></tr>
+  <tr><td>App Store Connect › Sandbox preview</td><td class="yes">Preview</td><td>How the message looks, including the version for subscribers who aren't eligible for the offer</td></tr>
+</table>
+
+<!-- 9 -->
+<h2 id="rules">9 · Content rules (or App Review rejects it)</h2>
+<div class="grid two rules">
+  <div class="card">
+    <h3 class="bad">Don't write</h3>
+    <ul>
+      <li>Prices: "$9.99"</li>
+      <li>Discounts: "50% off"</li>
+      <li>Promotions: "one month free"</li>
+      <li>Pressure: "Last chance!", "You'll regret it"</li>
+      <li>Claims you can't back up</li>
+    </ul>
+  </div>
+  <div class="card">
+    <h3 class="good">Do write</h3>
+    <ul>
+      <li>Features they'll lose, if accurate: "Skyway stops logging drives from CarPlay"</li>
+      <li>What's coming next</li>
+      <li>Leave the offer terms to Apple's offer button</li>
+    </ul>
+  </div>
+</div>
+
+<footer>
+  Sources: Apple's Retention Messaging API documentation and
+  <a href="https://livsycode.com/best-practices/retention-messaging-in-app-store-subscriptions/">livsycode.com: Retention Messaging in App Store Subscriptions</a>.
+  See also <code>Docs/RetentionMessaging.md</code> for the developer reference.
+</footer>
+
+</main>
+</body>
+</html>
