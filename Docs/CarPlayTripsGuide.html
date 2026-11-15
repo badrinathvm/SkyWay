@@ -301,12 +301,12 @@
     <thead><tr><th>File</th><th>Role</th></tr></thead>
     <tbody>
       <tr><td><code>App/CarPlaySceneDelegate.swift</code></td><td>Entry point iOS calls when the car connects. Builds the 4 tabs and hands the Trips tab to the controller.</td></tr>
-      <tr><td><code>App/CarPlayTripsController.swift</code></td><td>Builds and updates every Trips screen, and handles every tap.</td></tr>
-      <tr><td><code>App/DriveTripStore.swift</code></td><td>Shared, saved state: the active trip, past trips, current location, and the mileage math.</td></tr>
-      <tr><td><code>App/DriveTracker.swift</code></td><td>Turns <code>CLLocationUpdate.liveUpdates</code> into a stream of accurate fixes. Includes a fake drive for testing.</td></tr>
-      <tr><td><code>App/DriveTrip.swift</code></td><td>The trip struct: dates, coordinates, addresses, miles, purpose, and formatted text.</td></tr>
-      <tr><td><code>App/DriveTripIntents.swift</code></td><td>Siri / Shortcuts actions to start and end a trip.</td></tr>
-      <tr><td><code>App/SkywayShortcuts.swift</code></td><td>The spoken phrases for those actions.</td></tr>
+      <tr><td><code>App/Mileage/CarPlay/CarPlayTripsController.swift</code></td><td>Builds and updates every Trips screen, and handles every tap.</td></tr>
+      <tr><td><code>App/Mileage/Models/DriveTripStore.swift</code></td><td>Shared, saved state: the active trip, past trips, current location, and the mileage math.</td></tr>
+      <tr><td><code>App/Mileage/Models/DriveTracker.swift</code></td><td>Turns <code>CLLocationUpdate.liveUpdates</code> into a stream of accurate fixes. Includes a fake drive for testing.</td></tr>
+      <tr><td><code>App/Mileage/Models/DriveTrip.swift</code></td><td>The trip struct: dates, coordinates, addresses, miles, purpose, and formatted text.</td></tr>
+      <tr><td><code>App/Mileage/Siri/DriveTripIntents.swift</code></td><td>Siri / Shortcuts actions to start and end a trip.</td></tr>
+      <tr><td><code>App/Siri/Tools/SkywayShortcuts.swift</code></td><td>The spoken phrases for those actions.</td></tr>
     </tbody>
   </table>
 
@@ -491,7 +491,7 @@
   <p class="intro">This file holds all the Trips UI. Each part below is shown as code, followed by what it does and why.</p>
 
   <h3>7.1 · Properties and init</h3>
-  <pre><code><span class="file">App/CarPlayTripsController.swift</span><span class="kw">@MainActor</span>
+  <pre><code><span class="file">App/Mileage/CarPlay/CarPlayTripsController.swift</span><span class="kw">@MainActor</span>
 <span class="kw">final class</span> <span class="ty">CarPlayTripsController</span>: <span class="ty">NSObject</span> {
   <span class="kw">let</span> rootTemplate: <span class="ty">CPListTemplate</span>
   <span class="kw">private weak var</span> interfaceController: <span class="ty">CPInterfaceController</span>?
@@ -767,7 +767,7 @@ interfaceController?.presentTemplate(alert, animated: <span class="kw">true</spa
     <span class="sep">→</span>
     <div class="box model"><strong>miles += m / 1609.344</strong><small>save every 15 s</small></div>
   </div>
-  <pre><code><span class="file">App/DriveTracker.swift</span>serviceSession = <span class="ty">CLServiceSession</span>(authorization: .whenInUse)   <span class="cm">// asks for permission on iPhone</span>
+  <pre><code><span class="file">App/Mileage/Models/DriveTracker.swift</span>serviceSession = <span class="ty">CLServiceSession</span>(authorization: .whenInUse)   <span class="cm">// asks for permission on iPhone</span>
 backgroundSession = <span class="ty">CLBackgroundActivitySession</span>()             <span class="cm">// keeps updates coming while locked</span>
 <span class="kw">for try await</span> update <span class="kw">in</span> <span class="ty">CLLocationUpdate</span>.liveUpdates(.automotiveNavigation) {
   <span class="kw">if</span> update.authorizationDenied || update.authorizationDeniedGlobally || update.authorizationRestricted {
@@ -821,10 +821,10 @@ backgroundSession = <span class="ty">CLBackgroundActivitySession</span>()       
   <table>
     <thead><tr><th>File</th><th>Role</th></tr></thead>
     <tbody>
-      <tr><td><code>App/TripBackend.swift</code></td><td>Protocol with one method, <code>upload(_:)</code>. Uploads must be safe to repeat (keyed by <code>trip.id</code>).</td></tr>
-      <tr><td><code>App/SwiftDataTripBackend.swift</code></td><td>Stand-in server: upserts into <code>SyncedTrips.store</code>. <code>-failTripSync</code> makes every upload fail, for testing retries.</td></tr>
-      <tr><td><code>App/SyncedTripRecord.swift</code></td><td>The SwiftData <code>@Model</code>, shaped like the server's data. Delete it when the real server exists.</td></tr>
-      <tr><td><code>App/TripSyncer.swift</code></td><td>The queue: uploads oldest first, stops at the first failure, retries with backoff, and gets extra background time.</td></tr>
+      <tr><td><code>App/Mileage/Sync/TripBackend.swift</code></td><td>Protocol with one method, <code>upload(_:)</code>. Uploads must be safe to repeat (keyed by <code>trip.id</code>).</td></tr>
+      <tr><td><code>App/Mileage/Sync/SwiftDataTripBackend.swift</code></td><td>Stand-in server: upserts into <code>SyncedTrips.store</code>. <code>-failTripSync</code> makes every upload fail, for testing retries.</td></tr>
+      <tr><td><code>App/Mileage/Sync/SyncedTripRecord.swift</code></td><td>The SwiftData <code>@Model</code>, shaped like the server's data. Delete it when the real server exists.</td></tr>
+      <tr><td><code>App/Mileage/Sync/TripSyncer.swift</code></td><td>The queue: uploads oldest first, stops at the first failure, retries with backoff, and gets extra background time.</td></tr>
     </tbody>
   </table>
   <h3>Recent Trips come from the backend</h3>
@@ -949,7 +949,7 @@ Scripts/simulate-drive.sh stop     <span class="cm"># stop and clear</span></cod
 
   <footer>
     Related: <a href="CarPlayLifecycle.html">CarPlay scene lifecycle</a> · <a href="CarPlayTripsMockup.html">Interactive Trips mockup</a><br>
-    Source: <code>App/CarPlaySceneDelegate.swift</code>, <code>App/CarPlayTripsController.swift</code>, <code>App/DriveTripStore.swift</code>, <code>App/DriveTracker.swift</code>, <code>App/DriveTrip.swift</code>, <code>App/DriveTripIntents.swift</code>, <code>App/SkywayShortcuts.swift</code>, <code>App/TripSyncer.swift</code>, <code>App/TripBackend.swift</code>, <code>App/SwiftDataTripBackend.swift</code>, <code>App/SyncedTripRecord.swift</code>
+    Source: <code>App/CarPlaySceneDelegate.swift</code>, <code>App/Mileage/CarPlay/CarPlayTripsController.swift</code>, <code>App/Mileage/Models/DriveTripStore.swift</code>, <code>App/Mileage/Models/DriveTracker.swift</code>, <code>App/Mileage/Models/DriveTrip.swift</code>, <code>App/Mileage/Siri/DriveTripIntents.swift</code>, <code>App/Siri/Tools/SkywayShortcuts.swift</code>, <code>App/Mileage/Sync/TripSyncer.swift</code>, <code>App/Mileage/Sync/TripBackend.swift</code>, <code>App/Mileage/Sync/SwiftDataTripBackend.swift</code>, <code>App/Mileage/Sync/SyncedTripRecord.swift</code>
   </footer>
 </main>
 </body>

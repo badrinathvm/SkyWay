@@ -602,7 +602,7 @@ issued today.</span> If there is one, tell the user and ask whether they really 
       <div class="who"><span class="chip siri">Siri</span> → <span class="chip tool">Get Recent Invoices</span></div>
       <h3>A lookup with no parameters</h3>
       <p>Apple's guidance is not to write search tools that take criteria. Siri finds things itself. So this tool simply returns the latest invoices, and Siri does the matching.</p>
-      <pre><code><span class="file">App/Siri/Tools/GetRecentInvoicesIntent.swift</span><span class="kw">struct</span> <span class="ty">GetRecentInvoicesIntent</span>: <span class="ty">AppIntent</span> {
+      <pre><code><span class="file">App/Invoices/Siri/GetRecentInvoicesIntent.swift</span><span class="kw">struct</span> <span class="ty">GetRecentInvoicesIntent</span>: <span class="ty">AppIntent</span> {
   <span class="kw">static let</span> title: <span class="ty">LocalizedStringResource</span> = <span class="st">"Get Recent Invoices"</span>
   <span class="kw">static let</span> description = <span class="ty">IntentDescription</span>(
     <span class="st">"Lists your most recent Skyway invoices, newest first, with each one's number, client, service, amount, and the date it was issued. It doesn't create or change invoices."</span>,
@@ -641,7 +641,7 @@ issued today.</span> If there is one, tell the user and ask whether they really 
   dialog: <span class="st">"Your recent invoices: \(list.formatted(.list(type: .and)))."</span>
 )</code></pre>
       <p>Each <code>InvoiceEntity</code> carries the fields the skill's rules need. <b>Issued</b> was added for this skill: without it, Siri couldn't say “on Oct 24” or spot a duplicate from today.</p>
-      <pre><code><span class="file">App/Siri/Entities/InvoiceEntity.swift</span><span class="kw">@Property</span>(title: <span class="st">"Number"</span>) <span class="kw">var</span> number: <span class="ty">String</span>      <span class="cm">// INV-0006</span>
+      <pre><code><span class="file">App/Invoices/Siri/InvoiceEntity.swift</span><span class="kw">@Property</span>(title: <span class="st">"Number"</span>) <span class="kw">var</span> number: <span class="ty">String</span>      <span class="cm">// INV-0006</span>
 <span class="kw">@Property</span>(title: <span class="st">"Client"</span>) <span class="kw">var</span> clientName: <span class="ty">String</span>  <span class="cm">// John Carter</span>
 <span class="kw">@Property</span>(title: <span class="st">"Service"</span>) <span class="kw">var</span> service: <span class="ty">String</span>    <span class="cm">// Gardening</span>
 <span class="kw">@Property</span>(title: <span class="st">"Amount"</span>) <span class="kw">var</span> amount: <span class="ty">Double</span>     <span class="cm">// 450</span>
@@ -683,7 +683,7 @@ issued today.</span> If there is one, tell the user and ask whether they really 
         <tr><td>Service</td><td><b>Gardening</b></td><td>History</td></tr>
         <tr><td>Amount</td><td><b>450</b></td><td>“the usual” + INV-0006</td></tr>
       </table>
-      <pre><code><span class="file">App/Siri/Tools/CreateInvoiceIntent.swift</span><span class="kw">@Parameter</span>(title: <span class="st">"Client"</span>, description: <span class="st">"The name of the person or business being billed, like John"</span>,
+      <pre><code><span class="file">App/Invoices/Siri/CreateInvoiceIntent.swift</span><span class="kw">@Parameter</span>(title: <span class="st">"Client"</span>, description: <span class="st">"The name of the person or business being billed, like John"</span>,
            requestValueDialog: <span class="st">"Who's the invoice for?"</span>)
 <span class="kw">var</span> clientName: <span class="ty">String</span>    <span class="cm">// ← "John Carter"</span>
 
@@ -736,7 +736,7 @@ issued today.</span> If there is one, tell the user and ask whether they really 
     <div>
       <div class="who"><span class="chip tool">Create Invoice</span> → <span class="chip data">InvoiceStore</span></div>
       <h3>INV-0008 is saved</h3>
-      <pre><code><span class="file">CreateInvoiceIntent.perform() → App/InvoiceStore.swift</span><span class="kw">let</span> invoice = <span class="ty">InvoiceStore</span>.createInvoice(clientName: client, service: work, amount: amount)
+      <pre><code><span class="file">CreateInvoiceIntent.perform() → App/Invoices/Models/InvoiceStore.swift</span><span class="kw">let</span> invoice = <span class="ty">InvoiceStore</span>.createInvoice(clientName: client, service: work, amount: amount)
 <span class="cm">// INV-0008 · John Carter · Gardening · $450 · issued Nov 9 · due Nov 23</span></code></pre>
       <p>It's now the newest invoice, so the next “bill John the usual” will find it first.</p>
     </div>
