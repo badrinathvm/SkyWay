@@ -7,7 +7,7 @@ struct ExpenseListView: View {
   @Environment(\.modelContext) private var modelContext
   @Query(sort: \Expense.date, order: .reverse) private var expenses: [Expense]
   @State private var importer = ReceiptImporter()
-  @State private var path: [Expense] = []
+  @State private var path = NavigationPath()
   @State private var isScanning = false
   @State private var isPickingPhotos = false
   @State private var photoSelection: [PhotosPickerItem] = []
@@ -25,7 +25,15 @@ struct ExpenseListView: View {
       .navigationDestination(for: Expense.self) { expense in
         ExpenseDetailView(expense: expense)
       }
+      .navigationDestination(for: ExpenseListRoute.self) { _ in
+        MonthlyReportView()
+      }
       .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          NavigationLink(value: ExpenseListRoute.monthlyReport) {
+            Label("Monthly Report", systemImage: "chart.bar.doc.horizontal")
+          }
+        }
         ToolbarItem(placement: .primaryAction) {
           addMenu
         }
@@ -75,7 +83,10 @@ struct ExpenseListView: View {
   private var list: some View {
     List {
       Section {
-        ExpenseMonthSummary(totals: Expense.monthlyTotals(of: expenses))
+        NavigationLink(value: ExpenseListRoute.monthlyReport) {
+          ExpenseMonthSummary(totals: Expense.monthlyTotals(of: expenses))
+        }
+        .accessibilityHint("Shows the monthly report.")
       }
       Section("All Expenses") {
         ForEach(expenses) { expense in
@@ -150,4 +161,9 @@ struct ExpenseListView: View {
       }
     }
   }
+}
+
+/// Screens pushed from the expense list, other than an expense itself.
+private enum ExpenseListRoute: Hashable {
+  case monthlyReport
 }

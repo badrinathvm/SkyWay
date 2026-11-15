@@ -21,6 +21,9 @@ struct ContentView: View {
       Tab(AppTab.expenses.title, systemImage: AppTab.expenses.systemImage, value: AppTab.expenses) {
         ExpenseListView()
       }
+      Tab(AppTab.invoices.title, systemImage: AppTab.invoices.systemImage, value: AppTab.invoices) {
+        InvoiceListView()
+      }
 //      Tab(AppTab.bookFlight.title, systemImage: AppTab.bookFlight.systemImage, value: AppTab.bookFlight) {
 //        PlaceholderTabView(tab: .bookFlight)
 //      }

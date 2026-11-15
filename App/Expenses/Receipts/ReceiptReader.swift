@@ -185,7 +185,10 @@ struct ReceiptReader {
     // In the local time zone: "2026-11-12" is the 12th where the purchase was made, not
     // midnight UTC, which is still the 11th in the Americas.
     let strategy = Date.ISO8601FormatStyle(timeZone: .current).year().month().day()
-    guard let date = try? Date(text, strategy: strategy) else { return nil }
+    guard let midnight = try? Date(text, strategy: strategy) else { return nil }
+    // Noon rather than midnight, so the expense stays on the same calendar day when it's
+    // shown in another time zone, like after travelling.
+    let date = midnight.addingTimeInterval(12 * 3600)
     return date <= .now.addingTimeInterval(86_400) ? date : nil
   }
 
