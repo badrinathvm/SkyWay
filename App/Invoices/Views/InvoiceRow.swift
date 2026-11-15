@@ -30,11 +30,25 @@ struct InvoiceRow: View {
         Text(invoice.amountText)
           .font(.body.weight(.semibold))
           .monospacedDigit()
-        Text("Due \(invoice.dueDate.formatted(.dateTime.month(.abbreviated).day()))")
+        statusText
           .font(.subheadline)
-          .foregroundStyle(.secondary)
       }
     }
     .accessibilityElement(children: .combine)
+  }
+
+  /// "Due Nov 28" while it's waiting, otherwise where it stands, in that state's color.
+  @ViewBuilder
+  private var statusText: some View {
+    let state = invoice.paymentState()
+    switch state {
+    case .sent:
+      Text("Due \(invoice.dueDate.formatted(.dateTime.month(.abbreviated).day()))")
+        .foregroundStyle(.secondary)
+    case .draft, .overdue, .paid:
+      Text(state.title)
+        .foregroundStyle(state.color)
+        .fontWeight(.medium)
+    }
   }
 }

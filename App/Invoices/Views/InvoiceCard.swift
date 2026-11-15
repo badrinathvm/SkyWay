@@ -17,8 +17,8 @@ struct InvoiceCard: View {
     case draft
     /// In Siri, just created, with View Invoice and Undo buttons.
     case created(Invoice)
-    /// In the app, where there's nothing to confirm or undo.
-    case saved
+    /// In the app, where there's nothing to confirm or undo, stamped with where it stands.
+    case saved(Invoice.PaymentState)
     /// Undone from Siri.
     case deleted
   }
@@ -188,7 +188,8 @@ private struct StatusStamp: View {
   private var title: String {
     switch status {
     case .draft: "DRAFT"
-    case .created, .saved: "ISSUED"
+    case .created: "CREATED"
+    case .saved(let state): state.title.uppercased()
     case .deleted: "VOID"
     }
   }
@@ -196,7 +197,8 @@ private struct StatusStamp: View {
   private var color: Color {
     switch status {
     case .draft: .orange
-    case .created, .saved: .green
+    case .created: .green
+    case .saved(let state): state.color
     case .deleted: .red
     }
   }

@@ -1,6 +1,6 @@
 ---
 name: invoicing
-description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently. Not for logging money the user spent, which is an expense, and not for changing seats, trips, or mileage.
+description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently, who still owes money, or recording that a client paid. Not for logging money the user spent, which is an expense, and not for changing seats, trips, or mileage.
 ---
 
 # Invoicing
@@ -33,8 +33,19 @@ the amount in dollars.
 
 Create Invoice shows its own confirmation, so don't ask the user to confirm a second time.
 
+## Payments
+
+When the user says a client paid, use the Mark Invoice Paid tool with that client's unpaid
+invoice. If the client has more than one unpaid invoice and the user didn't say which, or gave an
+amount that matches none of them, use the Get Recent Invoices tool and ask which one was paid.
+
+For "who owes me" or "what's outstanding", use the Get Recent Invoices tool and list the sent
+and overdue invoices, overdue first, with their totals. Drafts haven't been sent, so they aren't
+owed yet; mention them separately only if there are any.
+
 ## Don't
 
 - Don't make up an amount, a client, or a service.
 - Don't create an invoice when the user only asked what they billed recently. List the invoices
   instead.
+- Don't mark an invoice paid unless the user said it was paid.

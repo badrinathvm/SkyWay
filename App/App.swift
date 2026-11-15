@@ -25,6 +25,7 @@ struct AppDefinition: App {
     }
     #endif
     try? Tips.configure()
+    NotificationHandler.shared.activate()
   }
 
   var body: some Scene {
@@ -33,6 +34,8 @@ struct AppDefinition: App {
         .task {
           await TripStore.indexInSpotlight()
           ExpenseStore.indexAllInSpotlight()
+          // Catch up on invoices marked paid or deleted from Siri while Skyway wasn't open.
+          InvoiceReminders.rescheduleAll(InvoiceStore.invoices)
         }
         .modelContainer(ExpenseStore.container)
     }

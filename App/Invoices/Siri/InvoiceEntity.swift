@@ -25,6 +25,9 @@ struct InvoiceEntity: AppEntity {
   @Property(title: "Due Date")
   var dueDate: Date
 
+  @Property(title: "Payment Status")
+  var paymentState: Invoice.PaymentState
+
   init(invoice: Invoice) {
     id = invoice.id
     number = invoice.number
@@ -33,12 +36,13 @@ struct InvoiceEntity: AppEntity {
     amount = invoice.amount
     createdAt = invoice.createdAt
     dueDate = invoice.dueDate
+    paymentState = invoice.paymentState()
   }
 
   var displayRepresentation: DisplayRepresentation {
     DisplayRepresentation(
       title: "\(number) · \(clientName)",
-      subtitle: "\(service) · \(Invoice.format(amount)) · Due \(dueDate.formatted(date: .abbreviated, time: .omitted))",
+      subtitle: "\(service) · \(Invoice.format(amount)) · \(paymentState == .sent ? "Due \(dueDate.formatted(date: .abbreviated, time: .omitted))" : paymentState.title)",
       image: .init(systemName: "doc.text")
     )
   }
@@ -48,7 +52,13 @@ extension Invoice {
   var entity: InvoiceEntity { InvoiceEntity(invoice: self) }
 }
 
-struct InvoiceEntityQuery: EntityQuery {
+/// Enumerable, since a person's invoices are a short list: Siri can look through all of them to
+/// find the one a request means, like "Acme's invoice".
+struct InvoiceEntityQuery: EnumerableEntityQuery {
+  func allEntities() async throws -> [InvoiceEntity] {
+    InvoiceStore.invoices.map(\.entity)
+  }
+
   func entities(for identifiers: [InvoiceEntity.ID]) async throws -> [InvoiceEntity] {
     InvoiceStore.invoices(with: identifiers).map(\.entity)
   }

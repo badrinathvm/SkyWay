@@ -23,11 +23,19 @@ enum ReportCSV {
     for invoice in report.invoices {
       rows.append([
         "Invoice", day(invoice.createdAt), "\(invoice.number) \(invoice.clientName)", invoice.service,
-        number(invoice.amount), "USD", "", "", "Due \(day(invoice.dueDate))",
+        number(invoice.amount), "USD", "", "", invoiceNote(invoice),
       ])
     }
     // CRLF line endings, as RFC 4180 asks and Excel expects.
     return rows.map { $0.map(escape).joined(separator: ",") }.joined(separator: "\r\n") + "\r\n"
+  }
+
+  /// "Paid 2026-11-20", or the status and due date while it's unpaid.
+  private static func invoiceNote(_ invoice: Invoice) -> String {
+    if let paidAt = invoice.paidAt, invoice.status == .paid {
+      return "Paid \(day(paidAt))"
+    }
+    return "\(invoice.paymentState().title), due \(day(invoice.dueDate))"
   }
 
   /// Quotes a field that has a comma, quote or line break, doubling any quotes inside it.

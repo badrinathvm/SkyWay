@@ -4,8 +4,8 @@ import AppIntents
 struct GetRecentInvoicesIntent: AppIntent {
   static let title: LocalizedStringResource = "Get Recent Invoices"
   static let description = IntentDescription(
-    "Lists your most recent Skyway invoices, newest first, with each one's number, client, service, amount, and the date it was issued. It doesn't create or change invoices.",
-    searchKeywords: ["invoices", "past invoices", "billing history", "last invoice", "what did I bill", "clients"]
+    "Lists your most recent Skyway invoices, newest first, with each one's number, client, service, amount, the date it was issued, its due date, and its payment status: draft, sent, overdue, or paid. It doesn't create or change invoices.",
+    searchKeywords: ["invoices", "past invoices", "billing history", "last invoice", "what did I bill", "clients", "who owes me", "unpaid", "overdue", "outstanding"]
   )
 
   /// How many invoices to return, so the list stays short enough for Siri to read out.

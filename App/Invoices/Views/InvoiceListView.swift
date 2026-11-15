@@ -5,6 +5,7 @@ import SwiftUI
 struct InvoiceListView: View {
   @State private var invoices: [Invoice] = []
   @State private var selectedInvoice: Invoice?
+  @State private var isEditingBusiness = false
   @Environment(\.scenePhase) private var scenePhase
 
   var body: some View {
@@ -25,12 +26,20 @@ struct InvoiceListView: View {
         MonthlyReportView()
       }
       .toolbar {
+        ToolbarItem(placement: .topBarLeading) {
+          Button("Business Details", systemImage: "building.2") {
+            isEditingBusiness = true
+          }
+        }
         ToolbarItem(placement: .primaryAction) {
           NavigationLink(value: InvoiceListRoute.monthlyReport) {
             Label("Monthly Report", systemImage: "chart.bar.doc.horizontal")
           }
         }
       }
+    }
+    .sheet(isPresented: $isEditingBusiness) {
+      BusinessProfileView()
     }
     .sheet(item: $selectedInvoice, onDismiss: reload) { invoice in
       InvoiceDetailView(invoice: invoice)
@@ -47,12 +56,21 @@ struct InvoiceListView: View {
     List {
       Section {
         VStack(alignment: .leading, spacing: 4) {
-          Text("Invoiced in \(Date.now.formatted(.dateTime.month(.wide)))")
+          Text("Waiting to Be Paid")
             .font(.subheadline)
             .foregroundStyle(.secondary)
-          Text(MonthlyReport.usd(invoicedThisMonth))
+          Text(MonthlyReport.usd(total(of: outstanding)))
             .font(.largeTitle.weight(.bold))
             .monospacedDigit()
+            .contentTransition(.numericText())
+          if !overdue.isEmpty {
+            Label("\(MonthlyReport.usd(total(of: overdue))) overdue", systemImage: "exclamationmark.circle.fill")
+              .font(.subheadline.weight(.medium))
+              .foregroundStyle(.red)
+          }
+          Text("\(MonthlyReport.usd(invoicedThisMonth)) invoiced in \(Date.now.formatted(.dateTime.month(.wide)))")
+            .font(.subheadline)
+            .foregroundStyle(.secondary)
         }
         .padding(.vertical, 4)
         .accessibilityElement(children: .combine)
@@ -77,6 +95,19 @@ struct InvoiceListView: View {
         }
       }
     }
+  }
+
+  /// Sent, including overdue, and not yet paid.
+  private var outstanding: [Invoice] {
+    invoices.filter(\.isOutstanding)
+  }
+
+  private var overdue: [Invoice] {
+    invoices.filter { $0.paymentState() == .overdue }
+  }
+
+  private func total(of invoices: [Invoice]) -> Double {
+    invoices.reduce(0) { $0 + $1.amount }
   }
 
   private var invoicedThisMonth: Double {

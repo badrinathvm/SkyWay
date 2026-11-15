@@ -44,6 +44,50 @@ enum InvoiceStore {
 
   static func deleteInvoice(id: Invoice.ID) {
     save(invoices.filter { $0.id != id })
+    InvoiceReminders.cancel(invoiceID: id)
+  }
+
+  /// Marks the invoice sent to the client, which starts its payment reminders.
+  @discardableResult
+  static func markSent(id: Invoice.ID) -> Invoice? {
+    update(id: id) {
+      $0.status = .sent
+      $0.sentAt = .now
+      $0.paidAt = nil
+    }
+  }
+
+  /// Marks the invoice paid, which stops its reminders.
+  @discardableResult
+  static func markPaid(id: Invoice.ID, on date: Date = .now) -> Invoice? {
+    update(id: id) {
+      // A draft paid straight away was sent, in effect, at the same time. An invoice already
+      // marked sent keeps its date, or none if it was sent before Skyway tracked it.
+      if $0.status == .draft {
+        $0.sentAt = date
+      }
+      $0.status = .paid
+      $0.paidAt = date
+    }
+  }
+
+  /// Undoes Mark as Paid, for a payment recorded by mistake or one that bounced.
+  @discardableResult
+  static func markUnpaid(id: Invoice.ID) -> Invoice? {
+    update(id: id) {
+      $0.status = .sent
+      $0.paidAt = nil
+    }
+  }
+
+  /// Changes one invoice, saves, and brings its reminders in line with its new status.
+  private static func update(id: Invoice.ID, _ change: (inout Invoice) -> Void) -> Invoice? {
+    var all = invoices
+    guard let index = all.firstIndex(where: { $0.id == id }) else { return nil }
+    change(&all[index])
+    save(all)
+    InvoiceReminders.update(for: all[index])
+    return all[index]
   }
 
   /// Replaces every invoice, and continues numbering after the highest one given.
@@ -51,6 +95,7 @@ enum InvoiceStore {
     let lastNumber = invoices.compactMap { Int($0.number.dropFirst("INV-".count)) }.max() ?? 0
     UserDefaults.standard.set(lastNumber, forKey: lastNumberKey)
     save(invoices.sorted { $0.createdAt > $1.createdAt })
+    InvoiceReminders.rescheduleAll(invoices)
   }
 
   private static func save(_ invoices: [Invoice]) {

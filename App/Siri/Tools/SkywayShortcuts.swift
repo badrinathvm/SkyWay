@@ -38,6 +38,16 @@ struct SkywayShortcuts: AppShortcutsProvider {
       systemImageName: "doc.text"
     )
     AppShortcut(
+      intent: MarkInvoicePaidIntent(),
+      phrases: [
+        "Mark an invoice paid in \(.applicationName)",
+        "Mark \(\.$invoice) paid in \(.applicationName)",
+        "Record a payment in \(.applicationName)",
+      ],
+      shortTitle: "Mark Invoice Paid",
+      systemImageName: "checkmark.circle"
+    )
+    AppShortcut(
       intent: LogExpenseIntent(),
       phrases: [
         "Log an expense in \(.applicationName)",
