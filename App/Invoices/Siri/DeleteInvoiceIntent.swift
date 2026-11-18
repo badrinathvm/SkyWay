@@ -2,7 +2,7 @@ import AppIntents
 
 /// Runs when the person taps Undo on the created invoice. Siri then redraws the card.
 struct DeleteInvoiceIntent: AppIntent {
-  static let title: LocalizedStringResource = "Delete Invoice"
+  static let title: LocalizedStringResource = "Undo New Invoice"
   static let isDiscoverable = false
 
   @Parameter(title: "Invoice ID")

@@ -1,6 +1,6 @@
 ---
 name: invoicing
-description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently, who still owes money, recording that an invoice was sent or that a client paid, and follow-ups about invoices already listed or created. Not for logging money the user spent, which is an expense, and not for changing seats, trips, or mileage.
+description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently, who still owes money, recording that an invoice was sent or that a client paid, deleting or undoing an invoice, and follow-ups about invoices already listed or created. Not for logging money the user spent, which is an expense, and not for changing seats, trips, or mileage.
 ---
 
 # Invoicing
@@ -48,6 +48,15 @@ owed yet; mention them separately only if there are any.
 When the user says they sent, emailed, or gave an invoice to a client, use the Record Invoice as Sent
 tool with that client's draft. Skyway doesn't send invoices itself, so never say it sent one.
 
+## Undo
+
+When the user says "undo that", "cancel that invoice", or "I made a mistake" right after you
+created an invoice, use the Delete Invoice tool with the invoice you just created. Don't call Get
+Recent Invoices to find it. Delete Invoice asks the user to confirm, so don't ask a second time.
+
+If they want to fix a detail instead, like the amount, delete the invoice and create a corrected
+one, and tell them that's what you did.
+
 ## Follow-ups
 
 After you've listed invoices or created, sent, or paid one, the user often goes on about the same
@@ -68,3 +77,4 @@ can remind them when it's due. Don't mark it sent until they say so.
   instead.
 - Don't mark an invoice paid unless the user said it was paid.
 - Don't mark an invoice sent unless the user said they sent it.
+- Don't delete an invoice unless the user asked to delete, cancel, or undo it.

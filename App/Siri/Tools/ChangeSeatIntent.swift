@@ -59,7 +59,7 @@ struct ChangeSeatIntent: AppIntent {
     let updated = booking.withSavedSeat
     return .result(
       value: updated.entity,
-      dialog: "Done. You're now in \(newSeat.description) on flight \(updated.flightNumber).",
+      dialog: "Done. You've moved from \(previousSeat) to \(newSeat.description) on flight \(updated.flightNumber).",
       snippetIntent: SeatChangeResultSnippetIntent(trip: updated.entity, previousSeat: previousSeat)
     )
   }

@@ -182,4 +182,33 @@ struct InvoicingEvaluationTests {
     #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
     #expect(result.aggregateValue(.mean(of: .siriResponseAllPass)) >= 0.8)
   }
+
+  /// Undoing by voice, with no card to tap, like on AirPods: Siri deletes the invoice it just
+  /// created, after the person confirms.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Undo a new invoice by voice",
+    dataset: SiriScenarioLoader {
+      ["Actually, undo that", "Cancel that invoice", "Oops, I made a mistake, delete it"].map { undo in
+        SiriScenario {
+          UserTurn("In Skyway, bill Maria Garcia $40 for dog walking")
+          UserTurn("Yes")
+          UserTurn(undo) {
+            Calls(.disallowed) { SkywayDefinitions.getRecentInvoices }
+          }
+          UserTurn("Yes")
+        } expectation: {
+          Calls {
+            SkywayDefinitions.createInvoice
+            SkywayDefinitions.deleteInvoice.expect(
+              invoice: SkywayDefinitions.invoice.expect(number: .equals("INV-0004"))
+            )
+          }
+        }
+      }
+    }
+  )))
+  func undoNewInvoice() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+  }
 }

@@ -53,7 +53,7 @@ struct CreateInvoiceIntent: AppIntent {
     try await requestConfirmation(
       actionName: .custom(
         acceptLabel: "Create Invoice",
-        acceptAlternatives: ["Yes", "Create it", "Send it"],
+        acceptAlternatives: ["Yes", "Create it"],
         denyLabel: "Cancel",
         denyAlternatives: ["No", "Don't create it"],
         destructive: false

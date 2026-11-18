@@ -189,4 +189,28 @@ struct SeatSelectionEvaluationTests {
     let result = EvaluationContext.current.result
     #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
   }
+
+  /// Undoing a seat change by voice moves the person back to the seat they left.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Undo a seat change by voice",
+    dataset: SiriScenarioLoader {
+      ["Actually, undo that", "Put me back in my old seat"].map { undo in
+        SiriScenario {
+          UserTurn("In Skyway, move me to seat 17B")
+          UserTurn("Yes")
+          UserTurn(undo)
+          UserTurn("Yes")
+        } expectation: {
+          Calls {
+            SkywayDefinitions.changeSeat.expect(seat: .equals("17B"))
+            SkywayDefinitions.changeSeat.expect(seat: .equals("14A"))
+          }
+        }
+      }
+    }
+  )))
+  func undoSeatChange() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+  }
 }

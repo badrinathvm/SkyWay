@@ -1,6 +1,6 @@
 ---
 name: seat-selection
-description: Choose a new seat on the user's upcoming Skyway flight when they describe the kind of seat they want instead of a seat number, such as a window or aisle seat, more legroom, an exit row, or a seat near the front. Also for asking which seats are free. Not for questions about the gate, boarding time, or trip details.
+description: Undo a seat change, or choose a new seat on the user's upcoming Skyway flight when they describe the kind of seat they want instead of a seat number, such as a window or aisle seat, more legroom, an exit row, or a seat near the front. Also for asking which seats are free. Not for questions about the gate, boarding time, or trip details.
 ---
 
 # Seat Selection
@@ -32,6 +32,12 @@ confirmation, so don't ask the user to confirm a second time.
 
 If no free seat matches, say so and offer the nearest alternative, such as an aisle seat when no
 window seat is free, or a seat a few rows further back.
+
+## Undo
+
+When the user says "undo that", "put me back", or "never mind" after you changed their seat, use
+the Change Seat tool with the seat they moved from, which Change Seat's reply names. It asks the
+user to confirm, so don't ask a second time.
 
 ## Don't
 
