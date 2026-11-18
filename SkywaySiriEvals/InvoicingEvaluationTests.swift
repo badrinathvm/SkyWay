@@ -124,4 +124,91 @@ struct InvoicingEvaluationTests {
     let result = EvaluationContext.current.result
     #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
   }
+
+  /// After listing invoices, Siri acts on one of them from the list it already has, without
+  /// asking which invoice or listing them again.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Follow-up on listed invoices",
+    dataset: SiriScenarioLoader {
+      SiriScenario {
+        UserTurn("What did I bill recently in Skyway?") {
+          Calls { SkywayDefinitions.getRecentInvoices }
+        }
+        UserTurn("Maria paid that one") {
+          Calls(.disallowed) { SkywayDefinitions.getRecentInvoices }
+        }
+      } expectation: {
+        Calls {
+          SkywayDefinitions.getRecentInvoices
+          SkywayDefinitions.markInvoicePaid.expect(
+            invoice: SkywayDefinitions.invoice.expect(clientName: .equals("Maria Garcia"))
+          )
+        }
+      }
+      SiriScenario {
+        UserTurn("Show my Skyway invoices") {
+          Calls { SkywayDefinitions.getRecentInvoices }
+        }
+        UserTurn("I just emailed the pool cleaning one") {
+          Calls(.disallowed) {
+            SkywayDefinitions.getRecentInvoices
+            SkywayDefinitions.markInvoicePaid
+          }
+        }
+      } expectation: {
+        Calls {
+          SkywayDefinitions.getRecentInvoices
+          SkywayDefinitions.markInvoiceSent.expect(
+            invoice: SkywayDefinitions.invoice.expect(clientName: .equals("John Rivera"))
+          )
+        }
+      }
+      // A question about the listed invoices is answered from them, without changing anything.
+      SiriScenario {
+        UserTurn("What did I bill recently in Skyway?")
+        UserTurn("How much was Maria's?") {
+          Calls(.disallowed) {
+            SkywayDefinitions.markInvoicePaid
+            SkywayDefinitions.markInvoiceSent
+            SkywayDefinitions.createInvoice
+          }
+          SiriResponse(.contains("40"))
+        }
+      }
+    }
+  )))
+  func followUpOnListedInvoices() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+    #expect(result.aggregateValue(.mean(of: .siriResponseAllPass)) >= 0.8)
+  }
+
+  /// Undoing by voice, with no card to tap, like on AirPods: Siri deletes the invoice it just
+  /// created, after the person confirms.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Undo a new invoice by voice",
+    dataset: SiriScenarioLoader {
+      ["Actually, undo that", "Cancel that invoice", "Oops, I made a mistake, delete it"].map { undo in
+        SiriScenario {
+          UserTurn("In Skyway, bill Maria Garcia $40 for dog walking")
+          UserTurn("Yes")
+          UserTurn(undo) {
+            Calls(.disallowed) { SkywayDefinitions.getRecentInvoices }
+          }
+          UserTurn("Yes")
+        } expectation: {
+          Calls {
+            SkywayDefinitions.createInvoice
+            SkywayDefinitions.deleteInvoice.expect(
+              invoice: SkywayDefinitions.invoice.expect(number: .equals("INV-0004"))
+            )
+          }
+        }
+      }
+    }
+  )))
+  func undoNewInvoice() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+  }
 }

@@ -5,24 +5,26 @@ struct InvoiceEntity: AppEntity {
   static let typeDisplayRepresentation: TypeDisplayRepresentation = "Invoice"
   static let defaultQuery = InvoiceEntityQuery()
 
+  /// Property titles carry their meaning, because `@Property(description:)` needs iOS 27.3 and
+  /// this entity also ships on 27.0. Siri reads them to answer follow-ups about invoices it listed.
   var id: String
 
-  @Property(title: "Number")
+  @Property(title: "Invoice Number (like INV-0002)")
   var number: String
 
-  @Property(title: "Client")
+  @Property(title: "Client Billed")
   var clientName: String
 
-  @Property(title: "Service")
+  @Property(title: "Service Billed For")
   var service: String
 
-  @Property(title: "Amount")
+  @Property(title: "Amount Owed (US Dollars)")
   var amount: Double
 
-  @Property(title: "Issued")
+  @Property(title: "Date Issued")
   var createdAt: Date
 
-  @Property(title: "Due Date")
+  @Property(title: "Payment Due Date")
   var dueDate: Date
 
   @Property(title: "Payment Status")

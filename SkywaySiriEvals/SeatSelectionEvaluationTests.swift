@@ -156,4 +156,61 @@ struct SeatSelectionEvaluationTests {
     let result = EvaluationContext.current.result
     #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
   }
+
+  /// After Get Upcoming Trip, a seat request reuses that trip, and a question about it is
+  /// answered from it.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Follow-up on the upcoming trip",
+    dataset: SiriScenarioLoader {
+      SiriScenario {
+        UserTurn("Where am I flying with Skyway?") {
+          Calls { SkywayDefinitions.getCurrentTrip }
+        }
+        UserTurn("Can you move me to 17B?")
+        UserTurn("Yes")
+      } expectation: {
+        Calls {
+          SkywayDefinitions.getCurrentTrip
+          SkywayDefinitions.changeSeat.expect(seat: .equals("17B"))
+        }
+      }
+      SiriScenario {
+        UserTurn("Where am I flying with Skyway?")
+        UserTurn("What's my confirmation code?") {
+          Calls(.disallowed) {
+            SkywayDefinitions.changeSeat
+            SkywayDefinitions.getAvailableSeats
+          }
+        }
+      }
+    }
+  )))
+  func followUpOnTrip() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+  }
+
+  /// Undoing a seat change by voice moves the person back to the seat they left.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Undo a seat change by voice",
+    dataset: SiriScenarioLoader {
+      ["Actually, undo that", "Put me back in my old seat"].map { undo in
+        SiriScenario {
+          UserTurn("In Skyway, move me to seat 17B")
+          UserTurn("Yes")
+          UserTurn(undo)
+          UserTurn("Yes")
+        } expectation: {
+          Calls {
+            SkywayDefinitions.changeSeat.expect(seat: .equals("17B"))
+            SkywayDefinitions.changeSeat.expect(seat: .equals("14A"))
+          }
+        }
+      }
+    }
+  )))
+  func undoSeatChange() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+  }
 }
