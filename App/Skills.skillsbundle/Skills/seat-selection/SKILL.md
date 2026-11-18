@@ -5,6 +5,10 @@ description: Choose a new seat on the user's upcoming Skyway flight when they de
 
 # Seat Selection
 
+If you already have the user's trip from an earlier answer, like Get Upcoming Trip, pass that
+trip to the Get Available Seats and Change Seat tools. Its seat is the user's current seat, for
+requests like "something closer to the front than my seat".
+
 If the user named an exact seat, like 17B, use the Change Seat tool with it. Don't look up
 available seats first.
 

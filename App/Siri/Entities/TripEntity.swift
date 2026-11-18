@@ -9,30 +9,32 @@ struct TripEntity: IndexedEntity {
   static let defaultQuery = TripEntityQuery()
   static let viewTripActivityType = "app.skyway.viewTrip"
 
+  /// Property titles carry their meaning, because `@Property(description:)` needs iOS 27.3 and
+  /// this entity also ships on 27.0. Siri reads them to answer follow-ups about a trip it got back.
   var id: String
 
-  @Property(title: "Destination")
+  @Property(title: "Destination City and Airport Code")
   var destination: String
 
-  @Property(title: "Origin")
+  @Property(title: "Departing From (City and Airport Code)")
   var origin: String
 
   @Property(title: "Flight Number")
   var flightNumber: String
 
-  @Property(title: "Departure")
+  @Property(title: "Departure Date and Time")
   var departure: Date
 
-  @Property(title: "Gate")
+  @Property(title: "Departure Gate")
   var gate: String
 
-  @Property(title: "Seat")
+  @Property(title: "Seat (Row and Letter, like 14A)")
   var seat: String
 
   @Property(title: "Boarding Group")
   var boardingGroup: String
 
-  @Property(title: "Confirmation Code")
+  @Property(title: "Booking Confirmation Code")
   var confirmationCode: String
 
   init(trip: Trip) {

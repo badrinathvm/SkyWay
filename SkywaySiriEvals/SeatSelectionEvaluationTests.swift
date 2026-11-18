@@ -156,4 +156,37 @@ struct SeatSelectionEvaluationTests {
     let result = EvaluationContext.current.result
     #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
   }
+
+  /// After Get Upcoming Trip, a seat request reuses that trip, and a question about it is
+  /// answered from it.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Follow-up on the upcoming trip",
+    dataset: SiriScenarioLoader {
+      SiriScenario {
+        UserTurn("Where am I flying with Skyway?") {
+          Calls { SkywayDefinitions.getCurrentTrip }
+        }
+        UserTurn("Can you move me to 17B?")
+        UserTurn("Yes")
+      } expectation: {
+        Calls {
+          SkywayDefinitions.getCurrentTrip
+          SkywayDefinitions.changeSeat.expect(seat: .equals("17B"))
+        }
+      }
+      SiriScenario {
+        UserTurn("Where am I flying with Skyway?")
+        UserTurn("What's my confirmation code?") {
+          Calls(.disallowed) {
+            SkywayDefinitions.changeSeat
+            SkywayDefinitions.getAvailableSeats
+          }
+        }
+      }
+    }
+  )))
+  func followUpOnTrip() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+  }
 }

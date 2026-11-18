@@ -124,4 +124,62 @@ struct InvoicingEvaluationTests {
     let result = EvaluationContext.current.result
     #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
   }
+
+  /// After listing invoices, Siri acts on one of them from the list it already has, without
+  /// asking which invoice or listing them again.
+  @Test(.evaluates(SkywaySiriEvaluation(
+    name: "Follow-up on listed invoices",
+    dataset: SiriScenarioLoader {
+      SiriScenario {
+        UserTurn("What did I bill recently in Skyway?") {
+          Calls { SkywayDefinitions.getRecentInvoices }
+        }
+        UserTurn("Maria paid that one") {
+          Calls(.disallowed) { SkywayDefinitions.getRecentInvoices }
+        }
+      } expectation: {
+        Calls {
+          SkywayDefinitions.getRecentInvoices
+          SkywayDefinitions.markInvoicePaid.expect(
+            invoice: SkywayDefinitions.invoice.expect(clientName: .equals("Maria Garcia"))
+          )
+        }
+      }
+      SiriScenario {
+        UserTurn("Show my Skyway invoices") {
+          Calls { SkywayDefinitions.getRecentInvoices }
+        }
+        UserTurn("I just emailed the pool cleaning one") {
+          Calls(.disallowed) {
+            SkywayDefinitions.getRecentInvoices
+            SkywayDefinitions.markInvoicePaid
+          }
+        }
+      } expectation: {
+        Calls {
+          SkywayDefinitions.getRecentInvoices
+          SkywayDefinitions.markInvoiceSent.expect(
+            invoice: SkywayDefinitions.invoice.expect(clientName: .equals("John Rivera"))
+          )
+        }
+      }
+      // A question about the listed invoices is answered from them, without changing anything.
+      SiriScenario {
+        UserTurn("What did I bill recently in Skyway?")
+        UserTurn("How much was Maria's?") {
+          Calls(.disallowed) {
+            SkywayDefinitions.markInvoicePaid
+            SkywayDefinitions.markInvoiceSent
+            SkywayDefinitions.createInvoice
+          }
+          SiriResponse(.contains("40"))
+        }
+      }
+    }
+  )))
+  func followUpOnListedInvoices() {
+    let result = EvaluationContext.current.result
+    #expect(result.aggregateValue(.mean(of: .intentsAllPass)) >= 0.8)
+    #expect(result.aggregateValue(.mean(of: .siriResponseAllPass)) >= 0.8)
+  }
 }

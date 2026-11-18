@@ -1,6 +1,6 @@
 ---
 name: invoicing
-description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently, who still owes money, or recording that a client paid. Not for logging money the user spent, which is an expense, and not for changing seats, trips, or mileage.
+description: Bill a client in Skyway when the request is vague or missing details, such as no amount, the usual amount, the same as last time, a rate per hour or per visit instead of a total, only a first name, an amount in a currency other than US dollars, or several jobs at once. Also for asking what was billed recently, who still owes money, recording that an invoice was sent or that a client paid, and follow-ups about invoices already listed or created. Not for logging money the user spent, which is an expense, and not for changing seats, trips, or mileage.
 ---
 
 # Invoicing
@@ -43,9 +43,28 @@ For "who owes me" or "what's outstanding", use the Get Recent Invoices tool and 
 and overdue invoices, overdue first, with their totals. Drafts haven't been sent, so they aren't
 owed yet; mention them separately only if there are any.
 
+## Sending
+
+When the user says they sent, emailed, or gave an invoice to a client, use the Record Invoice as Sent
+tool with that client's draft. Skyway doesn't send invoices itself, so never say it sent one.
+
+## Follow-ups
+
+After you've listed invoices or created, sent, or paid one, the user often goes on about the same
+invoices, like "mark the second one paid", "I sent John's", or "when is that one due?". Use the
+invoices you already have from that answer, matched by their position in the list, client, or
+number. Don't call Get Recent Invoices again or ask which invoice they mean when it's clear.
+
+Answer questions about those invoices, like due dates, totals, or what's overdue, from what you
+already have.
+
+After creating an invoice, you can tell the user to let you know once they've sent it, so Skyway
+can remind them when it's due. Don't mark it sent until they say so.
+
 ## Don't
 
 - Don't make up an amount, a client, or a service.
 - Don't create an invoice when the user only asked what they billed recently. List the invoices
   instead.
 - Don't mark an invoice paid unless the user said it was paid.
+- Don't mark an invoice sent unless the user said they sent it.
